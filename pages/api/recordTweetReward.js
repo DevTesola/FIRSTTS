@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { wallet, txSignature, reference_id, reward_type } = req.body;
+    const { wallet, txSignature, reference_id, reward_type, nft_id, mint_address } = req.body;
     
     if (!wallet) {
       return res.status(400).json({ error: 'Wallet address is required' });
@@ -29,25 +29,70 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Reference ID is required' });
     }
     
-    // 중복 보상 확인
-    const { data: existingReward, error: checkError } = await supabase
+    // 중복 보상 확인을 위한 광범위한 검사
+    // 1. 정확히 같은 참조 ID + 보상 유형 조합 확인
+    let duplicateQuery = supabase
       .from('rewards')
       .select('id')
       .eq('wallet_address', wallet)
       .eq('reference_id', refId)
-      .eq('reward_type', rewardType)
-      .maybeSingle();
+      .eq('reward_type', rewardType);
     
-    if (checkError) {
-      throw new Error(`Database query error: ${checkError.message}`);
+    let { data: duplicateExact, error: checkError1 } = await duplicateQuery.maybeSingle();
+    
+    if (checkError1) {
+      throw new Error(`Database query error: ${checkError1.message}`);
     }
     
-    // 이미 보상받았는지 확인
-    if (existingReward) {
-      return res.status(400).json({ error: 'Reward already claimed for this reference' });
+    // 이미 정확히 같은 보상이 있음
+    if (duplicateExact) {
+      return res.status(400).json({ error: `Reward already claimed for this reference` });
     }
     
-    // 새 보상 레코드 생성
+    // 2. 같은 NFT ID에 대한 다른 형태의 보상 확인
+    if (nft_id) {
+      // NFT ID 기반 중복 확인 - 다양한 패턴 확인
+      const potentialRefIds = [
+        `mint_${nft_id}`,
+        `nft_tweet_${nft_id}`,
+        `nft_telegram_${nft_id}`
+      ];
+      
+      let { data: duplicateNft, error: checkError2 } = await supabase
+        .from('rewards')
+        .select('id, reward_type, reference_id')
+        .eq('wallet_address', wallet)
+        .in('reference_id', potentialRefIds);
+      
+      if (checkError2) {
+        throw new Error(`Database query error: ${checkError2.message}`);
+      }
+      
+      // 같은 NFT에 대한 같은 유형의 보상이 이미 있음
+      if (duplicateNft && duplicateNft.some(reward => reward.reward_type === rewardType)) {
+        return res.status(400).json({ error: `You've already received a ${rewardType} reward for this NFT` });
+      }
+    }
+    
+    // 3. 민트 주소 기반 중복 확인
+    if (mint_address && mint_address.length > 30) {
+      let { data: duplicateMint, error: checkError3 } = await supabase
+        .from('rewards')
+        .select('id')
+        .eq('wallet_address', wallet)
+        .eq('mint_address', mint_address)
+        .eq('reward_type', rewardType);
+      
+      if (checkError3) {
+        throw new Error(`Database query error: ${checkError3.message}`);
+      }
+      
+      if (duplicateMint && duplicateMint.length > 0) {
+        return res.status(400).json({ error: `You've already received a ${rewardType} reward for this NFT` });
+      }
+    }
+    
+    // 모든 검사를 통과했으면 새 보상 레코드 생성
     const platform = rewardType.includes('telegram') ? 'Telegram' : 'Twitter';
     
     const { data: newReward, error } = await supabase
@@ -59,7 +104,10 @@ export default async function handler(req, res) {
           reward_type: rewardType,
           reference_id: refId,
           description: `Reward for sharing on ${platform}`,
-          claimed: false
+          claimed: false,
+          nft_id: nft_id || null,
+          mint_address: mint_address || null,
+          tx_signature: txSignature || null
         }
       ])
       .select()

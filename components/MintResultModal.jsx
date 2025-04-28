@@ -62,21 +62,26 @@ export default function MintResultModal({ result, onClose }) {
   const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
   
   // Create meaningful links
-  let shareUrl;
-  if (mintAddress) {
-    // Use Magic Eden link if we have a mint address
-    shareUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
-  } else {
-    // Fallback to project website
-    shareUrl = "https://tesola.xyz";
-  }
+  // Solscan link for the transaction
+  const solscanUrl = `https://solscan.io/token/${mintAddress}?cluster=${network}`;
   
-  // Create tweet text with proper links
+  // Magic Eden link if we have a mint address
+  const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
+  
+  // Tesola website URL
+  const tesolaUrl = `https://tesola.xyz/solara/${filename}`;
+  
+  // Create tweet text with proper links to Solscan, Magic Eden and tesola.xyz
   const tweetText = encodeURIComponent(
-    `I just minted SOLARA #${filename} – ${tier} tier from the GEN:0 collection! 🚀 #SOLARA #NFT #Solana`
+    `I just minted SOLARA #${filename} – ${tier} tier from the GEN:0 collection! 🚀\n\n` +
+    `View on Solscan: ${solscanUrl}\n` +
+    `View on Magic Eden: ${magicEdenUrl}\n` +
+    `Visit: ${tesolaUrl}\n\n` +
+    `#SOLARA #NFT #Solana`
   );
-  const tweetUrl = encodeURIComponent(shareUrl);
-  const twitterShareUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`;
+  
+  // No URL needed since links are in the text
+  const twitterShareUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
   
   // Tweet share and reward handler
   const handleTweetShare = async () => {
@@ -202,6 +207,53 @@ export default function MintResultModal({ result, onClose }) {
               </div>
             </div>
           )}
+          
+          {/* Links to Solscan, Magic Eden and TESOLA.xyz */}
+          <div className="flex flex-col gap-2 mb-4">
+            {mintAddress && (
+              <>
+                <a 
+                  href={solscanUrl}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 6H6C5.46957 6 4.96086 6.21071 4.58579 6.58579C4.21071 6.96086 4 7.46957 4 8V18C4 18.5304 4.21071 19.0391 4.58579 19.4142C4.96086 19.7893 5.46957 20 6 20H16C16.5304 20 17.0391 19.7893 17.4142 19.4142C17.7893 19.0391 18 18.5304 18 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 12L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 4H20V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  View on Solscan
+                </a>
+                <a 
+                  href={magicEdenUrl}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-purple-400 hover:underline flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 6H6C5.46957 6 4.96086 6.21071 4.58579 6.58579C4.21071 6.96086 4 7.46957 4 8V18C4 18.5304 4.21071 19.0391 4.58579 19.4142C4.96086 19.7893 5.46957 20 6 20H16C16.5304 20 17.0391 19.7893 17.4142 19.4142C17.7893 19.0391 18 18.5304 18 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 12L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 4H20V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  View on Magic Eden
+                </a>
+                <a 
+                  href={tesolaUrl}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-green-400 hover:underline flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 6H6C5.46957 6 4.96086 6.21071 4.58579 6.58579C4.21071 6.96086 4 7.46957 4 8V18C4 18.5304 4.21071 19.0391 4.58579 19.4142C4.96086 19.7893 5.46957 20 6 20H16C16.5304 20 17.0391 19.7893 17.4142 19.4142C17.7893 19.0391 18 18.5304 18 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 12L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 4H20V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  View on TESOLA.xyz
+                </a>
+              </>
+            )}
+          </div>
           
           {/* Description */}
           <div className="mb-6">

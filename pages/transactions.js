@@ -70,24 +70,55 @@ export default function Transactions() {
     fetchRewards();
   }, [publicKey, connected]);
 
-  // Check if already received reward for this transaction - improved to separate tweet/telegram rewards
+  // 개선된 중복 리워드 확인 함수
   const hasReceivedReward = (txSignature, rewardType) => {
-    // This checks for rewards specific to this type and transaction
+    // 기본 체크: 해당 트랜잭션 + 리워드 타입 조합 확인
     const typeSpecificCheck = rewardHistory.some(reward => 
       (reward.reference_id === txSignature || 
        reward.txSignature === txSignature) && 
       reward.reward_type === rewardType
     );
     
-    // Only for tweet rewards, also check if there's a mint_tweet reward for this transaction
-    // This prevents getting rewards twice for the same transaction (once from mint, once from transaction)
-    const mintTweetCheck = rewardType === 'tweet' && 
-      rewardHistory.some(reward => 
-        (reward.reference_id === `mint_${txSignature}` || reward.txSignature === txSignature) && 
+    // 트윗 리워드인 경우 추가 체크
+    if (rewardType === 'tweet') {
+      // 민팅 트윗 체크
+      const mintTweetCheck = rewardHistory.some(reward => 
+        // mint_ 접두사 포함 체크
+        (reward.reference_id && reward.reference_id.includes(`mint_`) && 
+         reward.reward_type === 'mint_tweet') ||
+        // 또는 동일한 트랜잭션 체크
+        (reward.txSignature === txSignature && reward.reward_type === 'mint_tweet')
+      );
+      
+      // 텔레그램 공유 체크 - 만약 이미 텔레그램으로 공유했으면 트윗 공유도 막음
+      const telegramCheck = rewardHistory.some(reward => 
+        (reward.reference_id === txSignature || 
+         reward.txSignature === txSignature) && 
+        reward.reward_type === 'telegram_share'
+      );
+      
+      return typeSpecificCheck || mintTweetCheck || telegramCheck;
+    } 
+    // 텔레그램 리워드인 경우
+    else if (rewardType === 'telegram_share') {
+      // 트윗 체크 - 만약 이미 트윗으로 공유했으면 텔레그램 공유도 막음
+      const tweetCheck = rewardHistory.some(reward => 
+        (reward.reference_id === txSignature || 
+         reward.txSignature === txSignature) && 
+        reward.reward_type === 'tweet'
+      );
+      
+      // 민팅 트윗 체크
+      const mintTweetCheck = rewardHistory.some(reward => 
+        (reward.txSignature === txSignature) && 
         reward.reward_type === 'mint_tweet'
       );
+      
+      return typeSpecificCheck || tweetCheck || mintTweetCheck;
+    }
     
-    return typeSpecificCheck || mintTweetCheck;
+    // 기본적으로는 타입 체크만
+    return typeSpecificCheck;
   };
 
   // List handler function
@@ -125,6 +156,9 @@ export default function Transactions() {
     // Create Solscan transaction URL
     const solscanTxUrl = `https://solscan.io/tx/${txSignature}?cluster=${network}`;
     
+    // Create Website URL
+    const tesolaUrl = `https://tesola.xyz/solara/${mintAddress}`;
+    
     // Create share message with useful links
     let shareText;
     if (mintAddress) {
@@ -134,20 +168,21 @@ export default function Transactions() {
       shareText = encodeURIComponent(
         `Check out my SOLARA NFT: ${nftName} 🚀\n\n` +
         `View on Solscan: ${solscanTxUrl}\n` +
-        `View on Magic Eden: ${magicEdenUrl}\n\n` +
+        `View on Magic Eden: ${magicEdenUrl}\n` +
+        `Visit: ${tesolaUrl}\n\n` +
         `#SOLARA #NFT #Solana`
       );
     } else {
       // Otherwise just include transaction link
       shareText = encodeURIComponent(
         `Check out my SOLARA transaction! 🚀\n\n` +
-        `View on Solscan: ${solscanTxUrl}\n\n` +
+        `View on Solscan: ${solscanTxUrl}\n` +
+        `Visit: https://tesola.xyz\n\n` +
         `#SOLARA #NFT #Solana`
       );
     }
     
-    // URL is empty because links are already in the message
-    const tweetUrl = '';
+    // Twitter share URL (no additional URL parameter since links are in the text)
     const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
     
     // User instructions
@@ -233,6 +268,14 @@ export default function Transactions() {
     // Create Solscan transaction URL
     const solscanTxUrl = `https://solscan.io/tx/${txSignature}?cluster=${network}`;
     
+    // Create Website URL
+    const tesolaUrl = mintAddress 
+      ? `https://tesola.xyz/solara/${mintAddress}`
+      : `https://tesola.xyz`;
+    
+    // Create Telegram community URL (the TESOLA Telegram community)
+    const telegramCommunityUrl = "https://t.me/TESLAINSOLANA";
+    
     // Create share message with useful links
     let shareText;
     if (mintAddress) {
@@ -242,21 +285,24 @@ export default function Transactions() {
       shareText = encodeURIComponent(
         `Check out my SOLARA NFT: ${nftName} 🚀\n\n` +
         `View on Solscan: ${solscanTxUrl}\n` +
-        `View on Magic Eden: ${magicEdenUrl}\n\n` +
+        `View on Magic Eden: ${magicEdenUrl}\n` +
+        `Visit: ${tesolaUrl}\n\n` +
+        `Join our community: ${telegramCommunityUrl}\n\n` +
         `#SOLARA #NFT #Solana`
       );
     } else {
       // Otherwise just include transaction link
       shareText = encodeURIComponent(
         `Check out my SOLARA transaction! 🚀\n\n` +
-        `View on Solscan: ${solscanTxUrl}\n\n` +
+        `View on Solscan: ${solscanTxUrl}\n` +
+        `Visit: https://tesola.xyz\n\n` +
+        `Join our community: ${telegramCommunityUrl}\n\n` +
         `#SOLARA #NFT #Solana`
       );
     }
     
-    // URL is empty because links are already in the message
-    const url = '';
-    const telegramUrl = `https://telegram.me/share/url?url=${url}&text=${shareText}`;
+    // Open in Telegram directly to TESOLA community with pre-filled message
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(telegramCommunityUrl)}&text=${shareText}`;
     
     // User guidance
     alert('Please share on Telegram and then return to this window for your reward.');
@@ -312,9 +358,6 @@ export default function Transactions() {
           
           // Success message
           alert(`Congratulations! ${process.env.NEXT_PUBLIC_SHARE_REWARD_AMOUNT || '5'} TESOLA tokens have been added to your rewards.`);
-          
-          // Refresh the page - comment this out if you don't want the page refresh
-          // window.location.reload();
         } catch (error) {
           console.error('Telegram share error:', error);
           alert(`Error: ${error.message}`);
