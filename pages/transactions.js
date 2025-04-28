@@ -21,6 +21,7 @@ export default function Transactions() {
   const [claimLoading, setClaimLoading] = useState(false);
   const [tweetLoading, setTweetLoading] = useState({});
   const [telegramLoading, setTelegramLoading] = useState({});
+  const [rewardHistory, setRewardHistory] = useState([]);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -56,6 +57,11 @@ export default function Transactions() {
           totalRewards: data.totalRewards || 0,
           claimableRewards: data.claimableRewards || []
         });
+        
+        // Store full reward history for checking duplicates
+        if (data.rewardHistory) {
+          setRewardHistory(data.rewardHistory);
+        }
       } catch (err) {
         console.error('Error fetching rewards:', err);
       }
@@ -63,6 +69,26 @@ export default function Transactions() {
     
     fetchRewards();
   }, [publicKey, connected]);
+
+  // Check if already received reward for this transaction - improved to separate tweet/telegram rewards
+  const hasReceivedReward = (txSignature, rewardType) => {
+    // This checks for rewards specific to this type and transaction
+    const typeSpecificCheck = rewardHistory.some(reward => 
+      (reward.reference_id === txSignature || 
+       reward.txSignature === txSignature) && 
+      reward.reward_type === rewardType
+    );
+    
+    // Only for tweet rewards, also check if there's a mint_tweet reward for this transaction
+    // This prevents getting rewards twice for the same transaction (once from mint, once from transaction)
+    const mintTweetCheck = rewardType === 'tweet' && 
+      rewardHistory.some(reward => 
+        (reward.reference_id === `mint_${txSignature}` || reward.txSignature === txSignature) && 
+        reward.reward_type === 'mint_tweet'
+      );
+    
+    return typeSpecificCheck || mintTweetCheck;
+  };
 
   // List handler function
   const handleList = async (mintAddress, name) => {
@@ -82,12 +108,47 @@ export default function Transactions() {
 
   // Tweet share handler
   const handleTweet = async (txSignature) => {
-    // Create tweet URL
-    const tweetText = encodeURIComponent(
-      `Check out my SOLARA NFT transaction! 🚀\n\nTx: ${txSignature.slice(0, 8)}...${txSignature.slice(-8)}\n\n#SOLARA #NFT #Solana`
-    );
-    const tweetUrl = encodeURIComponent('https://tesola.xyz/solara');
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`;
+    // Check if already rewarded
+    if (hasReceivedReward(txSignature, 'tweet')) {
+      alert("You've already received rewards for sharing this transaction!");
+      return;
+    }
+    
+    // Get current transaction for consistent sharing message
+    const tx = transactions.find(t => t.signature === txSignature);
+    const mintAddress = tx?.nftMint || '';
+    const nftName = tx?.nftName || 'SOLARA NFT';
+    
+    // Network configuration
+    const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
+    
+    // Create Solscan transaction URL
+    const solscanTxUrl = `https://solscan.io/tx/${txSignature}?cluster=${network}`;
+    
+    // Create share message with useful links
+    let shareText;
+    if (mintAddress) {
+      // Include Magic Eden link if we have mint address
+      const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
+      
+      shareText = encodeURIComponent(
+        `Check out my SOLARA NFT: ${nftName} 🚀\n\n` +
+        `View on Solscan: ${solscanTxUrl}\n` +
+        `View on Magic Eden: ${magicEdenUrl}\n\n` +
+        `#SOLARA #NFT #Solana`
+      );
+    } else {
+      // Otherwise just include transaction link
+      shareText = encodeURIComponent(
+        `Check out my SOLARA transaction! 🚀\n\n` +
+        `View on Solscan: ${solscanTxUrl}\n\n` +
+        `#SOLARA #NFT #Solana`
+      );
+    }
+    
+    // URL is empty because links are already in the message
+    const tweetUrl = '';
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
     
     // User instructions
     alert('Please share on Twitter and then return to this window for your reward.');
@@ -121,7 +182,8 @@ export default function Transactions() {
             body: JSON.stringify({
               wallet: publicKey.toString(),
               txSignature,
-              reward_type: 'tweet'
+              reference_id: txSignature,
+              reward_type: 'tweet' // Use specific type for transactions page tweets
             })
           });
           
@@ -136,6 +198,10 @@ export default function Transactions() {
             claimableRewards: rewards.claimableRewards || []
           });
           
+          if (rewards.rewardHistory) {
+            setRewardHistory(rewards.rewardHistory);
+          }
+          
           // Success message
           alert('Congratulations! 5 TESOLA tokens have been added to your rewards.');
         } catch (error) {
@@ -149,59 +215,72 @@ export default function Transactions() {
   };
 
   // Telegram share handler
-// 텔레그램 공유 핸들러 수정
-// 텔레그램 공유 핸들러
-const handleTelegramShare = async (txSignature) => {
-    // 현재 트랜잭션 찾기
+  const handleTelegramShare = async (txSignature) => {
+    // Check if already rewarded for Telegram specifically
+    if (hasReceivedReward(txSignature, 'telegram_share')) {
+      alert("You've already received rewards for sharing this transaction on Telegram!");
+      return;
+    }
+    
+    // Current transaction
     const tx = transactions.find(t => t.signature === txSignature);
     const mintAddress = tx?.nftMint || '';
     const nftName = tx?.nftName || 'SOLARA NFT';
     
-    // URL 생성
-    const solscanUrl = `https://solscan.io/token/${mintAddress}?cluster=${process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet'}`;
-    const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet'}`;
+    // Network configuration
+    const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
     
+    // Create Solscan transaction URL
+    const solscanTxUrl = `https://solscan.io/tx/${txSignature}?cluster=${network}`;
+    
+    // Create share message with useful links
     let shareText;
     if (mintAddress) {
+      // Include Magic Eden link if we have mint address
+      const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
+      
       shareText = encodeURIComponent(
-        `Check out my SOLARA NFT: ${nftName} 🚀\n\nMint: ${mintAddress}\n\n` +
-        `View on Solscan: ${solscanUrl}\n` +
+        `Check out my SOLARA NFT: ${nftName} 🚀\n\n` +
+        `View on Solscan: ${solscanTxUrl}\n` +
         `View on Magic Eden: ${magicEdenUrl}\n\n` +
         `#SOLARA #NFT #Solana`
       );
     } else {
+      // Otherwise just include transaction link
       shareText = encodeURIComponent(
-        `Check out my SOLARA transaction! 🚀\n\nTx: ${txSignature.slice(0, 8)}...${txSignature.slice(-8)}\n\n` +
+        `Check out my SOLARA transaction! 🚀\n\n` +
+        `View on Solscan: ${solscanTxUrl}\n\n` +
         `#SOLARA #NFT #Solana`
       );
     }
     
-    const url = encodeURIComponent('https://tesola.xyz/solara');
+    // URL is empty because links are already in the message
+    const url = '';
     const telegramUrl = `https://telegram.me/share/url?url=${url}&text=${shareText}`;
     
-    // 사용자 안내
+    // User guidance
     alert('Please share on Telegram and then return to this window for your reward.');
     
-    // 공유 시작
+    // Start sharing process
     setTelegramLoading(prev => ({ ...prev, [txSignature]: true }));
     
-    // 텔레그램 창 열기
+    // Open Telegram window
     const telegramWindow = window.open(telegramUrl, '_blank');
     
-    // 팝업 차단 확인
+    // Check for popup blocking
     if (!telegramWindow || telegramWindow.closed || typeof telegramWindow.closed === 'undefined') {
       alert('Please allow popups to open Telegram and earn rewards.');
       setTelegramLoading(prev => ({ ...prev, [txSignature]: false }));
       return;
     }
     
-    // 확인 지연
+    // Delay for user to complete sharing
     setTimeout(async () => {
       const confirmed = window.confirm('Did you complete sharing on Telegram? Confirm to receive your TESOLA tokens.');
       
       if (confirmed && publicKey) {
         try {
-          // 보상 API 호출
+          // Call reward API
           const response = await fetch('/api/recordTweetReward', {
             method: 'POST',
             headers: {
@@ -211,7 +290,7 @@ const handleTelegramShare = async (txSignature) => {
               wallet: publicKey.toString(),
               txSignature,
               reference_id: txSignature,
-              reward_type: 'telegram_share'
+              reward_type: 'telegram_share' // Use specific reward type
             })
           });
           
@@ -220,18 +299,22 @@ const handleTelegramShare = async (txSignature) => {
             throw new Error(errorData.error || 'Error processing Telegram share reward');
           }
           
-          // 보상 정보 업데이트
+          // Update rewards info
           const rewards = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`).then(res => res.json());
           setRewards({
             totalRewards: rewards.totalRewards || 0,
             claimableRewards: rewards.claimableRewards || []
           });
           
-          // 성공 메시지
+          if (rewards.rewardHistory) {
+            setRewardHistory(rewards.rewardHistory);
+          }
+          
+          // Success message
           alert(`Congratulations! ${process.env.NEXT_PUBLIC_SHARE_REWARD_AMOUNT || '5'} TESOLA tokens have been added to your rewards.`);
           
-          // 페이지 새로고침
-          window.location.reload();
+          // Refresh the page - comment this out if you don't want the page refresh
+          // window.location.reload();
         } catch (error) {
           console.error('Telegram share error:', error);
           alert(`Error: ${error.message}`);
@@ -240,6 +323,21 @@ const handleTelegramShare = async (txSignature) => {
       
       setTelegramLoading(prev => ({ ...prev, [txSignature]: false }));
     }, 8000);
+  };
+
+  // Check which buttons should be disabled
+  const checkTweetShared = (txSignature) => {
+    return rewardHistory.some(reward => 
+      ((reward.reference_id === txSignature || reward.txSignature === txSignature) && reward.reward_type === 'tweet') ||
+      ((reward.reference_id === `mint_${txSignature}` || reward.txSignature === txSignature) && reward.reward_type === 'mint_tweet')
+    );
+  };
+  
+  const checkTelegramShared = (txSignature) => {
+    return rewardHistory.some(reward => 
+      (reward.reference_id === txSignature || reward.txSignature === txSignature) && 
+      reward.reward_type === 'telegram_share'
+    );
   };
 
   // Reward claim handler
@@ -347,9 +445,9 @@ const handleTelegramShare = async (txSignature) => {
                     );
                     const rewardAmount = txRewards.reduce((sum, r) => sum + r.amount, 0);
                     
-                    // Check if already shared on Twitter or Telegram
-                    const tweetShared = txRewards.some(r => r.reward_type === 'tweet');
-                    const telegramShared = txRewards.some(r => r.reward_type === 'telegram_share');
+                    // Check if already shared on Twitter or Telegram using separate functions
+                    const tweetShared = checkTweetShared(tx.signature);
+                    const telegramShared = checkTelegramShared(tx.signature);
                     
                     return (
                       <tr key={tx.signature} className="hover:bg-gray-700">

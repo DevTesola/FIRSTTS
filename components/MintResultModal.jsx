@@ -1,11 +1,40 @@
-// MintResultModal.jsx updated version
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 export default function MintResultModal({ result, onClose }) {
   const { publicKey } = useWallet();
   const [rewardProcessing, setRewardProcessing] = useState(false);
   const [rewardReceived, setRewardReceived] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
+  useEffect(() => {
+    // Check if reward already received on component mount
+    const checkExistingReward = async () => {
+      if (!result || !publicKey) return;
+      
+      try {
+        const checkRes = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`);
+        if (checkRes.ok) {
+          const { rewardHistory } = await checkRes.json();
+          
+          // Only check for mint_tweet rewards
+          const alreadyRewarded = rewardHistory.some(reward => 
+            reward.reference_id === `mint_${result.filename}` && 
+            reward.reward_type === 'mint_tweet'
+          );
+          
+          if (alreadyRewarded) {
+            setRewardReceived(true);
+          }
+        }
+      } catch (error) {
+        // Error handling - silently continue
+      }
+    };
+    
+    checkExistingReward();
+  }, [result, publicKey]);
 
   if (!result) return null;
   
@@ -20,21 +49,59 @@ export default function MintResultModal({ result, onClose }) {
     }
   }
   
-  // Process image URL
+  // Process image URL with Pinata gateway
   let imageUrl = metadata.image || "";
   if (imageUrl.startsWith('ipfs://')) {
-    imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+    const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
+    const ipfsHash = imageUrl.replace('ipfs://', '');
+    imageUrl = `${ipfsGateway}/ipfs/${ipfsHash}`;
   }
   
-  // Create tweet URL
+  // Extract mint address from metadata if available
+  const mintAddress = metadata.mintAddress || metadata.mint || "";
+  const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
+  
+  // Create meaningful links
+  let shareUrl;
+  if (mintAddress) {
+    // Use Magic Eden link if we have a mint address
+    shareUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
+  } else {
+    // Fallback to project website
+    shareUrl = "https://tesola.xyz";
+  }
+  
+  // Create tweet text with proper links
   const tweetText = encodeURIComponent(
     `I just minted SOLARA #${filename} – ${tier} tier from the GEN:0 collection! 🚀 #SOLARA #NFT #Solana`
   );
-  const tweetUrl = encodeURIComponent(`https://tesola.xyz/solara/${filename}`);
+  const tweetUrl = encodeURIComponent(shareUrl);
   const twitterShareUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`;
   
   // Tweet share and reward handler
   const handleTweetShare = async () => {
+    // Check if already rewarded
+    try {
+      const checkRes = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`);
+      if (checkRes.ok) {
+        const { rewardHistory } = await checkRes.json();
+        
+        // Only check for mint_tweet rewards
+        const alreadyRewarded = rewardHistory.some(reward => 
+          reward.reference_id === `mint_${filename}` && 
+          reward.reward_type === 'mint_tweet'
+        );
+        
+        if (alreadyRewarded) {
+          alert("You've already received rewards for sharing this NFT!");
+          setRewardReceived(true);
+          return;
+        }
+      }
+    } catch (error) {
+      // Error handling - continue anyway
+    }
+    
     // User guidance
     alert('After tweeting, click "Confirm" to receive 5 TESOLA tokens as reward!');
     
@@ -56,7 +123,7 @@ export default function MintResultModal({ result, onClose }) {
           body: JSON.stringify({
             wallet: publicKey.toString(),
             reference_id: `mint_${filename}`,
-            reward_type: 'mint_tweet'
+            reward_type: 'mint_tweet' // Use a specific reward type
           })
         });
         
@@ -74,6 +141,15 @@ export default function MintResultModal({ result, onClose }) {
     
     setRewardProcessing(false);
   };
+
+  // Handle image loading/error
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
   
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -89,16 +165,41 @@ export default function MintResultModal({ result, onClose }) {
         <div className="relative">
           {imageUrl && (
             <div className="relative mb-4">
+              {/* Loading indicator */}
+              {!imageLoaded && !imageError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-lg">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                </div>
+              )}
+              
+              {/* Image */}
               <img
                 src={imageUrl}
                 alt={metadata.name || "Solara NFT"}
-                className="w-full rounded-lg border-2 border-purple-500 shadow-lg"
+                className={`w-full rounded-lg border-2 border-purple-500 shadow-lg ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
+              
+              {/* Reward badge */}
               {!rewardReceived && (
-                <div className="absolute -top-3 -right-3 bg-yellow-500 text-black font-bold px-3 py-1 rounded-full transform rotate-12 shadow-lg animate-pulse">
+                <div className="absolute -top-5 -right-5 bg-yellow-500 text-black font-bold px-3 py-1 rounded-full transform rotate-12 shadow-lg animate-pulse z-10">
                   Share for +5 TESOLA!
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* Error fallback */}
+          {imageError && (
+            <div className="mb-4 bg-gray-800 rounded-lg border-2 border-purple-500 p-8 text-center">
+              <div className="text-gray-400 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p>Image unavailable</p>
+                <p className="text-sm">Your NFT was minted successfully</p>
+              </div>
             </div>
           )}
           

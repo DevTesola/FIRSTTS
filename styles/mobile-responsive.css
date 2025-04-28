@@ -1,0 +1,86 @@
+/* Mobile-focused responsive styles */
+
+/* Base adjustments for small screens */
+@media (max-width: 640px) {
+    .neon-title {
+      font-size: 3rem !important; /* Smaller title on mobile */
+    }
+    
+    .mint-button {
+      font-size: 1.25rem !important;
+      padding: 0.75rem 1.5rem !important;
+    }
+    
+    /* Better spacing on mobile */
+    .wallet-button-container {
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+    
+    /* Make modals more compact on mobile */
+    .fixed.inset-0.bg-black\/80.flex.items-center.justify-center.z-50 > div {
+      width: 90% !important;
+      max-height: 80vh !important;
+      overflow-y: auto !important;
+    }
+  }
+  
+  /* Additional adjustments for extra small screens */
+  @media (max-width: 360px) {
+    .neon-title {
+      font-size: 2.5rem !important;
+    }
+    
+    /* Stack footer links on very small screens */
+    .flex.justify-center.space-x-8.mt-8 {
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 1rem !important;
+    }
+    
+    .flex.justify-center.space-x-8.mt-8 > * {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+  }
+  
+  /* Improved touch targets for mobile */
+  button, a, .wallet-adapter-button {
+    min-height: 44px; /* Minimum recommended touch target size */
+  }
+  
+  /* Fix wallet modal on mobile */
+  @media (max-width: 640px) {
+    .wallet-adapter-modal-wrapper {
+      width: 100% !important;
+      max-width: 95vw !important;
+      margin: 0 auto !important;
+    }
+    
+    .wallet-adapter-button {
+      width: 100% !important;
+    }
+    
+    .wallet-adapter-modal-list {
+      grid-template-columns: 1fr !important; /* Stack wallet options */
+    }
+  }
+  
+  /* Fix video controls on mobile */
+  @media (max-width: 640px) {
+    .absolute.bottom-0.inset-x-0.flex.justify-between.items-center.p-4 {
+      padding: 0.5rem !important;
+    }
+    
+    .absolute.bottom-0.inset-x-0.flex.justify-between.items-center.p-4 button {
+      padding: 0.5rem !important;
+    }
+  }
+  
+  /* Fix for iOS safari viewport height issues */
+  @supports (-webkit-touch-callout: none) {
+    .min-h-screen {
+      min-height: -webkit-fill-available;
+    }
+  }

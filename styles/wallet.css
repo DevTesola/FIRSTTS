@@ -1,12 +1,69 @@
+/* Custom styles for wallet adapter button to fix icon size */
 .wallet-adapter-button {
-  font-size: 2rem !important;
-  padding: 2.5rem 3rem !important;
-  border-radius: 16px !important;
-  background-color: #2d2d2d !important;
+  font-size: 1rem !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.5rem !important;
+  background-color: #4c1d95 !important;
   color: white !important;
   border: none !important;
   cursor: pointer !important;
-  font-weight: bold !important;
+  font-weight: 600 !important;
+  transition: background-color 0.2s ease-in-out !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Fix the icon size and spacing */
+.wallet-adapter-button-start-icon {
+  margin-right: 0.5rem !important;
+  width: 1.125rem !important; /* 18px */
+  height: 1.125rem !important; /* 18px */
+}
+
+.wallet-adapter-button:hover { 
+  background-color: #6d28d9 !important; 
+}
+
+/* Container styling */
+.wallet-button-container {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: rgba(55, 48, 163, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* Fix the wallet dropdown */
+.wallet-adapter-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.wallet-adapter-dropdown-list {
+  background: #1f1f1f !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.6) !important;
+  margin-top: 0.5rem !important;
+  padding: 0.5rem !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: 100% !important;
+  z-index: 50 !important;
+}
+
+.wallet-adapter-dropdown-list-item {
+  border-radius: 0.25rem !important;
+  cursor: pointer !important;
+  display: flex !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 0.75rem !important;
+  align-items: center !important;
   transition: background-color 0.2s ease-in-out !important;
 }
-.wallet-adapter-button:hover { background-color: #444 !important; }
+
+.wallet-adapter-dropdown-list-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}

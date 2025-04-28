@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 
-const BackgroundVideo = dynamic(() => import("./BackgroundVideo"), { ssr: false });
+// Dynamic import of BackgroundVideo for better performance
+import BackgroundVideo from "./BackgroundVideo";
 
-// 섹션별 모달 컴포넌트
+// Section modal components
 const ValueModal = ({ onClose }) => (
   <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50" onClick={onClose}>
     <div className="bg-gray-900 p-6 rounded-xl max-w-2xl w-full space-y-4 relative" onClick={(e) => e.stopPropagation()}>
@@ -49,9 +50,10 @@ const RoadmapModal = ({ onClose }) => (
 
 export default function Layout({ children }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState(null); // 현재 활성화된 모달
+  const [activeModal, setActiveModal] = useState(null); // Currently active modal
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  // 네비게이션 링크 클릭 핸들러
+  // Navigation link click handler
   const handleNavClick = (e, href, label) => {
     e.preventDefault();
     
@@ -60,8 +62,8 @@ export default function Layout({ children }) {
     } else if (href === '#roadmap') {
       setActiveModal('roadmap');
     } else {
-      // 다른 페이지로는 Next.js의 방식으로 이동합니다
-      // 페이지 이름에 따라 다른 처리를 합니다
+      // For other pages, navigate using Next.js routing or direct changes
+      // Handle different page names
       if (href === '/') {
         window.location.href = href;
       } else if (label === "MY COLLECTION") {
@@ -73,13 +75,25 @@ export default function Layout({ children }) {
       }
     }
 
-    // 모바일 메뉴 닫기
+    // Close mobile menu after clicking
     setIsMenuOpen(false);
   };
 
+  // Close modal when ESC key is pressed
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && activeModal) {
+        setActiveModal(null);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeModal]);
+
   return (
     <div className="relative min-h-screen overflow-hidden text-white font-orbitron">
-      {/* 모달 컴포넌트 */}
+      {/* Modal components */}
       {activeModal === 'value' && <ValueModal onClose={() => setActiveModal(null)} />}
       {activeModal === 'roadmap' && <RoadmapModal onClose={() => setActiveModal(null)} />}
       
@@ -89,17 +103,22 @@ export default function Layout({ children }) {
           src="/stars.jpg"
           alt="Stars"
           fill
-          className="object-cover opacity-20"
+          className={`object-cover opacity-${imageLoaded ? '20' : '0'} transition-opacity duration-1000`}
           priority={false}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => {
+            console.error('Failed to load background image');
+            setImageLoaded(true); // Still mark as loaded to avoid display issues
+          }}
         />
       </div>
       <div
-        className="fixed inset-0 -z-10 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(circle at center, rgba(75,0,130,0.6) 0%, rgba(75,0,130,0.1) 50%, transparent 100%)",
-        }}
-      />
+  className="fixed inset-0 -z-10 pointer-events-none"
+  style={{
+    background:
+      "radial-gradient(circle at center, transparent 0%, rgba(25,25,112,0.05) 50%, rgba(75,0,130,0.1) 75%, rgba(0,0,0,0.2) 100%)",
+  }}
+/>
       <div className="relative z-10">
         <header className="flex items-center justify-between px-6 py-4">
           <Link href="/">
@@ -128,9 +147,10 @@ export default function Layout({ children }) {
             ))}
           </nav>
           <button
-            className="md:hidden text-white"
+            className="md:hidden text-white p-2 rounded hover:bg-purple-800 focus:outline-none"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMenuOpen}
           >
             {isMenuOpen ? "✕" : "☰"}
           </button>
@@ -138,7 +158,7 @@ export default function Layout({ children }) {
         {isMenuOpen && (
           <nav
             aria-label="Mobile navigation"
-            className="md:hidden bg-gray-900 px-6 py-4 flex flex-col space-y-2"
+            className="md:hidden bg-gray-900 px-6 py-4 flex flex-col space-y-2 animate-fade-in"
           >
             {[
               ["/", "HOME"],

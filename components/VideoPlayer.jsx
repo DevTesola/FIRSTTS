@@ -16,7 +16,12 @@ export default function VideoPlayer({ src }) {
   const [volume, setVolume] = useState(0.5);
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(0.5);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const controlsTimeoutRef = useRef(null);
 
+  // Handle video visibility using Intersection Observer
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -34,6 +39,7 @@ export default function VideoPlayer({ src }) {
     return () => observer.unobserve(video);
   }, [playing]);
 
+  // Handle volume and mute state
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
@@ -42,11 +48,66 @@ export default function VideoPlayer({ src }) {
     }
   }, [volume, isMuted]);
 
+  // Video event handlers
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleCanPlay = () => setIsLoaded(true);
+    const handleError = () => {
+      console.error("Video error:", video.error);
+      setHasError(true);
+    };
+    const handlePlay = () => setPlaying(true);
+    const handlePause = () => setPlaying(false);
+
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+    };
+  }, []);
+
+  // Auto-hide controls
+  useEffect(() => {
+    if (playing) {
+      // Show controls initially, then hide after 3 seconds
+      setControlsVisible(true);
+      const hideControls = () => setControlsVisible(false);
+      
+      controlsTimeoutRef.current = setTimeout(hideControls, 3000);
+      return () => clearTimeout(controlsTimeoutRef.current);
+    } else {
+      // Always show controls when paused
+      setControlsVisible(true);
+    }
+  }, [playing]);
+
+  // Control functions
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
-    playing ? video.pause() : video.play();
-    setPlaying(!playing);
+    
+    if (playing) {
+      video.pause();
+    } else {
+      try {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error("Error playing video:", error);
+          });
+        }
+      } catch (error) {
+        console.error("Error in play method:", error);
+      }
+    }
   };
 
   const toggleMute = () => {
@@ -60,63 +121,125 @@ export default function VideoPlayer({ src }) {
     }
   };
 
-  const decVolume = () => {
-    setVolume((v) => Math.max(0, v - 0.1));
-    if (volume <= 0.1) setIsMuted(true);
+  const decreaseVolume = () => {
+    setVolume((v) => {
+      const newVolume = Math.max(0, v - 0.1);
+      if (newVolume <= 0.1) setIsMuted(true);
+      return newVolume;
+    });
   };
 
-  const incVolume = () => {
-    setVolume((v) => Math.min(1, v + 0.1));
-    setIsMuted(false);
+  const increaseVolume = () => {
+    setVolume((v) => {
+      const newVolume = Math.min(1, v + 0.1);
+      setIsMuted(false);
+      return newVolume;
+    });
+  };
+
+  // Show controls when mouse enters
+  const handleMouseEnter = () => {
+    setControlsVisible(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+  };
+
+  // Start hiding timer when mouse leaves
+  const handleMouseLeave = () => {
+    if (playing) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setControlsVisible(false);
+      }, 1500);
+    }
   };
 
   return (
-    <div className="mt-8 w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl relative">
+    <div 
+      className="mt-8 w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Video */}
       <video
         ref={videoRef}
         src={src}
         autoPlay
         loop
         playsInline
-        className="w-full h-auto"
+        className={`w-full h-auto ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
       />
-      <div className="absolute bottom-4 right-4 flex space-x-2">
-        <button
-          onClick={toggleMute}
-          className="bg-black bg-opacity-30 p-2 rounded-full hover:bg-opacity-50"
-          aria-label={isMuted ? "음소거 해제" : "음소거"}
-        >
-          {isMuted ? (
-            <SpeakerWaveIcon className="h-5 w-5 text-white" />
-          ) : (
-            <SpeakerXMarkIcon className="h-5 w-5 text-white" />
-          )}
-        </button>
+      
+      {/* Loading indicator */}
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+      )}
+      
+      {/* Error message */}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white flex-col">
+          <div className="text-red-500 text-4xl mb-2">⚠️</div>
+          <p className="text-center">Video playback error</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
+          >
+            Reload
+          </button>
+        </div>
+      )}
+      
+      {/* Controls overlay */}
+      <div 
+        className={`absolute bottom-0 inset-x-0 flex justify-between items-center p-4 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${
+          controlsVisible ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {/* Left side - play/pause */}
         <button
           onClick={togglePlay}
-          className="bg-purple-700 p-3 rounded-full hover:bg-opacity-90"
-          aria-label={playing ? "비디오 일시정지" : "비디오 재생"}
+          className="group bg-purple-700 p-3 rounded-full hover:bg-purple-600 transition-colors"
+          aria-label={playing ? "Pause video" : "Play video"}
         >
           {playing ? (
-            <PauseIcon className="h-6 w-6 text-white" />
+            <PauseIcon className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
           ) : (
-            <PlayIcon className="h-6 w-6 text-white" />
+            <PlayIcon className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
           )}
         </button>
-        <button
-          onClick={decVolume}
-          className="bg-black bg-opacity-30 p-2 rounded-full hover:bg-opacity-50"
-          aria-label="볼륨 낮추기"
-        >
-          <MinusIcon className="h-5 w-5 text-white" />
-        </button>
-        <button
-          onClick={incVolume}
-          className="bg-black bg-opacity-30 p-2 rounded-full hover:bg-opacity-50"
-          aria-label="볼륨 높이기"
-        >
-          <PlusIcon className="h-5 w-5 text-white" />
-        </button>
+        
+        {/* Right side - volume controls */}
+        <div className="flex space-x-2">
+          <button
+            onClick={decreaseVolume}
+            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
+            aria-label="Decrease volume"
+          >
+            <MinusIcon className="h-5 w-5 text-white" />
+          </button>
+          
+          <button
+            onClick={toggleMute}
+            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
+            aria-label={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? (
+              <SpeakerXMarkIcon className="h-5 w-5 text-white" />
+            ) : (
+              <SpeakerWaveIcon className="h-5 w-5 text-white" />
+            )}
+          </button>
+          
+          <button
+            onClick={increaseVolume}
+            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
+            aria-label="Increase volume"
+          >
+            <PlusIcon className="h-5 w-5 text-white" />
+          </button>
+        </div>
       </div>
     </div>
   );
