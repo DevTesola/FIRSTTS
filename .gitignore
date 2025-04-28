@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env
 
 # vercel
 .vercel
@@ -39,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 민감 정보: 절대 커밋 금지
+mintWallet.json
+
+# 📦 안전 설정
+.env.local
+*.key.json
+*.secret.json
+

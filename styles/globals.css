@@ -1,26 +1,111 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* 기본 body 스타일 */
+@layer base {
+  body {
+    @apply bg-black text-white font-orbitron;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* 그라데이션 애니메이션 */
+  @keyframes gradientBackground {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .animate-gradientBackground {
+    animation: gradientBackground 20s linear infinite;
+  }
+
+  /* 네온 깜빡임 애니메이션 */
+  @keyframes neonGlow {
+    0%   { text-shadow: 0 0 5px #fff, 0 0 10px #fff; }
+    100% { text-shadow: 0 0 20px #ff00de, 0 0 30px #ff00de, 0 0 40px #ff00de; }
+  }
+  .animate-neon {
+    animation: neonGlow 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-in-out forwards;
+  }
+  /* 헤로 배경 */
+  .hero-background {
+    @apply absolute inset-0
+           bg-gradient-to-tr from-purple-500 to-blue-500
+           opacity-30 blur-2xl z-0
+           animate-gradientBackground;
+  }
+
+  /* 네온 타이틀 */
+  .neon-title {
+    @apply text-8xl font-extrabold
+           bg-clip-text text-transparent
+           bg-gradient-to-r from-pink-400 via-purple-500 to-blue-400
+           drop-shadow-[0_0_20px_rgba(255,0,255,0.7)]
+           animate-neon;
+  }
+
+  /* 네비게이션 버튼 */
+  .nav-button {
+    @apply px-6 py-3
+           bg-purple-800
+           text-white
+           font-bold
+           rounded-lg
+           shadow-lg
+           transition-all
+           duration-200
+           ease-in-out;
+  }
+
+  .nav-button:hover {
+    @apply bg-purple-600 shadow-[0_0_15px_rgba(200,150,255,0.8)];
+  }
+
+  /* 지갑 연결 버튼 */
+  .wallet-adapter-button {
+    @apply text-2xl px-8 py-4
+           bg-green-600 hover:bg-green-700
+           text-white font-semibold rounded-lg shadow-md
+           transition duration-200 ease-in-out
+           cursor-pointer z-50;
+  }
+
+  /* 민팅 버튼 */
+  .mint-button {
+    @apply text-4xl px-20 py-8 font-extrabold
+           bg-blue-600 hover:bg-blue-700
+           hover:shadow-[0_0_30px_10px_rgba(0,128,255,0.7)]
+           text-white rounded-2xl shadow-2xl
+           transition duration-300 ease-in-out;
+  }
+
+  /* 월렛 드롭다운 */
+  .wallet-adapter-dropdown {
+    @apply relative z-50;
+  }
+
+  .wallet-adapter-dropdown-list {
+    @apply absolute mt-2 bg-gray-800 p-2 rounded-xl shadow-lg list-none z-50;
+  }
+
+  .wallet-adapter-dropdown-list-item {
+    @apply px-6 py-3 text-white hover:bg-gray-700 rounded-lg cursor-pointer;
+  }
 }
