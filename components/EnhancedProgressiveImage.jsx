@@ -49,7 +49,15 @@ export default function EnhancedProgressiveImage({
     triggerOnce: true,
     rootMargin: '200px 0px', // Start loading image when it's within 200px of viewport
   });
-  
+  // Add image size optimization parameters to URLs
+ const optimizeImageUrl = (url, width = 400) => {
+    if (!url) return url;
+    if (url.includes('ipfs://')) {
+      const ipfsUrl = `${ipfsGateway}/ipfs/${url.replace('ipfs://', '')}`;
+      return `${ipfsUrl}?w=${width}&quality=80`;
+    }
+    return url;
+  };
   // Process the image source URL - handle IPFS and apply resizing if needed
   const processImageUrl = useCallback((url) => {
     if (!url) return getDefaultPlaceholder(alt);
