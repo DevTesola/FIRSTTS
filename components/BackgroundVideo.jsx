@@ -52,16 +52,16 @@ export default function BackgroundVideo() {
 
   return (
     <>
-      <video
-        ref={videoRef}
-        className={`absolute inset-0 w-full h-full object-cover -z-30 ${isLoaded ? 'opacity-60' : 'opacity-0'} transition-opacity duration-1000`}
-        src="/space.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-      />
+   <video
+  ref={videoRef}
+  className={`absolute inset-0 w-full h-full object-cover -z-30 ${isLoaded ? 'opacity-60' : 'opacity-0'} transition-opacity duration-1000`}
+  src="/space.mp4"
+  autoPlay={true}
+  muted={true}
+  loop={true}
+  playsInline={true}
+  preload="auto"
+/>
       
       {/* Fallback background - only shown when video fails to load */}
       {hasError && (

@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"; // 이 임포트가 필요합니다
 import Link from "next/link";
 import Image from "next/image";
 
-// Dynamic import of BackgroundVideo for better performance
-import BackgroundVideo from "./BackgroundVideo";
+// 정적 임포트를 동적 임포트로 변경
+const BackgroundVideo = dynamic(() => import("./BackgroundVideo"), { ssr: false });
 
 // Section modal components
 const ValueModal = ({ onClose }) => (
@@ -98,20 +98,20 @@ export default function Layout({ children }) {
       {activeModal === 'roadmap' && <RoadmapModal onClose={() => setActiveModal(null)} />}
       
       <BackgroundVideo />
-      <div className="fixed inset-0 -z-20">
-        <Image
-          src="/stars.jpg"
-          alt="Stars"
-          fill
-          className={`object-cover opacity-${imageLoaded ? '20' : '0'} transition-opacity duration-1000`}
-          priority={false}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => {
-            console.error('Failed to load background image');
-            setImageLoaded(true); // Still mark as loaded to avoid display issues
-          }}
-        />
-      </div>
+      <div className="fixed inset-0 -z-40">  {/* -z-20에서 -z-40으로 변경 */}
+  <Image
+    src="/stars.jpg"
+    alt="Stars"
+    fill
+    className={`object-cover opacity-${imageLoaded ? '20' : '0'} transition-opacity duration-1000`}
+    priority={false}
+    onLoad={() => setImageLoaded(true)}
+    onError={() => {
+      console.error('Failed to load background image');
+      setImageLoaded(true);
+    }}
+  />
+</div>
       <div
   className="fixed inset-0 -z-10 pointer-events-none"
   style={{

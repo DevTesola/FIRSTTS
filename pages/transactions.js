@@ -70,55 +70,49 @@ export default function Transactions() {
     fetchRewards();
   }, [publicKey, connected]);
 
-  // 개선된 중복 리워드 확인 함수
+  // 개선된 보상 확인 함수
   const hasReceivedReward = (txSignature, rewardType) => {
-    // 기본 체크: 해당 트랜잭션 + 리워드 타입 조합 확인
-    const typeSpecificCheck = rewardHistory.some(reward => 
-      (reward.reference_id === txSignature || 
-       reward.txSignature === txSignature) && 
-      reward.reward_type === rewardType
-    );
-    
-    // 트윗 리워드인 경우 추가 체크
-    if (rewardType === 'tweet') {
-      // 민팅 트윗 체크
-      const mintTweetCheck = rewardHistory.some(reward => 
-        // mint_ 접두사 포함 체크
-        (reward.reference_id && reward.reference_id.includes(`mint_`) && 
-         reward.reward_type === 'mint_tweet') ||
-        // 또는 동일한 트랜잭션 체크
-        (reward.txSignature === txSignature && reward.reward_type === 'mint_tweet')
-      );
-      
-      // 텔레그램 공유 체크 - 만약 이미 텔레그램으로 공유했으면 트윗 공유도 막음
-      const telegramCheck = rewardHistory.some(reward => 
-        (reward.reference_id === txSignature || 
-         reward.txSignature === txSignature) && 
-        reward.reward_type === 'telegram_share'
-      );
-      
-      return typeSpecificCheck || mintTweetCheck || telegramCheck;
-    } 
-    // 텔레그램 리워드인 경우
-    else if (rewardType === 'telegram_share') {
-      // 트윗 체크 - 만약 이미 트윗으로 공유했으면 텔레그램 공유도 막음
-      const tweetCheck = rewardHistory.some(reward => 
-        (reward.reference_id === txSignature || 
-         reward.txSignature === txSignature) && 
-        reward.reward_type === 'tweet'
-      );
-      
-      // 민팅 트윗 체크
-      const mintTweetCheck = rewardHistory.some(reward => 
-        (reward.txSignature === txSignature) && 
-        reward.reward_type === 'mint_tweet'
-      );
-      
-      return typeSpecificCheck || tweetCheck || mintTweetCheck;
+    if (!rewardHistory || !rewardHistory.length) {
+      return false;
     }
     
-    // 기본적으로는 타입 체크만
-    return typeSpecificCheck;
+    // 디버깅용
+    console.log('Checking for rewards:', { txSignature, rewardType });
+    
+    // 이 트랜잭션과 관련된 모든 보상 찾기
+    const relatedRewards = rewardHistory.filter(reward => {
+      return (
+        // 정확한 참조 ID 또는 tx_signature 일치
+        reward.reference_id === txSignature || 
+        reward.tx_signature === txSignature ||
+        // 또는 mint_ 접두사가 있는 참조 ID
+        (reward.reference_id && reward.reference_id.includes(`mint_${txSignature}`))
+      );
+    });
+    
+    if (relatedRewards.length > 0) {
+      console.log('Found related rewards:', relatedRewards);
+    }
+    
+    // 트윗 보상의 경우, 모든 트윗 관련 보상 확인
+    if (rewardType === 'tweet') {
+      return relatedRewards.some(reward => 
+        reward.reward_type === 'tweet' || 
+        reward.reward_type === 'mint_tweet'
+      );
+    }
+    
+    // 텔레그램 보상의 경우
+    if (rewardType === 'telegram_share') {
+      return relatedRewards.some(reward => 
+        reward.reward_type === 'telegram_share'
+      );
+    }
+    
+    // 다른 보상 유형의 경우
+    return relatedRewards.some(reward => 
+      reward.reward_type === rewardType
+    );
   };
 
   // List handler function
@@ -137,32 +131,32 @@ export default function Transactions() {
     alert("Staking feature is under development. Coming soon!");
   };
 
-  // Tweet share handler
+  // 개선된 트윗 공유 핸들러
   const handleTweet = async (txSignature) => {
-    // Check if already rewarded
+    // 이미 보상을 받았는지 확인
     if (hasReceivedReward(txSignature, 'tweet')) {
       alert("You've already received rewards for sharing this transaction!");
       return;
     }
     
-    // Get current transaction for consistent sharing message
+    // 현재 트랜잭션 가져오기
     const tx = transactions.find(t => t.signature === txSignature);
     const mintAddress = tx?.nftMint || '';
     const nftName = tx?.nftName || 'SOLARA NFT';
     
-    // Network configuration
+    // 네트워크 설정
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
     
-    // Create Solscan transaction URL
+    // Solscan 트랜잭션 URL 생성
     const solscanTxUrl = `https://solscan.io/tx/${txSignature}?cluster=${network}`;
     
-    // Create Website URL
+    // 웹사이트 URL 생성
     const tesolaUrl = `https://tesola.xyz/solara/${mintAddress}`;
     
-    // Create share message with useful links
+    // 공유 메시지 생성
     let shareText;
     if (mintAddress) {
-      // Include Magic Eden link if we have mint address
+      // 민트 주소가 있으면 Magic Eden 링크 포함
       const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
       
       shareText = encodeURIComponent(
@@ -173,7 +167,7 @@ export default function Transactions() {
         `#SOLARA #NFT #Solana`
       );
     } else {
-      // Otherwise just include transaction link
+      // 트랜잭션 링크만 포함
       shareText = encodeURIComponent(
         `Check out my SOLARA transaction! 🚀\n\n` +
         `View on Solscan: ${solscanTxUrl}\n` +
@@ -182,33 +176,30 @@ export default function Transactions() {
       );
     }
     
-    // Twitter share URL (no additional URL parameter since links are in the text)
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
-    
-    // User instructions
+    // 사용자 안내
     alert('Please share on Twitter and then return to this window for your reward.');
     
-    // Start the reward process
+    // 보상 프로세스 시작
     setTweetLoading(prev => ({ ...prev, [txSignature]: true }));
     
-    // Open Twitter in a new window
-    const tweetWindow = window.open(twitterUrl, '_blank');
+    // 새 창에서 트위터 열기
+    const tweetWindow = window.open(`https://twitter.com/intent/tweet?text=${shareText}`, '_blank');
     
-    // Check if popup was blocked
+    // 팝업 차단 확인
     if (!tweetWindow || tweetWindow.closed || typeof tweetWindow.closed === 'undefined') {
       alert('Please allow popups to open Twitter and earn rewards.');
       setTweetLoading(prev => ({ ...prev, [txSignature]: false }));
       return;
     }
     
-    // Set a delay before allowing reward claim
+    // 사용자가 공유를 완료할 시간을 주기 위한 지연
     setTimeout(async () => {
-      // Now show the confirmation dialog
+      // 확인 대화상자 표시
       const confirmed = window.confirm('Did you complete sharing on Twitter? Confirm to receive your TESOLA tokens.');
       
       if (confirmed && publicKey) {
         try {
-          // Call reward API
+          // 보상 API 호출
           const response = await fetch('/api/recordTweetReward', {
             method: 'POST',
             headers: {
@@ -218,26 +209,31 @@ export default function Transactions() {
               wallet: publicKey.toString(),
               txSignature,
               reference_id: txSignature,
-              reward_type: 'tweet' // Use specific type for transactions page tweets
+              reward_type: 'tweet',
+              mint_address: mintAddress || null
             })
           });
           
           if (!response.ok) {
-            throw new Error('Error processing tweet reward');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error processing tweet reward');
           }
           
-          // Update rewards info
-          const rewards = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`).then(res => res.json());
-          setRewards({
-            totalRewards: rewards.totalRewards || 0,
-            claimableRewards: rewards.claimableRewards || []
-          });
-          
-          if (rewards.rewardHistory) {
-            setRewardHistory(rewards.rewardHistory);
+          // 보상 정보 업데이트
+          const rewardsResponse = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`);
+          if (rewardsResponse.ok) {
+            const rewardsData = await rewardsResponse.json();
+            setRewards({
+              totalRewards: rewardsData.totalRewards || 0,
+              claimableRewards: rewardsData.claimableRewards || []
+            });
+            
+            if (rewardsData.rewardHistory) {
+              setRewardHistory(rewardsData.rewardHistory);
+            }
           }
           
-          // Success message
+          // 성공 메시지
           alert('Congratulations! 5 TESOLA tokens have been added to your rewards.');
         } catch (error) {
           console.error('Tweet reward error:', error);
@@ -246,40 +242,40 @@ export default function Transactions() {
       }
       
       setTweetLoading(prev => ({ ...prev, [txSignature]: false }));
-    }, 8000); // 8 second delay
+    }, 5000); // 5초 지연
   };
 
-  // Telegram share handler
+  // 개선된 텔레그램 공유 핸들러
   const handleTelegramShare = async (txSignature) => {
-    // Check if already rewarded for Telegram specifically
+    // 이미 보상을 받았는지 확인
     if (hasReceivedReward(txSignature, 'telegram_share')) {
       alert("You've already received rewards for sharing this transaction on Telegram!");
       return;
     }
     
-    // Current transaction
+    // 현재 트랜잭션
     const tx = transactions.find(t => t.signature === txSignature);
     const mintAddress = tx?.nftMint || '';
     const nftName = tx?.nftName || 'SOLARA NFT';
     
-    // Network configuration
+    // 네트워크 설정
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
     
-    // Create Solscan transaction URL
+    // Solscan 트랜잭션 URL 생성
     const solscanTxUrl = `https://solscan.io/tx/${txSignature}?cluster=${network}`;
     
-    // Create Website URL
+    // 웹사이트 URL 생성
     const tesolaUrl = mintAddress 
       ? `https://tesola.xyz/solara/${mintAddress}`
       : `https://tesola.xyz`;
     
-    // Create Telegram community URL (the TESOLA Telegram community)
+    // 텔레그램 커뮤니티 URL
     const telegramCommunityUrl = "https://t.me/TESLAINSOLANA";
     
-    // Create share message with useful links
+    // 공유 메시지 생성
     let shareText;
     if (mintAddress) {
-      // Include Magic Eden link if we have mint address
+      // 민트 주소가 있으면 Magic Eden 링크 포함
       const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
       
       shareText = encodeURIComponent(
@@ -291,7 +287,7 @@ export default function Transactions() {
         `#SOLARA #NFT #Solana`
       );
     } else {
-      // Otherwise just include transaction link
+      // 트랜잭션 링크만 포함
       shareText = encodeURIComponent(
         `Check out my SOLARA transaction! 🚀\n\n` +
         `View on Solscan: ${solscanTxUrl}\n` +
@@ -301,32 +297,30 @@ export default function Transactions() {
       );
     }
     
-    // Open in Telegram directly to TESOLA community with pre-filled message
-    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(telegramCommunityUrl)}&text=${shareText}`;
-    
-    // User guidance
+    // 사용자 안내
     alert('Please share on Telegram and then return to this window for your reward.');
     
-    // Start sharing process
+    // 공유 프로세스 시작
     setTelegramLoading(prev => ({ ...prev, [txSignature]: true }));
     
-    // Open Telegram window
+    // 텔레그램 창 열기 - 미리 작성된 메시지로 TESOLA 커뮤니티로 바로 연결
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(telegramCommunityUrl)}&text=${shareText}`;
     const telegramWindow = window.open(telegramUrl, '_blank');
     
-    // Check for popup blocking
+    // 팝업 차단 확인
     if (!telegramWindow || telegramWindow.closed || typeof telegramWindow.closed === 'undefined') {
       alert('Please allow popups to open Telegram and earn rewards.');
       setTelegramLoading(prev => ({ ...prev, [txSignature]: false }));
       return;
     }
     
-    // Delay for user to complete sharing
+    // 사용자가 공유를 완료할 시간을 주기 위한 지연
     setTimeout(async () => {
       const confirmed = window.confirm('Did you complete sharing on Telegram? Confirm to receive your TESOLA tokens.');
       
       if (confirmed && publicKey) {
         try {
-          // Call reward API
+          // 보상 API 호출
           const response = await fetch('/api/recordTweetReward', {
             method: 'POST',
             headers: {
@@ -336,7 +330,8 @@ export default function Transactions() {
               wallet: publicKey.toString(),
               txSignature,
               reference_id: txSignature,
-              reward_type: 'telegram_share' // Use specific reward type
+              reward_type: 'telegram_share',
+              mint_address: mintAddress || null
             })
           });
           
@@ -345,19 +340,23 @@ export default function Transactions() {
             throw new Error(errorData.error || 'Error processing Telegram share reward');
           }
           
-          // Update rewards info
-          const rewards = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`).then(res => res.json());
-          setRewards({
-            totalRewards: rewards.totalRewards || 0,
-            claimableRewards: rewards.claimableRewards || []
-          });
-          
-          if (rewards.rewardHistory) {
-            setRewardHistory(rewards.rewardHistory);
+          // 보상 정보 업데이트
+          const rewardsResponse = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`);
+          if (rewardsResponse.ok) {
+            const rewardsData = await rewardsResponse.json();
+            setRewards({
+              totalRewards: rewardsData.totalRewards || 0,
+              claimableRewards: rewardsData.claimableRewards || []
+            });
+            
+            if (rewardsData.rewardHistory) {
+              setRewardHistory(rewardsData.rewardHistory);
+            }
           }
           
-          // Success message
-          alert(`Congratulations! ${process.env.NEXT_PUBLIC_SHARE_REWARD_AMOUNT || '5'} TESOLA tokens have been added to your rewards.`);
+          // 성공 메시지
+          const rewardAmount = process.env.NEXT_PUBLIC_SHARE_REWARD_AMOUNT || '5';
+          alert(`Congratulations! ${rewardAmount} TESOLA tokens have been added to your rewards.`);
         } catch (error) {
           console.error('Telegram share error:', error);
           alert(`Error: ${error.message}`);
@@ -365,7 +364,7 @@ export default function Transactions() {
       }
       
       setTelegramLoading(prev => ({ ...prev, [txSignature]: false }));
-    }, 8000);
+    }, 5000);
   };
 
   // Check which buttons should be disabled
@@ -449,6 +448,30 @@ export default function Transactions() {
             </div>
           )}
         </div>
+        
+        {/* 보상 정책 안내 추가 */}
+        {connected && (
+          <div className="bg-purple-900/30 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold text-yellow-400 mb-2">Earn TESOLA Tokens by Sharing!</h3>
+            <p className="text-sm text-gray-200">
+              Share your NFTs on different platforms to earn up to 20 TESOLA tokens per NFT:
+            </p>
+            <ul className="text-sm text-gray-200 mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+              <li className="flex items-center">
+                <span className="text-yellow-500 mr-2">•</span> 5 tokens when sharing after minting
+              </li>
+              <li className="flex items-center">
+                <span className="text-yellow-500 mr-2">•</span> 5 tokens when sharing from My Collection
+              </li>
+              <li className="flex items-center">
+                <span className="text-yellow-500 mr-2">•</span> 5 tokens when sharing from Transactions
+              </li>
+              <li className="flex items-center">
+                <span className="text-yellow-500 mr-2">•</span> 5 tokens when sharing on Telegram
+              </li>
+            </ul>
+          </div>
+        )}
         
         {!connected && (
           <div className="text-center py-12">
@@ -552,7 +575,7 @@ export default function Transactions() {
                                tweetShared ? 'Shared' : 'Tweet +5'}
                             </button>
                             
-                            {/* Telegram share button */}
+                            {/* Telegram share button - 중복 버튼 제거 및 올바른 버튼만 유지 */}
                             <button 
                               onClick={() => handleTelegramShare(tx.signature)}
                               disabled={telegramLoading[tx.signature] || telegramShared}

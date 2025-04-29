@@ -142,21 +142,20 @@ export default function NFTViewer() {
   const checkRewardStatus = (history, nftId) => {
     if (!history || !history.length) return;
     
-    // 트윗 보상 확인 - NFT ID 또는 민트 주소 기반
-    const tweetRewarded = history.some(reward => 
-      (reward.reference_id === `mint_${nftId}` || 
-       reward.reference_id === `nft_tweet_${nftId}` ||
-       (getMintAddress() && reward.reference_id === `mint_${getMintAddress()}`)) && 
-      (reward.reward_type === 'mint_tweet' || reward.reward_type === 'tweet')
-    );
+    // 디버깅용 로그
+    console.log('Checking reward status for NFT ID:', nftId);
     
-    // 텔레그램 보상 확인
-    const telegramRewarded = history.some(reward => 
-      (reward.reference_id === `mint_${nftId}` || 
-       reward.reference_id === `nft_telegram_${nftId}` ||
-       (getMintAddress() && reward.reference_id === `mint_${getMintAddress()}`)) && 
-      reward.reward_type === 'telegram_share'
-    );
+    // 컬렉션 페이지에서의 트윗 확인
+    const tweetRewarded = history.some(reward => {
+      return reward.reference_id === `nft_tweet_${nftId}` && reward.reward_type === 'tweet';
+    });
+    
+    // 컬렉션 페이지에서의 텔레그램 공유 확인
+    const telegramRewarded = history.some(reward => {
+      return reward.reference_id === `nft_telegram_${nftId}` && reward.reward_type === 'telegram_share';
+    });
+    
+    console.log('Reward status:', { tweetRewarded, telegramRewarded });
     
     setIsTweetRewarded(tweetRewarded);
     setIsTelegramRewarded(telegramRewarded);
@@ -187,9 +186,17 @@ export default function NFTViewer() {
     }
   };
 
-  // 수정된 트윗 공유 함수
+  // 트윗 공유 함수
   const handleTweetShare = async () => {
     if (!data) return;
+    
+    // 지갑 연결 확인
+    if (!window.solana || !window.solana.publicKey) {
+      alert("Please connect your wallet to receive rewards");
+      return;
+    }
+    
+    const walletAddress = window.solana.publicKey.toString();
     
     // 이미 보상을 받았는지 확인
     if (isTweetRewarded) {
@@ -197,81 +204,112 @@ export default function NFTViewer() {
       return;
     }
     
-    const tier = getTier();
-    const mintAddress = getMintAddress();
-    
-    // Create links with proper checks
-    const solscanUrl = createSolscanUrl(mintAddress);
-    const magicEdenUrl = createMagicEdenUrl(mintAddress);
-    const tesolaUrl = `https://tesola.xyz/solara/${id}`;
-    
-    // Create tweet text
-    const text = `I just minted SOLARA #${id} – ${tier} tier! 🚀\n\n` +
-               `View on Solscan: ${solscanUrl}\n` +
-               `View on Magic Eden: ${magicEdenUrl}\n` +
-               `Visit: ${tesolaUrl}\n\n` +
-               `#SOLARA #NFT #Solana`;
-    
-    // 로딩 상태 시작
     setTweetLoading(true);
     
-    // Open Twitter intent URL
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
-    
-    // 사용자 확인
-    const confirmed = window.confirm('Did you complete sharing on Twitter? Confirm to receive your TESOLA tokens.');
-    
-    if (confirmed) {
-      try {
-        // 지갑 주소 가져오기
-        if (!window.solana || !window.solana.publicKey) {
-          throw new Error('Please connect your wallet to receive rewards');
-        }
-        
-        const walletAddress = window.solana.publicKey.toString();
-        const nftId = String(id).padStart(4, "0");
-        
-        // API 호출하여 보상 기록
-        const response = await fetch('/api/recordTweetReward', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            wallet: walletAddress,
-            reference_id: `nft_tweet_${nftId}`,
-            reward_type: 'tweet',
-            nft_id: nftId,
-            mint_address: mintAddress || ''
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Error processing tweet reward');
-        }
-        
-        // 보상 성공 메시지
-        alert('Congratulations! 5 TESOLA tokens have been added to your rewards.');
-        setIsTweetRewarded(true);
-        
-        // 리워드 기록 새로고침
-        const updatedRes = await fetch(`/api/getRewards?wallet=${walletAddress}`);
-        if (updatedRes.ok) {
-          const { rewardHistory: updatedHistory } = await updatedRes.json();
-          setRewardHistory(updatedHistory || []);
-        }
-      } catch (error) {
-        console.error('Tweet reward error:', error);
-        alert(`Error: ${error.message}`);
+    try {
+      const tier = getTier();
+      const mintAddress = getMintAddress();
+      const nftId = String(id).padStart(4, "0");
+      
+      // 링크 생성
+      const solscanUrl = createSolscanUrl(mintAddress);
+      const magicEdenUrl = createMagicEdenUrl(mintAddress);
+      const tesolaUrl = `https://tesola.xyz/solara/${id}`;
+      
+      // 트윗 텍스트 생성
+      const text = `I just minted SOLARA #${id} – ${tier} tier! 🚀\n\n` +
+                 `View on Solscan: ${solscanUrl}\n` +
+                 `View on Magic Eden: ${magicEdenUrl}\n` +
+                 `Visit: ${tesolaUrl}\n\n` +
+                 `#SOLARA #NFT #Solana`;
+      
+      // 사용자 안내
+      alert('Please share on Twitter and then return to this window for your reward.');
+      
+      // 트위터 창 열기
+      const twitterWindow = window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+      
+      // 팝업 차단 확인
+      if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
+        alert('Please allow popups to open Twitter and earn rewards.');
+        setTweetLoading(false);
+        return;
       }
+      
+      // 사용자가 공유를 완료할 시간을 주기 위한 지연
+      setTimeout(async () => {
+        const confirmed = window.confirm('Did you complete sharing on Twitter? Confirm to receive your TESOLA tokens.');
+        
+        if (confirmed) {
+          try {
+            // 디버깅 로그
+            console.log('Sending tweet reward request:', {
+              wallet: walletAddress,
+              reference_id: `nft_tweet_${nftId}`,
+              reward_type: 'tweet',
+              nft_id: nftId,
+              mint_address: mintAddress || ''
+            });
+            
+            // 보상 API 호출 - My Collection 페이지 전용 참조 ID 사용
+            const response = await fetch('/api/recordTweetReward', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                wallet: walletAddress,
+                reference_id: `nft_tweet_${nftId}`,
+                reward_type: 'tweet',
+                nft_id: nftId,
+                mint_address: mintAddress || ''
+              })
+            });
+            
+            // 응답 체크
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Error processing tweet reward');
+            }
+            
+            // 보상됨으로 표시
+            setIsTweetRewarded(true);
+            
+            // 리워드 내역 업데이트
+            const updatedRes = await fetch(`/api/getRewards?wallet=${walletAddress}`);
+            if (updatedRes.ok) {
+              const { rewardHistory: updatedHistory } = await updatedRes.json();
+              setRewardHistory(updatedHistory || []);
+            }
+            
+            // 성공 메시지
+            alert('Congratulations! 5 TESOLA tokens have been added to your rewards.');
+          } catch (error) {
+            console.error('Tweet reward error:', error);
+            alert(`Error: ${error.message}`);
+          }
+        }
+        
+        setTweetLoading(false);
+      }, 5000); // 5초 지연
+    } catch (error) {
+      console.error('Error in tweet share process:', error);
+      alert(`Error: ${error.message}`);
+      setTweetLoading(false);
     }
-    
-    setTweetLoading(false);
   };
   
-  // 수정된 텔레그램 공유 함수
+  // 텔레그램 공유 함수
   const handleTelegramShare = async () => {
     if (!data) return;
+    
+    // 지갑 연결 확인
+    if (!window.solana || !window.solana.publicKey) {
+      alert("Please connect your wallet to receive rewards");
+      return;
+    }
+    
+    const walletAddress = window.solana.publicKey.toString();
     
     // 이미 보상을 받았는지 확인
     if (isTelegramRewarded) {
@@ -279,78 +317,101 @@ export default function NFTViewer() {
       return;
     }
     
-    const tier = getTier();
-    const mintAddress = getMintAddress();
-    const telegramCommunityUrl = "https://t.me/TESLAINSOLANA";
-    
-    // Create links with proper checks
-    const solscanUrl = createSolscanUrl(mintAddress);
-    const magicEdenUrl = createMagicEdenUrl(mintAddress);
-    const tesolaUrl = `https://tesola.xyz/solara/${id}`;
-    
-    // Create message text
-    const text = `I just minted SOLARA #${id} – ${tier} tier! 🚀\n\n` +
-               `View on Solscan: ${solscanUrl}\n` +
-               `View on Magic Eden: ${magicEdenUrl}\n` +
-               `Visit: ${tesolaUrl}\n\n` +
-               `Join our community: ${telegramCommunityUrl}\n\n` +
-               `#SOLARA #NFT #Solana`;
-    
-    // 로딩 상태 시작
     setTelegramLoading(true);
     
-    // Open Telegram
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(telegramCommunityUrl)}&text=${encodeURIComponent(text)}`, '_blank');
-    
-    // 사용자 확인
-    const confirmed = window.confirm('Did you complete sharing on Telegram? Confirm to receive your TESOLA tokens.');
-    
-    if (confirmed) {
-      try {
-        // 지갑 주소 가져오기
-        if (!window.solana || !window.solana.publicKey) {
-          throw new Error('Please connect your wallet to receive rewards');
-        }
-        
-        const walletAddress = window.solana.publicKey.toString();
-        const nftId = String(id).padStart(4, "0");
-        
-        // API 호출하여 보상 기록
-        const response = await fetch('/api/recordTweetReward', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            wallet: walletAddress,
-            reference_id: `nft_telegram_${nftId}`,
-            reward_type: 'telegram_share',
-            nft_id: nftId,
-            mint_address: mintAddress || ''
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Error processing Telegram reward');
-        }
-        
-        // 보상 성공 메시지
-        alert('Congratulations! 5 TESOLA tokens have been added to your rewards.');
-        setIsTelegramRewarded(true);
-        
-        // 리워드 기록 새로고침
-        const updatedRes = await fetch(`/api/getRewards?wallet=${walletAddress}`);
-        if (updatedRes.ok) {
-          const { rewardHistory: updatedHistory } = await updatedRes.json();
-          setRewardHistory(updatedHistory || []);
-        }
-      } catch (error) {
-        console.error('Telegram reward error:', error);
-        alert(`Error: ${error.message}`);
+    try {
+      const tier = getTier();
+      const mintAddress = getMintAddress();
+      const nftId = String(id).padStart(4, "0");
+      const telegramCommunityUrl = "https://t.me/TESLAINSOLANA";
+      
+      // 링크 생성
+      const solscanUrl = createSolscanUrl(mintAddress);
+      const magicEdenUrl = createMagicEdenUrl(mintAddress);
+      const tesolaUrl = `https://tesola.xyz/solara/${id}`;
+      
+      // 메시지 텍스트 생성
+      const text = `I just minted SOLARA #${id} – ${tier} tier! 🚀\n\n` +
+                `View on Solscan: ${solscanUrl}\n` +
+                `View on Magic Eden: ${magicEdenUrl}\n` +
+                `Visit: ${tesolaUrl}\n\n` +
+                `Join our community: ${telegramCommunityUrl}\n\n` +
+                `#SOLARA #NFT #Solana`;
+      
+      // 사용자 안내
+      alert('Please share on Telegram and then return to this window for your reward.');
+      
+      // 텔레그램 열기
+      const telegramWindow = window.open(`https://t.me/share/url?url=${encodeURIComponent(telegramCommunityUrl)}&text=${encodeURIComponent(text)}`, '_blank');
+      
+      // 팝업 차단 확인
+      if (!telegramWindow || telegramWindow.closed || typeof telegramWindow.closed === 'undefined') {
+        alert('Please allow popups to open Telegram and earn rewards.');
+        setTelegramLoading(false);
+        return;
       }
+      
+      // 지연 후 공유 확인
+      setTimeout(async () => {
+        const confirmed = window.confirm('Did you complete sharing on Telegram? Confirm to receive your TESOLA tokens.');
+        
+        if (confirmed) {
+          try {
+            // 디버깅 로그
+            console.log('Sending telegram reward request:', {
+              wallet: walletAddress,
+              reference_id: `nft_telegram_${nftId}`,
+              reward_type: 'telegram_share',
+              nft_id: nftId,
+              mint_address: mintAddress || ''
+            });
+            
+            // 보상 API 호출 - My Collection 페이지 전용 참조 ID 사용
+            const response = await fetch('/api/recordTweetReward', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                wallet: walletAddress,
+                reference_id: `nft_telegram_${nftId}`,
+                reward_type: 'telegram_share',
+                nft_id: nftId,
+                mint_address: mintAddress || ''
+              })
+            });
+            
+            // 응답 체크
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Error processing Telegram reward');
+            }
+            
+            // 보상됨으로 표시
+            setIsTelegramRewarded(true);
+            
+            // 리워드 내역 업데이트
+            const updatedRes = await fetch(`/api/getRewards?wallet=${walletAddress}`);
+            if (updatedRes.ok) {
+              const { rewardHistory: updatedHistory } = await updatedRes.json();
+              setRewardHistory(updatedHistory || []);
+            }
+            
+            // 성공 메시지
+            alert('Congratulations! 5 TESOLA tokens have been added to your rewards.');
+          } catch (error) {
+            console.error('Telegram reward error:', error);
+            alert(`Error: ${error.message}`);
+          }
+        }
+        
+        setTelegramLoading(false);
+      }, 5000); // 5초 지연
+    } catch (error) {
+      console.error('Error in Telegram share process:', error);
+      alert(`Error: ${error.message}`);
+      setTelegramLoading(false);
     }
-    
-    setTelegramLoading(false);
   };
 
   if (loading) {
@@ -542,69 +603,83 @@ export default function NFTViewer() {
               </div>
             </div>
             
-            {/* Actions */}
-            <div className="mt-8 border-t border-gray-700 pt-6 flex flex-wrap justify-center gap-4">
-              <button
-                onClick={() => navigator.clipboard.writeText(window.location.href)}
-                className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded flex items-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy share link
-              </button>
+            {/* 보상 정책 안내 섹션 추가 */}
+            <div className="mt-8 border-t border-gray-700 pt-6">
+              <div className="bg-purple-900/30 p-3 rounded-lg mb-4">
+                <h3 className="font-semibold text-yellow-400 text-sm">Earn TESOLA Tokens!</h3>
+                <p className="text-xs text-gray-300 mt-1">
+                  Share your NFT on multiple platforms to earn more rewards:
+                </p>
+                <ul className="text-xs text-gray-300 mt-1 grid grid-cols-1 sm:grid-cols-2 gap-1">
+                  <li>• Twitter: +5 TESOLA (from each page)</li>
+                  <li>• Telegram: +5 TESOLA</li>
+                </ul>
+              </div>
               
-              <button
-                onClick={handleTweetShare}
-                disabled={tweetLoading || isTweetRewarded}
-                className={`mint-button inline-block ${isTweetRewarded ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {tweetLoading ? (
-                  <>
-                    <span className="animate-spin mr-2">⟳</span> Processing...
-                  </>
-                ) : isTweetRewarded ? (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Shared
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
-                    </svg>
-                    Tweet it!
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={handleTelegramShare}
-                disabled={telegramLoading || isTelegramRewarded}
-                className={`telegram-button inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded ${isTelegramRewarded ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {telegramLoading ? (
-                  <>
-                    <span className="animate-spin mr-2">⟳</span> Processing...
-                  </>
-                ) : isTelegramRewarded ? (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Shared
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-5 w-5 mr-2 inline-block" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.665,3.717l-17.73,6.837c-1.21,0.486-1.203,1.161-0.222,1.462l4.552,1.42l10.532-6.645c0.498-0.303,0.953-0.14,0.579,0.192l-8.533,7.701l-0.332,4.99c0.487,0,0.703-0.223,0.979-0.486l2.353-2.276l4.882,3.604c0.898,0.496,1.552,0.24,1.773-0.832l3.383-15.942l0,0C22.461,3.127,21.873,2.817,20.665,3.717z"/>
-                    </svg>
-                    Share on Telegram
-                  </>
-                )}
-              </button>
+              {/* Actions */}
+              <div className="flex flex-wrap justify-center gap-4">
+                <button
+                  onClick={() => navigator.clipboard.writeText(window.location.href)}
+                  className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded flex items-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy share link
+                </button>
+                
+                <button
+                  onClick={handleTweetShare}
+                  disabled={tweetLoading || isTweetRewarded}
+                  className={`mint-button inline-block ${isTweetRewarded ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {tweetLoading ? (
+                    <>
+                      <span className="animate-spin mr-2">⟳</span> Processing...
+                    </>
+                  ) : isTweetRewarded ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Shared
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
+                      </svg>
+                      Tweet +5
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={handleTelegramShare}
+                  disabled={telegramLoading || isTelegramRewarded}
+                  className={`telegram-button inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded ${isTelegramRewarded ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {telegramLoading ? (
+                    <>
+                      <span className="animate-spin mr-2">⟳</span> Processing...
+                    </>
+                  ) : isTelegramRewarded ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Shared
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5 mr-2 inline-block" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20.665,3.717l-17.73,6.837c-1.21,0.486-1.203,1.161-0.222,1.462l4.552,1.42l10.532-6.645c0.498-0.303,0.953-0.14,0.579,0.192l-8.533,7.701l-0.332,4.99c0.487,0,0.703-0.223,0.979-0.486l2.353-2.276l4.882,3.604c0.898,0.496,1.552,0.24,1.773-0.832l3.383-15.942l0,0C22.461,3.127,21.873,2.817,20.665,3.717z"/>
+                      </svg>
+                      Telegram +5
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

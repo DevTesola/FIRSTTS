@@ -30,6 +30,7 @@ export default function MintResultModal({ result, onClose }) {
         }
       } catch (error) {
         // Error handling - silently continue
+        console.error("Error checking existing rewards:", error);
       }
     };
     
@@ -105,6 +106,7 @@ export default function MintResultModal({ result, onClose }) {
       }
     } catch (error) {
       // Error handling - continue anyway
+      console.error("Error checking rewards:", error);
     }
     
     // User guidance
@@ -119,7 +121,16 @@ export default function MintResultModal({ result, onClose }) {
     const confirmed = window.confirm('Did you complete sharing the tweet?');
     if (confirmed && publicKey) {
       try {
-        // Call reward API
+        // Call reward API with enhanced logging
+        console.log('Sending tweet reward request:', {
+          wallet: publicKey.toString(),
+          reference_id: `mint_${filename}`,
+          reward_type: 'mint_tweet',
+          nft_id: filename,
+          mint_address: mintAddress || null
+        });
+        
+        // API 호출
         const response = await fetch('/api/recordTweetReward', {
           method: 'POST',
           headers: {
@@ -128,13 +139,20 @@ export default function MintResultModal({ result, onClose }) {
           body: JSON.stringify({
             wallet: publicKey.toString(),
             reference_id: `mint_${filename}`,
-            reward_type: 'mint_tweet' // Use a specific reward type
+            reward_type: 'mint_tweet',
+            nft_id: filename,
+            mint_address: mintAddress || null
           })
         });
         
+        // 응답 확인
         if (!response.ok) {
-          throw new Error('Error processing tweet reward');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error processing tweet reward');
         }
+        
+        const responseData = await response.json();
+        console.log('Tweet reward response:', responseData);
         
         setRewardReceived(true);
         alert('Congratulations! 5 TESOLA tokens have been added to your rewards.');
@@ -259,7 +277,7 @@ export default function MintResultModal({ result, onClose }) {
           <div className="mb-6">
             <p className="text-gray-300 text-sm mb-4">{metadata.description || "A unique SOLARA NFT from the GEN:0 collection."}</p>
             
-            {/* Reward info card */}
+            {/* 리워드 정보 카드 - 보상 정책 안내 추가 */}
             <div className="bg-purple-900/40 p-4 rounded-lg mb-4 border border-purple-500/50">
               <h3 className="text-lg font-bold text-yellow-400 mb-2 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -267,9 +285,15 @@ export default function MintResultModal({ result, onClose }) {
                 </svg>
                 Earn TESOLA Rewards
               </h3>
-              <p className="text-white text-sm">
-                Share your new SOLARA NFT on Twitter and earn <span className="text-yellow-400 font-bold">5 TESOLA tokens</span> instantly!
+              <p className="text-white text-sm mb-2">
+                Share your new SOLARA NFT and earn <span className="text-yellow-400 font-bold">TESOLA tokens</span>:
               </p>
+              <ul className="text-xs text-white space-y-1 ml-5 list-disc">
+                <li>Share on Twitter now: <span className="text-yellow-400 font-bold">+5 TESOLA</span></li>
+                <li>Share again from My Collection: <span className="text-yellow-400 font-bold">+5 TESOLA</span></li>
+                <li>Share from Transactions page: <span className="text-yellow-400 font-bold">+5 TESOLA</span></li>
+                <li>Share on Telegram: <span className="text-yellow-400 font-bold">+5 TESOLA</span></li>
+              </ul>
               {rewardReceived && (
                 <div className="mt-2 bg-green-900/50 p-2 rounded border border-green-500 text-green-400 text-sm">
                   ✓ You've earned 5 TESOLA tokens for sharing!
