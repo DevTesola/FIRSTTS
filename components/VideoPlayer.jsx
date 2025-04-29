@@ -156,9 +156,10 @@ export default function VideoPlayer({ src }) {
 
   return (
     <div 
-      className="mt-8 w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl relative"
+      className="mt-8 w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl relative video-player-container"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleMouseEnter}
     >
       {/* Video */}
       <video
@@ -193,52 +194,58 @@ export default function VideoPlayer({ src }) {
       
       {/* Controls overlay */}
       <div 
-        className={`absolute bottom-0 inset-x-0 flex justify-between items-center p-4 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${
+        className={`absolute bottom-0 inset-x-0 flex justify-between items-center p-2 sm:p-4 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${
           controlsVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
         {/* Left side - play/pause */}
         <button
           onClick={togglePlay}
-          className="group bg-purple-700 p-3 rounded-full hover:bg-purple-600 transition-colors"
+          className="group bg-purple-700 p-2 sm:p-3 rounded-full hover:bg-purple-600 transition-colors touch-manipulation"
           aria-label={playing ? "Pause video" : "Play video"}
         >
           {playing ? (
-            <PauseIcon className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
+            <PauseIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
           ) : (
-            <PlayIcon className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
+            <PlayIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
           )}
         </button>
         
         {/* Right side - volume controls */}
-        <div className="flex space-x-2">
-          <button
-            onClick={decreaseVolume}
-            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
-            aria-label="Decrease volume"
-          >
-            <MinusIcon className="h-5 w-5 text-white" />
-          </button>
+        <div className="flex space-x-1 sm:space-x-2">
+          {/* On mobile, we only show mute toggle for simplicity */}
+          <div className="hidden sm:block">
+            <button
+              onClick={decreaseVolume}
+              className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors touch-manipulation"
+              aria-label="Decrease volume"
+            >
+              <MinusIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            </button>
+          </div>
           
           <button
             onClick={toggleMute}
-            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
+            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors touch-manipulation"
             aria-label={isMuted ? "Unmute" : "Mute"}
           >
             {isMuted ? (
-              <SpeakerXMarkIcon className="h-5 w-5 text-white" />
+              <SpeakerXMarkIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             ) : (
-              <SpeakerWaveIcon className="h-5 w-5 text-white" />
+              <SpeakerWaveIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             )}
           </button>
           
-          <button
-            onClick={increaseVolume}
-            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
-            aria-label="Increase volume"
-          >
-            <PlusIcon className="h-5 w-5 text-white" />
-          </button>
+          {/* On mobile, we only show mute toggle for simplicity */}
+          <div className="hidden sm:block">
+            <button
+              onClick={increaseVolume}
+              className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors touch-manipulation"
+              aria-label="Increase volume"
+            >
+              <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

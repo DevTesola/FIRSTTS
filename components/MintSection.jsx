@@ -5,6 +5,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Connection, Transaction } from "@solana/web3.js";
 import Image from "next/image";
+import ErrorMessage from "./ErrorMessage";
+import WalletGuide from "./WalletGuide";
 
 // Environment variable with fallback
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
@@ -14,6 +16,7 @@ export default function MintSection({
   onMintComplete, 
   isClient = false,
   setErrorMessage,
+  setErrorDetails,
   setLoading,
   showRefundPolicy
 }) {
@@ -24,6 +27,7 @@ export default function MintSection({
     try {
       setLoading(true);
       setErrorMessage(null);
+      setErrorDetails(null);
       if (!connected || !publicKey) throw new Error("Please connect a wallet");
 
       // Step 1: Prepare purchase - Reserve NFT and create payment transaction
@@ -91,7 +95,8 @@ export default function MintSection({
       if (onMintComplete) {
         // Use Pinata gateway with fallback
         const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-        const metadataUrl = `${ipfsGateway}/ipfs/${process.env.NEXT_PUBLIC_RESOURCE_CID}/${filename}.json`;
+        const resourceCID = process.env.NEXT_PUBLIC_RESOURCE_CID || '';
+        const metadataUrl = `${ipfsGateway}/ipfs/${resourceCID}/${filename}.json`;
         console.log("Loading metadata from:", metadataUrl);
         
         const metadataRes = await fetch(metadataUrl);
@@ -105,14 +110,19 @@ export default function MintSection({
     } catch (err) {
       console.error("Minting error:", err);
       let userMessage = "Minting failed. Please try again.";
+      
       if (err.message.includes("wallet")) userMessage = "Wallet not connected.";
       else if (err.message.includes("No available NFT")) userMessage = "All NFTs are sold out.";
       else if (err.message.includes("metadata")) userMessage = "Failed to load NFT metadata. Please check IPFS connection and try again.";
       else if (err.message.includes("Invalid wallet")) userMessage = "Invalid wallet address.";
       else if (err.message.includes("buffer")) userMessage = "Invalid transaction data from server.";
       else if (err.message.includes("blockhash")) userMessage = "Invalid transaction configuration.";
+      else if (err.message.includes("insufficient")) userMessage = "Insufficient funds in your wallet.";
+      else if (err.message.includes("rejected")) userMessage = "Transaction rejected by wallet.";
+      else if (err.message.includes("timeout")) userMessage = "Network timeout. Please try again.";
+      
       setErrorMessage(userMessage);
-      alert(`Error: ${userMessage}`);
+      setErrorDetails(err.message || err.toString());
     } finally {
       setLoading(false);
     }
@@ -120,6 +130,9 @@ export default function MintSection({
 
   return (
     <div className="flex flex-col items-center space-y-6 mt-10 w-full max-w-sm mx-auto">
+      {/* Wallet connection guide */}
+      <WalletGuide />
+      
       {isClient ? (
         <>
           <div className="wallet-button-container">

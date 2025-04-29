@@ -23,6 +23,11 @@ module.exports = {
         gradientBackground: "gradientBackground 20s linear infinite",
         neon: "neonGlow 1.5s ease-in-out infinite alternate",
       },
+      animationDelay: {
+        '150': '150ms',
+        '300': '300ms',
+        '500': '500ms',
+      },
     },
   },
   plugins: [],

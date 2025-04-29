@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import Layout from '../components/Layout';
 import dynamic from 'next/dynamic';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import ErrorMessage from '../components/ErrorMessage';
 
 // Dynamic loading of wallet button
 const WalletMultiButton = dynamic(
@@ -18,16 +20,22 @@ export default function Transactions() {
     claimableRewards: []
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [errorDetails, setErrorDetails] = useState(null);
   const [claimLoading, setClaimLoading] = useState(false);
   const [tweetLoading, setTweetLoading] = useState({});
   const [telegramLoading, setTelegramLoading] = useState({});
   const [rewardHistory, setRewardHistory] = useState([]);
+  const [claimSuccess, setClaimSuccess] = useState(false);
 
+  // 트랜잭션 정보 가져오기
   useEffect(() => {
     const fetchTransactions = async () => {
       if (!connected || !publicKey) return;
       
       setLoading(true);
+      setError(null);
+      
       try {
         const res = await fetch(`/api/getTransactions?wallet=${publicKey.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch transactions');
@@ -36,6 +44,8 @@ export default function Transactions() {
         setTransactions(data.transactions || []);
       } catch (err) {
         console.error('Error fetching transactions:', err);
+        setError('Failed to load transaction history');
+        setErrorDetails(err.message || err.toString());
       } finally {
         setLoading(false);
       }
@@ -44,6 +54,7 @@ export default function Transactions() {
     fetchTransactions();
   }, [publicKey, connected]);
 
+  // 리워드 정보 가져오기
   useEffect(() => {
     const fetchRewards = async () => {
       if (!connected || !publicKey) return;
@@ -415,13 +426,81 @@ export default function Transactions() {
         claimableRewards: []
       });
       
-      // Success message
-      alert(`Reward claim successful! ${result.claim.amount} TESOLA tokens will be sent to your wallet soon.`);
+      // Set claim success state
+      setClaimSuccess(true);
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setClaimSuccess(false);
+      }, 5000);
     } catch (error) {
       console.error('Error claiming rewards:', error);
-      alert(`Error: ${error.message}`);
+      setError(`Failed to claim rewards: ${error.message}`);
+      setErrorDetails(error.toString());
     } finally {
       setClaimLoading(false);
+    }
+  };
+
+  // 오프라인 상태 감지
+  const [isOffline, setIsOffline] = useState(false);
+  
+  useEffect(() => {
+    // 온라인/오프라인 상태 이벤트 리스너
+    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => setIsOffline(false);
+    
+    // 초기 상태 설정
+    setIsOffline(!navigator.onLine);
+    
+    // 이벤트 리스너 등록
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    
+    // 클린업
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  // Retry fetch data
+  const handleRetry = () => {
+    setError(null);
+    setErrorDetails(null);
+    setLoading(true);
+    
+    if (publicKey) {
+      Promise.all([
+        fetch(`/api/getTransactions?wallet=${publicKey.toString()}`),
+        fetch(`/api/getRewards?wallet=${publicKey.toString()}`)
+      ])
+        .then(([txRes, rewardsRes]) => {
+          if (!txRes.ok) throw new Error('Failed to fetch transactions');
+          if (!rewardsRes.ok) throw new Error('Failed to fetch rewards');
+          
+          return Promise.all([txRes.json(), rewardsRes.json()]);
+        })
+        .then(([txData, rewardsData]) => {
+          setTransactions(txData.transactions || []);
+          setRewards({
+            totalRewards: rewardsData.totalRewards || 0,
+            claimableRewards: rewardsData.claimableRewards || []
+          });
+          if (rewardsData.rewardHistory) {
+            setRewardHistory(rewardsData.rewardHistory);
+          }
+        })
+        .catch(err => {
+          console.error('Error in retry:', err);
+          setError('Failed to load data');
+          setErrorDetails(err.toString());
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
   };
 
@@ -443,11 +522,40 @@ export default function Transactions() {
                 disabled={claimLoading}
                 className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded-lg disabled:opacity-50"
               >
-                {claimLoading ? 'Processing...' : 'Claim All'}
+                {claimLoading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                ) : 'Claim All'}
               </button>
             </div>
           )}
         </div>
+        
+        {/* 클레임 성공 메시지 */}
+        {claimSuccess && (
+          <div className="mb-6">
+            <ErrorMessage 
+              message="Rewards claimed successfully! TESOLA tokens will be sent to your wallet soon."
+              type="info"
+              onDismiss={() => setClaimSuccess(false)}
+            />
+          </div>
+        )}
+        
+        {/* 오프라인 알림 */}
+        {isOffline && (
+          <div className="mb-6">
+            <ErrorMessage
+              message="You are currently offline"
+              type="warning"
+            />
+          </div>
+        )}
         
         {/* 보상 정책 안내 추가 */}
         {connected && (
@@ -482,16 +590,43 @@ export default function Transactions() {
           </div>
         )}
         
-        {loading && (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        {error && (
+          <div className="mb-6">
+            <ErrorMessage 
+              message={error}
+              type="error"
+              errorDetails={errorDetails}
+              onRetry={handleRetry}
+              onDismiss={() => {
+                setError(null);
+                setErrorDetails(null);
+              }}
+            />
           </div>
         )}
         
-        {connected && !loading && (
+        {loading && (
+          <div className="py-12">
+            <p className="text-center text-gray-400 mb-8">Loading your transactions...</p>
+            <LoadingSkeleton type="transaction" count={5} />
+          </div>
+        )}
+        
+        {connected && !loading && !error && (
           <div className="overflow-x-auto">
             {transactions.length === 0 ? (
-              <p className="text-xl text-center py-12">No transactions found</p>
+              <div className="text-center py-12 bg-gray-900/50 rounded-lg border border-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p className="text-xl mb-4">No transactions found</p>
+                <button
+                  onClick={() => router.push('/')}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white"
+                >
+                  Make Your First Transaction
+                </button>
+              </div>
             ) : (
               <table className="min-w-full bg-gray-800 rounded-lg overflow-hidden">
                 <thead className="bg-purple-900">
@@ -575,7 +710,7 @@ export default function Transactions() {
                                tweetShared ? 'Shared' : 'Tweet +5'}
                             </button>
                             
-                            {/* Telegram share button - 중복 버튼 제거 및 올바른 버튼만 유지 */}
+                            {/* Telegram share button */}
                             <button 
                               onClick={() => handleTelegramShare(tx.signature)}
                               disabled={telegramLoading[tx.signature] || telegramShared}

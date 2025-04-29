@@ -24,6 +24,32 @@
       max-height: 80vh !important;
       overflow-y: auto !important;
     }
+    
+    /* Increase tap target sizes for better mobile experience */
+    button, a {
+      min-height: 44px;
+      min-width: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Make sure video controls are large enough to tap */
+    .video-player-container button {
+      min-width: 40px;
+      min-height: 40px;
+    }
+    
+    /* Add some space between controls for easier tapping */
+    .video-player-container .flex.space-x-1 > * {
+      margin-left: 4px;
+    }
+    
+    /* Bigger touch targets for wallet connection buttons */
+    .wallet-adapter-button {
+      min-height: 48px;
+      padding: 0.75rem 1.25rem !important;
+    }
   }
   
   /* Additional adjustments for extra small screens */
@@ -64,17 +90,6 @@
     
     .wallet-adapter-modal-list {
       grid-template-columns: 1fr !important; /* Stack wallet options */
-    }
-  }
-  
-  /* Fix video controls on mobile */
-  @media (max-width: 640px) {
-    .absolute.bottom-0.inset-x-0.flex.justify-between.items-center.p-4 {
-      padding: 0.5rem !important;
-    }
-    
-    .absolute.bottom-0.inset-x-0.flex.justify-between.items-center.p-4 button {
-      padding: 0.5rem !important;
     }
   }
   

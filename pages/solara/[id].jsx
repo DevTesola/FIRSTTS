@@ -3,6 +3,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Head from "next/head";
+import NFTDetailSkeleton from "../../components/NFTDetailSkeleton";
+import ErrorMessage from "../../components/ErrorMessage";
+import ProgressiveImage from "../../components/ProgressiveImage";
 
 // Layout 컴포넌트를 동적으로 로드
 const Layout = dynamic(() => import("../../components/Layout"), {
@@ -16,6 +19,7 @@ export default function NFTViewer() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [errorDetails, setErrorDetails] = useState(null);
   
   // 리워드 관련 상태 추가
   const [rewardHistory, setRewardHistory] = useState([]);
@@ -23,6 +27,9 @@ export default function NFTViewer() {
   const [isTelegramRewarded, setIsTelegramRewarded] = useState(false);
   const [tweetLoading, setTweetLoading] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
+  
+  // 이미지 로딩 상태
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // NFT 데이터 가져오기
   useEffect(() => {
@@ -31,6 +38,7 @@ export default function NFTViewer() {
       
       setLoading(true);
       setError(null);
+      setErrorDetails(null);
       
       try {
         // Use the environment variable for IPFS gateway
@@ -61,7 +69,8 @@ export default function NFTViewer() {
         setData(nftData);
       } catch (err) {
         console.error("Error fetching NFT data:", err);
-        setError(err.message);
+        setError("Failed to load NFT information");
+        setErrorDetails(err.message || err.toString());
       } finally {
         setLoading(false);
       }
@@ -414,12 +423,45 @@ export default function NFTViewer() {
     }
   };
 
+  // 데이터 다시 불러오기 핸들러
+  const handleRetry = () => {
+    setError(null);
+    setErrorDetails(null);
+    setLoading(true);
+    
+    // 0.5초 후 데이터 다시 불러오기
+    setTimeout(() => {
+      const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io';
+      const resourceCID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
+      
+      const jsonUrl = `${ipfsGateway}/ipfs/${resourceCID}/${String(id).padStart(4, "0")}.json`;
+      
+      fetch(jsonUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch NFT data: ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(nftData => {
+          setData(nftData);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error("Error fetching NFT data:", err);
+          setError("Failed to load NFT information");
+          setErrorDetails(err.message || err.toString());
+          setLoading(false);
+        });
+    }, 500);
+  };
+
   if (loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-          <span className="ml-3 text-xl">Loading NFT info...</span>
+        <div className="text-center py-6">
+          <p className="text-xl text-gray-400 mb-6">Loading NFT info...</p>
+          <NFTDetailSkeleton />
         </div>
       </Layout>
     );
@@ -428,12 +470,23 @@ export default function NFTViewer() {
   if (error) {
     return (
       <Layout>
-        <div className="text-center py-20">
+        <div className="text-center py-8">
           <h2 className="text-2xl text-red-500 mb-4">Error Loading NFT</h2>
-          <p className="text-gray-300 mb-4">{error}</p>
+          <div className="max-w-lg mx-auto">
+            <ErrorMessage 
+              message={error}
+              type="error"
+              errorDetails={errorDetails}
+              onRetry={handleRetry}
+              onDismiss={() => {
+                setError(null);
+                setErrorDetails(null);
+              }}
+            />
+          </div>
           <button 
             onClick={() => router.push("/")} 
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
+            className="mt-8 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
           >
             Return Home
           </button>
@@ -447,9 +500,10 @@ export default function NFTViewer() {
       <Layout>
         <div className="text-center py-20">
           <h2 className="text-2xl mb-4">NFT Not Found</h2>
+          <p className="text-gray-400 mb-6">We couldn't find information for NFT #{id}</p>
           <button 
             onClick={() => router.push("/")} 
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg"
           >
             Return Home
           </button>
@@ -500,15 +554,12 @@ export default function NFTViewer() {
               {/* Image column */}
               <div className="md:w-1/2">
                 {imageUrl && (
-                  <img
+                  <ProgressiveImage
                     src={imageUrl}
                     alt={nftName}
                     className="w-full rounded-lg border-2 border-purple-500 shadow-lg"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://placehold.co/400x400/3f1f5f/ffffff?text=SOLARA+NFT';
-                      console.log('Image load error');
-                    }}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageLoaded(true)}
                   />
                 )}
               </div>
