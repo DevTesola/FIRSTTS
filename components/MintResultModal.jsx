@@ -40,7 +40,7 @@ export default function MintResultModal({ result, onClose }) {
   if (!result) return null;
   
   const { metadata, filename } = result;
-  
+  const formattedId = String(filename).padStart(4, '0');
   // Extract tier information
   let tier = "No information";
   if (metadata.attributes && Array.isArray(metadata.attributes)) {
@@ -74,7 +74,7 @@ export default function MintResultModal({ result, onClose }) {
   
   // Create tweet text with proper links to Solscan, Magic Eden and tesola.xyz
   const tweetText = encodeURIComponent(
-    `I just minted SOLARA #${filename} – ${tier} tier from the GEN:0 collection! 🚀\n\n` +
+    `I just minted SOLARA #${formattedId} – ${tier} tier from the GEN:0 collection! 🚀\n\n` +
     `View on Solscan: ${solscanUrl}\n` +
     `View on Magic Eden: ${magicEdenUrl}\n` +
     `Visit: ${tesolaUrl}\n\n` +
@@ -179,7 +179,7 @@ export default function MintResultModal({ result, onClose }) {
       <div className="bg-gray-900 rounded-xl max-w-lg w-full p-6 shadow-2xl">
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-white mb-2">
-            Congratulations! SOLARA #{filename} Minted!
+            Congratulations! SOLARA #{formattedId} Minted!
           </h2>
           <p className="text-purple-300 text-lg font-semibold">{metadata.name || `SOLARA #${filename}`}</p>
           <p className="text-gray-400">Tier: {tier}</p>

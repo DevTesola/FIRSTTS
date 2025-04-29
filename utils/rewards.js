@@ -100,7 +100,7 @@ export function checkNftRewardStatus(rewardHistory, nftId) {
 export function createShareUrl(platform, data) {
   const { nftId, tier, mintAddress, txSignature } = data || {};
   const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
-  
+  const formattedId = nftId ? String(nftId).padStart(4, '0') : "";
   // 블록체인 Explorer URL 생성
   const solscanUrl = mintAddress 
     ? `https://solscan.io/token/${mintAddress}?cluster=${network}`
@@ -125,7 +125,7 @@ export function createShareUrl(platform, data) {
   let shareText;
   if (nftId && tier) {
     // NFT 정보가 있는 경우
-    shareText = `I just minted SOLARA #${nftId} – ${tier} tier! 🚀\n\n` +
+    shareText = `I just minted SOLARA #${formattedId} – ${tier} tier! 🚀\n\n` +
               `View on Solscan: ${solscanUrl}\n` +
               `View on Magic Eden: ${magicEdenUrl}\n` +
               `Visit: ${tesolaUrl}\n\n`;

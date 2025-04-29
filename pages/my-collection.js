@@ -250,15 +250,24 @@ export default function MyCollection() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentNFTs.map((nft) => (
+              {currentNFTs.map((nft) => {
+                // Format NFT name to ensure 4-digit ID display
+                if (nft.name && nft.name.includes('#')) {
+                  nft.name = nft.name.replace(/#(\d+)/, (match, id) => 
+                    `#${String(id).padStart(4, '0')}`
+                  );
+                }
+                
+                return (
                   <NFTCard 
                     key={nft.mint} 
                     nft={nft} 
                     onClick={() => handleNFTClick(nft)}
                     showActions={true}
                   />
-                ))}
-              </div>
+                );
+              })}
+            </div>
             )}
             
             {/* 페이지네이션 컨트롤 */}

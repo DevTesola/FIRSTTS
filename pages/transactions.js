@@ -154,7 +154,9 @@ export default function Transactions() {
     const tx = transactions.find(t => t.signature === txSignature);
     const mintAddress = tx?.nftMint || '';
     const nftName = tx?.nftName || 'SOLARA NFT';
-    
+    const formattedNftName = nftName.replace(/#(\d+)/, (match, id) => {
+      return `#${String(id).padStart(4, '0')}`;
+    });
     // 네트워크 설정
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
     
@@ -171,7 +173,7 @@ export default function Transactions() {
       const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
       
       shareText = encodeURIComponent(
-        `Check out my SOLARA NFT: ${nftName} 🚀\n\n` +
+        `Check out my SOLARA NFT: ${formattedNftName} 🚀\n\n` +
         `View on Solscan: ${solscanTxUrl}\n` +
         `View on Magic Eden: ${magicEdenUrl}\n` +
         `Visit: ${tesolaUrl}\n\n` +
@@ -268,7 +270,9 @@ export default function Transactions() {
     const tx = transactions.find(t => t.signature === txSignature);
     const mintAddress = tx?.nftMint || '';
     const nftName = tx?.nftName || 'SOLARA NFT';
-    
+    const formattedNftName = nftName.replace(/#(\d+)/, (match, id) => {
+      return `#${String(id).padStart(4, '0')}`;
+    });
     // 네트워크 설정
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
     
@@ -290,7 +294,7 @@ export default function Transactions() {
       const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
       
       shareText = encodeURIComponent(
-        `Check out my SOLARA NFT: ${nftName} 🚀\n\n` +
+        `Check out my SOLARA NFT: ${formattedNftName} 🚀\n\n` +
         `View on Solscan: ${solscanTxUrl}\n` +
         `View on Magic Eden: ${magicEdenUrl}\n` +
         `Visit: ${tesolaUrl}\n\n` +

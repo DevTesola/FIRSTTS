@@ -515,9 +515,10 @@ export default function NFTViewer() {
   // 필요한 데이터 추출
   const tier = getTier();
   const imageUrl = getImageUrl();
-  const nftName = data?.name || `SOLARA #${id}`;
-  const description = data?.description || `SOLARA NFT #${id} - ${tier} tier`;
-  const tesolaUrl = `https://tesola.xyz/solara/${id}`;
+  const formattedId = String(id).padStart(4, '0');
+  const nftName = data?.name || `SOLARA #${formattedId}`;
+  const description = data?.description || `SOLARA NFT #${formattedId} - ${tier} tier`;
+  const tesolaUrl = `https://tesola.xyz/solara/${id}`; 
   const mintAddress = getMintAddress();
   const solscanUrl = createSolscanUrl(mintAddress);
   const magicEdenUrl = createMagicEdenUrl(mintAddress);

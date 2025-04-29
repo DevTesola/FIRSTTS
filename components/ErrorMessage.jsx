@@ -4,22 +4,22 @@ import React, { useState } from "react";
 import { useAppState } from "../pages/_app";
 
 /**
- * 사용자 친화적인 오류 메시지 컴포넌트
- * - 다양한 오류 유형 지원 (error, warning, info, success)
- * - 자동 해결 방법 제안
- * - 상세 정보 토글 기능
- * - 재시도 및 해제 기능
- * - 자동 타임아웃 옵션
+ * User-friendly error message component
+ * - Supports various error types (error, warning, info, success)
+ * - Suggests auto-resolution methods
+ * - Toggle for detailed information
+ * - Retry and dismiss functionality
+ * - Auto-timeout option
  * 
- * @param {string} message - 오류 메시지
- * @param {string} type - 오류 유형 (error, warning, info, success)
- * @param {function} onRetry - 재시도 콜백 함수 (제공된 경우 재시도 버튼 표시)
- * @param {function} onDismiss - 닫기 콜백 함수 (제공된 경우 닫기 버튼 표시)
- * @param {object} errorDetails - 상세 오류 정보 (개발자 모드에서만 표시)
- * @param {boolean} autoClose - 자동으로 닫힐지 여부
- * @param {number} autoCloseTime - 자동으로 닫히는 시간 (밀리초)
- * @param {string} className - 추가 CSS 클래스
- * @param {React.ReactNode} children - 추가 컨텐츠
+ * @param {string} message - Error message
+ * @param {string} type - Error type (error, warning, info, success)
+ * @param {function} onRetry - Retry callback function (shows retry button if provided)
+ * @param {function} onDismiss - Close callback function (shows close button if provided)
+ * @param {object} errorDetails - Detailed error info (shown only in dev mode)
+ * @param {boolean} autoClose - Whether to close automatically
+ * @param {number} autoCloseTime - Auto-close time in milliseconds
+ * @param {string} className - Additional CSS classes
+ * @param {React.ReactNode} children - Additional content
  */
 export default function ErrorMessage({ 
   message, 
@@ -119,23 +119,23 @@ export default function ErrorMessage({
     
     // 오류 메시지 패턴에 따른 해결책
     if (typeof message === 'string') {
-      if (message.includes("wallet") || message.includes("지갑")) {
-        return "지갑이 연결되어 있고 잠금 해제되어 있는지 확인하세요. 문제가 지속되면 페이지를 새로고침하세요.";
-      } else if (message.includes("insufficient") || message.includes("balance") || message.includes("잔액")) {
-        return "지갑에 이 트랜잭션을 완료하기에 충분한 SOL이 없습니다. 더 많은 자금을 추가하고 다시 시도하세요.";
-      } else if (message.includes("network") || message.includes("timeout") || message.includes("네트워크") || message.includes("시간 초과")) {
-        return "네트워크 문제가 감지되었습니다. 인터넷 연결을 확인하고 잠시 후 다시 시도해보세요.";
-      } else if (message.includes("rejected") || message.includes("cancelled") || message.includes("거부") || message.includes("취소")) {
-        return "트랜잭션이 거부되거나 취소되었습니다. 계속하려면 지갑에서 트랜잭션을 승인하세요.";
-      } else if (message.includes("Failed to fetch") || message.includes("no response") || message.includes("가져오기 실패") || message.includes("응답 없음")) {
-        return "서버 연결 문제가 발생했습니다. 인터넷 연결을 확인하거나 나중에 다시 시도하세요.";
-      } else if (message.includes("mint") || message.includes("NFT") || message.includes("민팅")) {
-        return "NFT 민팅 중 문제가 발생했습니다. 지갑 잔액을 확인하고 다시 시도하세요. 문제가 지속되면 다른 지갑을 사용해보세요.";
+        if (message.includes("wallet")) {
+          return "Check that your wallet is connected and unlocked. If the problem persists, refresh the page.";
+        } else if (message.includes("insufficient") || message.includes("balance")) {
+          return "You don't have enough SOL in your wallet to complete this transaction. Please add more funds and try again.";
+        } else if (message.includes("network") || message.includes("timeout")) {
+          return "Network issues detected. Check your internet connection and try again later.";
+        } else if (message.includes("rejected") || message.includes("cancelled")) {
+          return "Transaction was rejected or cancelled. Please approve the transaction in your wallet to continue.";
+        } else if (message.includes("Failed to fetch") || message.includes("no response")) {
+          return "Server connection issue occurred. Check your internet connection or try again later.";
+        } else if (message.includes("mint") || message.includes("NFT")) {
+          return "Issue occurred during NFT minting. Check your wallet balance and try again. If the problem persists, try using a different wallet.";
+        }
       }
-    }
-    
-    return "이 오류가 계속되면 Telegram 채널을 통해 지원팀에 문의하세요.";
-  };
+      
+      return "If this error persists, please contact support through our Telegram channel.";
+    };
 
   return (
     <div className={`rounded-lg ${bgColor} border ${borderColor} p-4 ${className}`}>

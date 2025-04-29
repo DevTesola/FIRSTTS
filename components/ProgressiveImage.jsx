@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from "react";
 
 /**
- * 점진적 로딩을 지원하는 이미지 컴포넌트
+ * Progressive loading image component
  * 
- * @param {string} src - 이미지 URL
- * @param {string} alt - 이미지 대체 텍스트
- * @param {string} placeholder - 로딩 중 표시할 저해상도 이미지 URL (선택 사항)
- * @param {function} onLoad - 이미지 로드 완료 시 호출할 콜백 함수 (선택 사항)
- * @param {function} onError - 이미지 로드 실패 시 호출할 콜백 함수 (선택 사항)
- * @param {Object} props - 기타 이미지 속성
+ * @param {string} src - Image URL
+ * @param {string} alt - Image alt text
+ * @param {string} placeholder - Low-res placeholder image URL (optional)
+ * @param {function} onLoad - Callback function when image loading completes (optional)
+ * @param {function} onError - Callback function when image loading fails (optional)
+ * @param {Object} props - Other image attributes
  */
 export default function ProgressiveImage({
   src,
@@ -94,7 +94,7 @@ export default function ProgressiveImage({
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <p className="text-xs text-white">이미지를 불러올 수 없습니다</p>
+            <p className="text-xs text-white">Unable to load image</p>
           </div>
         </div>
       </div>
