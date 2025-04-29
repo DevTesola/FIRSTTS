@@ -1,10 +1,11 @@
-// pages/transactions.js
-import { useEffect, useState } from 'react';
+// pages/transactions.js - 최종 수정본
+import { useEffect, useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import Layout from '../components/Layout';
 import dynamic from 'next/dynamic';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import ErrorMessage from '../components/ErrorMessage';
+import StakingComponent from '../components/StakingComponent';
 
 // Dynamic loading of wallet button
 const WalletMultiButton = dynamic(
@@ -27,6 +28,11 @@ export default function Transactions() {
   const [telegramLoading, setTelegramLoading] = useState({});
   const [rewardHistory, setRewardHistory] = useState([]);
   const [claimSuccess, setClaimSuccess] = useState(false);
+  
+  // 스테이킹 관련 상태 추가
+  const [selectedNFT, setSelectedNFT] = useState(null);
+  const [showStakingModal, setShowStakingModal] = useState(false);
+  const [stakingSuccess, setStakingSuccess] = useState(false);
 
   // 트랜잭션 정보 가져오기
   useEffect(() => {
@@ -82,7 +88,7 @@ export default function Transactions() {
   }, [publicKey, connected]);
 
   // 개선된 보상 확인 함수
-  const hasReceivedReward = (txSignature, rewardType) => {
+  const hasReceivedReward = useCallback((txSignature, rewardType) => {
     if (!rewardHistory || !rewardHistory.length) {
       return false;
     }
@@ -124,10 +130,10 @@ export default function Transactions() {
     return relatedRewards.some(reward => 
       reward.reward_type === rewardType
     );
-  };
+  }, [rewardHistory]);
 
   // List handler function
-  const handleList = async (mintAddress, name) => {
+  const handleList = (mintAddress, name) => {
     if (!mintAddress) {
       alert("NFT mint address not found");
       return;
@@ -137,9 +143,56 @@ export default function Transactions() {
     window.open(`https://magiceden.io/sell/devnet/${mintAddress}`, '_blank');
   };
 
-  // Staking button handler
-  const handleStake = (txSignature) => {
-    alert("Staking feature is under development. Coming soon!");
+  // 스테이킹 핸들러 추가
+  const handleStake = (txSignature, nftMint, nftName) => {
+    if (!connected || !publicKey) {
+      alert("Please connect your wallet to stake NFTs");
+      return;
+    }
+    
+    if (!nftMint) {
+      alert("Cannot stake this transaction as no NFT mint was found");
+      return;
+    }
+    
+    // Set the selected NFT and show staking modal
+    setSelectedNFT({
+      mint: nftMint,
+      name: nftName || `SOLARA NFT`,
+      // We don't have the image URL in this context, but it can be fetched in the modal
+      // or displayed with a placeholder
+      image: '/placeholder-nft.jpg'
+    });
+    
+    setShowStakingModal(true);
+  };
+  
+  // 스테이킹 성공 핸들러 추가
+  const handleStakingSuccess = (result) => {
+    // Show success message
+    setStakingSuccess(true);
+    
+    // Hide success message after 5 seconds
+    setTimeout(() => {
+      setStakingSuccess(false);
+    }, 5000);
+    
+    // Close modal
+    setShowStakingModal(false);
+    
+    // Refresh transactions/staking status
+    // This could refetch transaction data or reload the page
+    handleRetry();
+  };
+  
+  // 스테이킹 오류 핸들러 추가
+  const handleStakingError = (error) => {
+    console.error("Staking error:", error);
+    setError(`Failed to stake NFT: ${error.message}`);
+    setErrorDetails(error.toString());
+    
+    // Close modal
+    setShowStakingModal(false);
   };
 
   // 개선된 트윗 공유 핸들러
@@ -545,8 +598,19 @@ export default function Transactions() {
           <div className="mb-6">
             <ErrorMessage 
               message="Rewards claimed successfully! TESOLA tokens will be sent to your wallet soon."
-              type="info"
+              type="success"
               onDismiss={() => setClaimSuccess(false)}
+            />
+          </div>
+        )}
+        
+        {/* 스테이킹 성공 메시지 */}
+        {stakingSuccess && (
+          <div className="mb-6">
+            <ErrorMessage 
+              message="NFT staked successfully! You'll receive TESOLA rewards based on your staking period."
+              type="success"
+              onDismiss={() => setStakingSuccess(false)}
             />
           </div>
         )}
@@ -625,7 +689,7 @@ export default function Transactions() {
                 </svg>
                 <p className="text-xl mb-4">No transactions found</p>
                 <button
-                  onClick={() => router.push('/')}
+                  onClick={() => window.location.href = '/'}
                   className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white"
                 >
                   Make Your First Transaction
@@ -650,14 +714,14 @@ export default function Transactions() {
                     );
                     const rewardAmount = txRewards.reduce((sum, r) => sum + r.amount, 0);
                     
-                    // Check if already shared on Twitter or Telegram using separate functions
-                    const tweetShared = checkTweetShared(tx.signature);
-                    const telegramShared = checkTelegramShared(tx.signature);
+                    // Check if already shared on Twitter or Telegram
+                    const tweetShared = hasReceivedReward(tx.signature, 'tweet');
+                    const telegramShared = hasReceivedReward(tx.signature, 'telegram_share');
                     
                     return (
                       <tr key={tx.signature} className="hover:bg-gray-700">
                         <td className="px-4 py-3 whitespace-nowrap">
-                          {new Date(tx.timestamp).toLocaleDateString()}
+                          {tx.timestamp ? new Date(tx.timestamp).toLocaleDateString() : 'Unknown'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <a href={`https://solscan.io/tx/${tx.signature}?cluster=devnet`} target="_blank" rel="noopener noreferrer"
@@ -694,7 +758,7 @@ export default function Transactions() {
 
                             {/* Staking button */}
                             <button 
-                              onClick={() => handleStake(tx.signature)}
+                              onClick={() => handleStake(tx.signature, tx.nftMint, tx.nftName)}
                               className="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-xs"
                             >
                               Stake
@@ -738,6 +802,39 @@ export default function Transactions() {
           </div>
         )}
       </div>
+      
+      {/* 스테이킹 모달 */}
+      {showStakingModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl max-w-md w-full p-6 relative">
+            <button 
+              onClick={() => setShowStakingModal(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white p-2"
+              aria-label="Close staking modal"
+            >
+              ✕
+            </button>
+            
+            <h2 className="text-2xl font-bold mb-4">Stake Your SOLARA NFT</h2>
+            
+            <StakingComponent 
+              nft={selectedNFT}
+              onSuccess={handleStakingSuccess}
+              onError={handleStakingError}
+            />
+          </div>
+        </div>
+      )}
+      {/* 스테이킹 성공 메시지 */}
+{stakingSuccess && (
+  <div className="mb-6">
+    <ErrorMessage 
+      message="NFT staked successfully! You'll receive TESOLA rewards based on your staking period."
+      type="success"
+      onDismiss={() => setStakingSuccess(false)}
+    />
+  </div>
+)}
     </Layout>
   );
 }

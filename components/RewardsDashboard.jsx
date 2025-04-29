@@ -19,6 +19,12 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
   const [error, setError] = useState(null);
   const [claimLoading, setClaimLoading] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false);
+  const [activeStakes, setActiveStakes] = useState([]);
+  const [stakingStats, setStakingStats] = useState({
+    totalStaked: 0,
+    projectedRewards: 0,
+    earnedToDate: 0
+  });
 
   // 리워드 데이터 가져오기
   const fetchRewards = useCallback(async () => {
@@ -41,6 +47,33 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
     } finally {
       setLoading(false);
     }
+  }, [publicKey, connected]);
+
+  // 스테이킹 데이터 가져오기
+  useEffect(() => {
+    const fetchStakingData = async () => {
+      if (!connected || !publicKey) return;
+      
+      try {
+        const res = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}`);
+        if (!res.ok) {
+          console.error('Failed to fetch staking stats');
+          return;
+        }
+        
+        const { activeStakes, stats } = await res.json();
+        setActiveStakes(activeStakes || []);
+        setStakingStats(stats || {
+          totalStaked: 0,
+          projectedRewards: 0,
+          earnedToDate: 0
+        });
+      } catch (err) {
+        console.error('Error fetching staking data:', err);
+      }
+    };
+    
+    fetchStakingData();
   }, [publicKey, connected]);
 
   // 지갑 연결 시 리워드 데이터 가져오기
@@ -268,6 +301,107 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
               </div>
             )}
             
+            {/* 스테이킹 섹션 */}
+            {activeStakes.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-2">NFT Staking</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  {/* Total NFTs Staked */}
+                  <div className="bg-gray-800 p-4 rounded-lg text-center">
+                    <p className="text-gray-400 text-sm mb-1">NFTs Staked</p>
+                    <div className="flex justify-center items-baseline">
+                      <span className="text-3xl font-bold text-indigo-400">
+                        {stakingStats.totalStaked}
+                      </span>
+                      <span className="text-indigo-500 ml-1">NFTs</span>
+                    </div>
+                  </div>
+                  
+                  {/* Projected Rewards */}
+                  <div className="bg-gray-800 p-4 rounded-lg text-center">
+                    <p className="text-gray-400 text-sm mb-1">Projected Rewards</p>
+                    <div className="flex justify-center items-baseline">
+                      <span className="text-3xl font-bold text-blue-400">
+                        {stakingStats.projectedRewards}
+                      </span>
+                      <span className="text-blue-500 ml-1">TESOLA</span>
+                    </div>
+                  </div>
+                  
+                  {/* Earned To Date */}
+                  <div className="bg-gray-800 p-4 rounded-lg text-center">
+                    <p className="text-gray-400 text-sm mb-1">Earned To Date</p>
+                    <div className="flex justify-center items-baseline">
+                      <span className="text-3xl font-bold text-green-400">
+                        {stakingStats.earnedToDate}
+                      </span>
+                      <span className="text-green-500 ml-1">TESOLA</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Active Stakes */}
+                <div className="bg-gray-800 rounded-lg overflow-hidden">
+                  <div className="p-4 bg-indigo-900/30 border-b border-indigo-800">
+                    <h4 className="font-medium">Active Staking Positions</h4>
+                  </div>
+                  
+                  <div className="divide-y divide-gray-700">
+                    {activeStakes.map(stake => {
+                      // Calculate days remaining
+                      const releaseDate = new Date(stake.release_date);
+                      const now = new Date();
+                      const daysRemaining = Math.max(0, Math.ceil((releaseDate - now) / (1000 * 60 * 60 * 24)));
+                      
+                      return (
+                        <div key={stake.id} className="p-4 hover:bg-gray-750 transition-colors">
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="font-medium">{stake.nft_name || `SOLARA #${stake.mint_address.slice(0, 4)}`}</div>
+                            <div className="text-sm text-blue-400">{`${daysRemaining} days remaining`}</div>
+                          </div>
+                          
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-gray-400">Staking Period:</span>
+                            <span>{stake.staking_period} days</span>
+                          </div>
+                          
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-gray-400">NFT Tier:</span>
+                            <span className={
+                              stake.nft_tier === 'Legendary' ? 'text-yellow-400' :
+                              stake.nft_tier === 'Rare' ? 'text-purple-400' :
+                              stake.nft_tier === 'Uncommon' ? 'text-blue-400' :
+                              'text-green-400'
+                            }>{stake.nft_tier}</span>
+                          </div>
+                          
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-400">Total Rewards:</span>
+                            <span className="text-yellow-400">{stake.total_rewards} TESOLA</span>
+                          </div>
+                          
+                          {/* Progress bar */}
+                          <div className="mt-3">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Progress</span>
+                              <span>{stake.progress_percentage.toFixed(1)}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-indigo-500 to-blue-500" 
+                                style={{width: `${stake.progress_percentage}%`}}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* 청구 가능한 리워드 목록 */}
             {rewardData.claimableRewards && rewardData.claimableRewards.length > 0 ? (
               <div className="mb-6">
@@ -322,7 +456,7 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
             
             {/* 리워드 획득 방법 안내 */}
             <div className="bg-purple-900/30 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-purple-300 mb-2 flex items-center">
+              <h3 className="font-medium mb-2 text-purple-300 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
@@ -347,7 +481,7 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
                 </li>
                 <li className="flex items-start">
                   <span className="text-yellow-500 mr-2">•</span>
-                  <span>Stake your NFTs (coming soon): <strong>+10 TESOLA per week</strong></span>
+                  <span>Stake your NFTs: <strong>+10 TESOLA per week</strong></span>
                 </li>
               </ul>
             </div>
