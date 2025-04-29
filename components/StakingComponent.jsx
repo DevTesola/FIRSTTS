@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import ErrorMessage from "./ErrorMessage";
@@ -22,6 +22,9 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
   const [isStaked, setIsStaked] = useState(false);
   const [stakingInfo, setStakingInfo] = useState(null);
   const [debugInfo, setDebugInfo] = useState(null);
+  const [isCheckingOwnership, setIsCheckingOwnership] = useState(false);
+  const [verifiedOwnership, setVerifiedOwnership] = useState(false);
+  const [transactionTimeoutId, setTransactionTimeoutId] = useState(null);
   
   const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
 
@@ -51,16 +54,40 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
     setEstimatedRewards(dailyRate * days);
   }, [nft, stakingPeriod]);
   
-  // Check if NFT is already staked
+  // Check if NFT is already staked and verify ownership
   useEffect(() => {
     const checkStakingStatus = async () => {
       if (!connected || !publicKey || !nft?.mint) return;
       
       try {
+        setIsCheckingOwnership(true);
+        
+        // First verify NFT ownership
+        const connection = new Connection(SOLANA_RPC_ENDPOINT, "confirmed");
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+          publicKey,
+          { mint: new PublicKey(nft.mint) }
+        );
+        
+        // Check if the user owns this NFT
+        const ownsNFT = tokenAccounts.value.length > 0 && 
+                        tokenAccounts.value.some(account => 
+                          account.account.data.parsed.info.tokenAmount.uiAmount === 1);
+        
+        setVerifiedOwnership(ownsNFT);
+        
+        if (!ownsNFT) {
+          console.warn("User does not own this NFT or it's already staked elsewhere");
+          setIsCheckingOwnership(false);
+          return;
+        }
+        
+        // Now check if it's already staked in our system
         const response = await fetch(`/api/getStakingInfo?wallet=${publicKey.toString()}&mintAddress=${nft.mint}`);
         if (!response.ok) {
           const errorData = await response.json();
           console.error("Error checking staking status:", errorData);
+          setIsCheckingOwnership(false);
           return;
         }
         
@@ -72,24 +99,46 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
           setIsStaked(false);
           setStakingInfo(null);
         }
+        
+        setIsCheckingOwnership(false);
       } catch (err) {
         console.error("Failed to check staking status:", err);
+        setIsCheckingOwnership(false);
       }
     };
     
     checkStakingStatus();
   }, [connected, publicKey, nft]);
 
-  // Stake NFT function
+  // Clear any pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (transactionTimeoutId) {
+        clearTimeout(transactionTimeoutId);
+      }
+    };
+  }, [transactionTimeoutId]);
+
+  // Stake NFT function with improved error handling and timeout management
   const handleStake = async () => {
     if (!connected || !publicKey || !nft?.mint) {
       setError("Please connect your wallet and select an NFT to stake.");
       return;
     }
     
+    if (!verifiedOwnership && !isCheckingOwnership) {
+      setError("You don't own this NFT or it might be staked elsewhere.");
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setDebugInfo(null);
+    
+    // Clear any existing timeouts
+    if (transactionTimeoutId) {
+      clearTimeout(transactionTimeoutId);
+    }
     
     try {
       // Step 1: Prepare staking transaction
@@ -125,7 +174,7 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
       
       // Step 2: Sign transaction
       console.log("Signing transaction...");
-      const connection = new Connection(SOLANA_RPC_ENDPOINT);
+      const connection = new Connection(SOLANA_RPC_ENDPOINT, "confirmed");
       const transaction = Transaction.from(Buffer.from(transactionBase64, "base64"));
       
       if (!transaction.feePayer) {
@@ -141,7 +190,7 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         throw new Error(`Failed to sign transaction: ${signError.message}`);
       }
       
-      // Step 3: Send signed transaction
+      // Step 3: Send signed transaction with timeout
       console.log("Sending transaction...");
       const rawTransaction = signedTransaction.serialize();
       let txSignature;
@@ -160,18 +209,57 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         throw new Error(`Failed to send transaction: ${sendError.message}`);
       }
       
-      // Step 4: Confirm transaction
+      // Step 4: Set a timeout for transaction confirmation
+      const timeoutPromise = new Promise((_, reject) => {
+        const id = setTimeout(() => {
+          reject(new Error("Transaction confirmation timed out after 30 seconds"));
+        }, 30000);
+        setTransactionTimeoutId(id);
+      });
+      
+      // Step 5: Confirm transaction with timeout
       try {
         console.log("Confirming transaction...");
-        await connection.confirmTransaction(txSignature, "confirmed");
+        await Promise.race([
+          connection.confirmTransaction(txSignature, "confirmed"),
+          timeoutPromise
+        ]);
+        
+        // Clear timeout if confirmation succeeds
+        if (transactionTimeoutId) {
+          clearTimeout(transactionTimeoutId);
+          setTransactionTimeoutId(null);
+        }
+        
         console.log("Transaction confirmed");
       } catch (confirmError) {
         console.error("Confirmation error:", confirmError);
-        // Continue anyway, as the transaction might still be valid
-        console.log("Continuing despite confirmation error...");
+        
+        // Clear timeout if we got an error
+        if (transactionTimeoutId) {
+          clearTimeout(transactionTimeoutId);
+          setTransactionTimeoutId(null);
+        }
+        
+        // Check transaction status before giving up
+        try {
+          const status = await connection.getSignatureStatus(txSignature);
+          console.log("Transaction status:", status);
+          
+          if (status.value && !status.value.err) {
+            console.log("Transaction appears successful despite confirmation error");
+          } else if (status.value && status.value.err) {
+            throw new Error(`Transaction failed: ${JSON.stringify(status.value.err)}`);
+          } else {
+            throw new Error("Transaction confirmation failed");
+          }
+        } catch (statusError) {
+          console.error("Error checking transaction status:", statusError);
+          throw confirmError; // Throw the original error
+        }
       }
       
-      // Step 5: Record staking in backend
+      // Step 6: Record staking in backend
       console.log("Recording staking...");
       const completeResponse = await fetch("/api/completeStaking", {
         method: "POST",
@@ -201,7 +289,16 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         if (errorData.stakingInfo) {
           setIsStaked(true);
           setStakingInfo(errorData.stakingInfo);
-          throw new Error(`This NFT is already staked. ${errorData.error}`);
+          
+          // Still report success even though there was an error response
+          if (onSuccess) {
+            onSuccess(errorData.stakingInfo);
+          }
+          
+          // Just show warning but don't throw
+          setLoading(false);
+          setError(`Note: ${errorData.error || "This NFT appears to be already staked"}`);
+          return;
         }
         
         throw new Error(errorData.error || "Failed to complete staking");
@@ -226,10 +323,16 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
       }
     } finally {
       setLoading(false);
+      
+      // Ensure timeout is cleared
+      if (transactionTimeoutId) {
+        clearTimeout(transactionTimeoutId);
+        setTransactionTimeoutId(null);
+      }
     }
   };
   
-  // Unstake NFT function
+  // Unstake NFT function with improved error handling
   const handleUnstake = async () => {
     if (!connected || !publicKey || !nft?.mint || !isStaked) {
       setError("Unable to unstake. Please check your wallet connection and NFT status.");
@@ -273,15 +376,59 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
       }
       
       // Sign and send transaction
-      const connection = new Connection(SOLANA_RPC_ENDPOINT);
+      const connection = new Connection(SOLANA_RPC_ENDPOINT, "confirmed");
       const transaction = Transaction.from(Buffer.from(transactionBase64, "base64"));
+      
+      if (!transaction.feePayer) {
+        transaction.feePayer = publicKey;
+      }
+      
       const signedTransaction = await signTransaction(transaction);
       
+      // Set a timeout for transaction confirmation
+      const timeoutPromise = new Promise((_, reject) => {
+        const id = setTimeout(() => {
+          reject(new Error("Transaction confirmation timed out after 30 seconds"));
+        }, 30000);
+        setTransactionTimeoutId(id);
+      });
+      
+      // Send transaction
       const signature = await connection.sendRawTransaction(
-        signedTransaction.serialize()
+        signedTransaction.serialize(),
+        {
+          skipPreflight: false,
+          preflightCommitment: 'confirmed'
+        }
       );
       
-      await connection.confirmTransaction(signature, "confirmed");
+      // Confirm transaction with timeout
+      try {
+        await Promise.race([
+          connection.confirmTransaction(signature, "confirmed"),
+          timeoutPromise
+        ]);
+        
+        // Clear timeout if confirmation succeeds
+        if (transactionTimeoutId) {
+          clearTimeout(transactionTimeoutId);
+          setTransactionTimeoutId(null);
+        }
+      } catch (confirmError) {
+        console.error("Confirmation error during unstaking:", confirmError);
+        
+        // Clear timeout if we got an error
+        if (transactionTimeoutId) {
+          clearTimeout(transactionTimeoutId);
+          setTransactionTimeoutId(null);
+        }
+        
+        // Check transaction status
+        const status = await connection.getSignatureStatus(signature);
+        if (!(status.value && !status.value.err)) {
+          throw new Error("Failed to confirm unstaking transaction");
+        }
+      }
       
       // Complete unstaking in backend
       const completeResponse = await fetch("/api/completeUnstaking", {
@@ -319,6 +466,12 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
       }
     } finally {
       setLoading(false);
+      
+      // Ensure timeout is cleared
+      if (transactionTimeoutId) {
+        clearTimeout(transactionTimeoutId);
+        setTransactionTimeoutId(null);
+      }
     }
   };
 
@@ -346,6 +499,10 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
             src={nft.image} 
             alt={nft.name} 
             className="w-14 h-14 rounded object-cover mr-3"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/placeholder-nft.jpg";
+            }}
           />
         )}
         <div>
@@ -354,10 +511,26 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         </div>
       </div>
       
+      {/* Verification Status */}
+      {isCheckingOwnership && (
+        <div className="mb-4 bg-blue-900/30 p-3 rounded-lg flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+          <p className="text-sm text-blue-300">Verifying NFT ownership...</p>
+        </div>
+      )}
+      
+      {!isCheckingOwnership && !verifiedOwnership && !isStaked && (
+        <div className="mb-4 bg-yellow-900/30 p-3 rounded-lg">
+          <p className="text-sm text-yellow-300">
+            We couldn't verify your ownership of this NFT. It might be staked elsewhere or not in your wallet.
+          </p>
+        </div>
+      )}
+      
       {error && (
         <ErrorMessage 
           message={error}
-          type="error"
+          type={error.includes("Note:") ? "info" : "error"}
           className="mb-4"
           onDismiss={() => setError(null)}
         />
@@ -427,7 +600,7 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
           <button
             onClick={handleUnstake}
             disabled={loading}
-            className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-h-[44px]"
           >
             {loading ? (
               <span className="flex items-center justify-center">
@@ -444,7 +617,7 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
           
           {new Date() < new Date(stakingInfo.release_date) && (
             <p className="text-xs text-center text-red-400 mt-2">
-              Warning: Early unstaking will incur a penalty.
+              Warning: Early unstaking will incur a penalty of approximately {Math.round(stakingInfo.total_rewards * 0.25)} TESOLA tokens.
             </p>
           )}
         </div>
@@ -460,6 +633,7 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
               value={stakingPeriod}
               onChange={(e) => setStakingPeriod(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-white"
+              disabled={!verifiedOwnership || loading}
             >
               <option value="7">7 days</option>
               <option value="30">30 days</option>
@@ -483,8 +657,8 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
           
           <button
             onClick={handleStake}
-            disabled={loading}
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || !verifiedOwnership}
+            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-h-[44px]"
           >
             {loading ? (
               <span className="flex items-center justify-center">
@@ -498,6 +672,12 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
               `Stake for ${stakingPeriod} days`
             )}
           </button>
+          
+          {!verifiedOwnership && !isCheckingOwnership && (
+            <p className="text-xs text-center text-red-400 mt-2">
+              You cannot stake this NFT because we couldn't verify your ownership.
+            </p>
+          )}
         </div>
       )}
       

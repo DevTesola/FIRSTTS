@@ -9,7 +9,7 @@ import { useAnalytics } from "./AnalyticsProvider";
  * 개선된 지갑 연결 가이드 컴포넌트
  * 사용자 친화적인 안내와 단계별 지침 제공
  */
-export default function WalletGuide() {
+export default function WalletGuide({ forceShow, onClose }) {
   const { publicKey, connected, wallet } = useWallet();
   const { trackEvent } = useAnalytics();
   const [showGuide, setShowGuide] = useState(false);
@@ -62,16 +62,24 @@ export default function WalletGuide() {
     }
   }, [connected, publicKey, getBalance]);
   
-  // 첫 방문 확인
+  // 첫 방문 확인 및 강제 표시 처리
   useEffect(() => {
-    const hasSeenGuide = localStorage.getItem("hasSeenWalletGuide");
-    
-    if (!hasSeenGuide && !connected) {
-      // 애널리틱스 이벤트 추적
-      trackEvent('wallet_guide_shown', { first_visit: true });
+    if (forceShow) {
+      // 강제 표시 옵션이 활성화된 경우 항상 표시
       setShowGuide(true);
+      // 애널리틱스 이벤트 추적
+      trackEvent('wallet_guide_shown', { forced: true });
+    } else {
+      // 기존 로직: 첫 방문 시에만 표시
+      const hasSeenGuide = localStorage.getItem("hasSeenWalletGuide");
+      
+      if (!hasSeenGuide && !connected) {
+        // 애널리틱스 이벤트 추적
+        trackEvent('wallet_guide_shown', { first_visit: true });
+        setShowGuide(true);
+      }
     }
-  }, [connected, trackEvent]);
+  }, [connected, trackEvent, forceShow]);
   
   // 연결 시 상태 업데이트
   useEffect(() => {
@@ -95,7 +103,12 @@ export default function WalletGuide() {
     
     // 애널리틱스 이벤트 추적
     trackEvent('wallet_guide_closed', { step });
-  }, [step, trackEvent]);
+    
+    // 외부에서 전달받은 onClose 콜백 실행
+    if (onClose) {
+      onClose();
+    }
+  }, [step, trackEvent, onClose]);
   
   // ESC 키 핸들러
   useEffect(() => {
