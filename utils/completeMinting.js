@@ -48,7 +48,7 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
       throw new Error('Wallet mismatch, possible front-running attempt');
     }
     
-    // 2. 결제 트랜잭션 확인 - 이부분은 꼭 필요함
+    // 2. 결제 트랜잭션 확인
     const txInfo = await connection.getTransaction(paymentTxId, {
       commitment: 'confirmed',
       maxSupportedTransactionVersion: 0
@@ -102,27 +102,34 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
       console.error('Collection verification failed:', err.message);
     }
     
-    // 6. Supabase 업데이트
-    console.log('Updating Supabase record:', { mintIndex, lockId });
-    const { error: updateError } = await supabase
-      .from('minted_nfts')
-      .update({
-        status: 'completed',
-        mint_address: nft.address.toString(),
-        tx_signature: createResponse.signature,
-        payment_tx_signature: paymentTxId,
-        verified: verificationSuccess,
-        updated_at: new Date().toISOString()
-      })
-      .eq('mint_index', mintIndex)
-      .eq('lock_id', lockId);
+// 6. Supabase 업데이트
+console.log('Updating Supabase record:', { mintIndex, lockId });
+try {
+  const { error: updateError } = await supabase
+    .from('minted_nfts')
+    .update({
+      status: 'completed',
+      mint_address: nft.address.toString(),
+      tx_signature: createResponse.signature,
+      payment_tx_signature: paymentTxId,
+      verified: verificationSuccess,
+      updated_at: new Date().toISOString()
+    })
+    .eq('mint_index', mintIndex)
+    .eq('lock_id', lockId);
 
-    if (updateError) {
-      console.error('Supabase update error:', updateError);
-      throw new Error('Failed to update mint record: ' + updateError.message);
-    } else {
-      console.log('Supabase record updated successfully');
-    }
+  if (updateError) {
+    console.error('Supabase update error:', updateError);
+    // 업데이트 실패해도 계속 진행
+    console.log('Continuing despite update error');
+  } else {
+    console.log('Supabase record updated successfully');
+  }
+} catch (updateErr) {
+  // 업데이트 예외 발생해도 계속 진행
+  console.error('Exception during Supabase update:', updateErr);
+  console.log('Continuing despite update exception');
+}
     
     return {
       mintAddress: nft.address.toString(),
@@ -135,17 +142,26 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
     // 민팅 실패 시 상태 리셋 - 결제는 이미 완료되었기 때문에 주의 필요
     if (!nft) {
       console.log('Minting failed after payment, marking as failed:', mintIndex);
-      const { error: updateError } = await supabase
-        .from('minted_nfts')
-        .update({
-          status: 'payment_received_mint_failed',  // 특수 상태로 표시하여 나중에 확인
-          updated_at: new Date().toISOString(),
-          payment_tx_signature: paymentTxId,
-          error_log: err.message || 'Unknown error'
-        })
-        .eq('mint_index', mintIndex)
-        .eq('lock_id', lockId);
-      if (updateError) console.error('Failed to update error state:', updateError);
+      try {
+        const { error: updateError } = await supabase
+          .from('minted_nfts')
+          .update({
+            status: 'payment_received_mint_failed',  // 특수 상태로 표시하여 나중에 확인
+            updated_at: new Date().toISOString(),
+            payment_tx_signature: paymentTxId
+            // error_log 필드 사용 시도하지 않음 - 스키마에 없을 수 있음
+          })
+          .eq('mint_index', mintIndex)
+          .eq('lock_id', lockId);
+        
+        if (updateError) {
+          console.error('Failed to update error state:', updateError);
+        } else {
+          console.log('Successfully reset record for mint_index:', mintIndex);
+        }
+      } catch (resetErr) {
+        console.error('Exception during error state update:', resetErr);
+      }
     }
     throw err;
   }

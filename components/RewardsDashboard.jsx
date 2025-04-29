@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import ErrorMessage from "./ErrorMessage";
+import { claimRewards } from "../utils/rewards";
 
 /**
- * TESOLA 리워드 대시보드 컴포넌트
+ * 개선된 TESOLA 리워드 대시보드 컴포넌트
  * 
  * @param {boolean} minimal - 최소화된 보기 모드 (기본: false)
  * @param {function} onClaim - 청구 버튼 클릭 시 호출할 콜백
+ * @param {string} className - 추가할 CSS 클래스
  */
 export default function RewardsDashboard({ minimal = false, onClaim, className = "" }) {
   const { publicKey, connected } = useWallet();
@@ -19,7 +21,7 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
   const [justClaimed, setJustClaimed] = useState(false);
 
   // 리워드 데이터 가져오기
-  const fetchRewards = async () => {
+  const fetchRewards = useCallback(async () => {
     if (!connected || !publicKey) return;
     
     setLoading(true);
@@ -39,12 +41,17 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
     } finally {
       setLoading(false);
     }
-  };
+  }, [publicKey, connected]);
 
   // 지갑 연결 시 리워드 데이터 가져오기
   useEffect(() => {
-    fetchRewards();
-  }, [publicKey, connected]);
+    if (connected && publicKey) {
+      fetchRewards();
+    } else {
+      // 지갑 연결이 끊기면 데이터 초기화
+      setRewardData(null);
+    }
+  }, [publicKey, connected, fetchRewards]);
 
   // 리워드 청구 핸들러
   const handleClaimRewards = async () => {
@@ -54,23 +61,7 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
     
     setClaimLoading(true);
     try {
-      const response = await fetch('/api/claimRewards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          wallet: publicKey.toString()
-        })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to claim rewards');
-      }
-      
-      // 청구 결과
-      const result = await response.json();
+      await claimRewards(publicKey.toString());
       
       // 리워드 데이터 업데이트
       setRewardData({
@@ -81,7 +72,10 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
       
       // 사용자 정의 콜백 호출
       if (onClaim) {
-        onClaim(result);
+        onClaim({ 
+          claimed: true, 
+          amount: rewardData.totalRewards 
+        });
       }
       
       // 청구 성공 메시지 표시
@@ -125,8 +119,17 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
           onClick={handleClaimRewards}
           disabled={claimLoading || !rewardData?.totalRewards}
           className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded-lg disabled:opacity-50 transition-colors"
+          aria-label="Claim all available TESOLA rewards"
         >
-          {claimLoading ? 'Processing...' : 'Claim All'}
+          {claimLoading ? (
+            <span className="flex items-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </span>
+          ) : 'Claim All'}
         </button>
       </div>
     );
@@ -291,6 +294,7 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
                     onClick={handleClaimRewards}
                     disabled={claimLoading || rewardData.totalRewards <= 0}
                     className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded-lg disabled:opacity-50 transition-colors flex items-center"
+                    aria-label="Claim all available TESOLA rewards"
                   >
                     {claimLoading ? (
                       <>

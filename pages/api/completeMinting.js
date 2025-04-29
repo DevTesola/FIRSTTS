@@ -27,14 +27,6 @@ export default async function handler(req, res) {
     res.status(200).json(result);
   } catch (err) {
     console.error('Complete minting API error:', err);
-    
-    // 상황에 따른 적절한 상태 코드 반환
-    if (err.message.includes('not found') || err.message.includes('not confirmed')) {
-      res.status(404).json({ error: err.message });
-    } else if (err.message.includes('mismatch') || err.message.includes('verification failed')) {
-      res.status(403).json({ error: err.message });
-    } else {
-      res.status(500).json({ error: err.message });
-    }
+    res.status(500).json({ error: err.message });
   }
 }

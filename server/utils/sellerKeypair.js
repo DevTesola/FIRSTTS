@@ -46,6 +46,8 @@ try {
     console.log('Secret key length:', secretKey.length);
     const keypair = Keypair.fromSecretKey(secretKey);
     console.log('Generated public key:', keypair.publicKey.toBase58());
+    
+    // 서명 테스트를 제거합니다 - 이것이 문제였습니다
   }
 } catch (err) {
   console.error('Failed to load mintWallet.json:', err.message);
