@@ -3,8 +3,11 @@
 import React, { useState } from "react";
 import ProgressiveImage from "./ProgressiveImage";
 
+// Set your custom IPFS gateway
+const CUSTOM_IPFS_GATEWAY = process.env.NEXT_PUBLIC_CUSTOM_IPFS_GATEWAY || "https://tesola.mypinata.cloud";
+
 /**
- * NFT card component
+ * NFT card component with custom IPFS gateway support
  * 
  * @param {Object} nft - NFT data object
  * @param {function} onClick - Click event handler
@@ -12,6 +15,34 @@ import ProgressiveImage from "./ProgressiveImage";
  */
 export default function NFTCard({ nft, onClick, showActions = false }) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  // Process image URL to use custom IPFS gateway
+  const processImageUrl = (url) => {
+    if (!url) return "";
+    
+    // Handle IPFS URLs with your custom gateway
+    if (url.startsWith('ipfs://')) {
+      return `${CUSTOM_IPFS_GATEWAY}/ipfs/${url.replace('ipfs://', '')}`;
+    }
+    
+    // Replace any other IPFS gateways with your custom one
+    const knownGateways = [
+      'https://ipfs.io/ipfs/',
+      'https://cloudflare-ipfs.com/ipfs/',
+      'https://gateway.pinata.cloud/ipfs/', 
+      'https://ipfs.infura.io/ipfs/',
+      'https://dweb.link/ipfs/'
+    ];
+    
+    for (const gateway of knownGateways) {
+      if (url.includes(gateway)) {
+        const cid = url.split(gateway)[1];
+        return `${CUSTOM_IPFS_GATEWAY}/ipfs/${cid}`;
+      }
+    }
+    
+    return url;
+  };
 
   // Extract needed info from NFT data
   const { image, name, mint, tier = "Unknown" } = nft;
@@ -38,6 +69,9 @@ export default function NFTCard({ nft, onClick, showActions = false }) {
   
   // Apply padding to display name
   const displayName = formatNftId(formattedName);
+  
+  // Process image URL to use custom gateway
+  const processedImageUrl = image ? processImageUrl(image) : "";
 
   return (
     <div 
@@ -46,7 +80,7 @@ export default function NFTCard({ nft, onClick, showActions = false }) {
     >
       <div className="relative aspect-square">
         <ProgressiveImage 
-          src={image} 
+          src={processedImageUrl} 
           alt={displayName}
           className="w-full h-full object-cover"
           onLoad={() => setIsImageLoaded(true)}

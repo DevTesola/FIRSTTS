@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 
+// Set your custom IPFS gateway as the only gateway
+const CUSTOM_IPFS_GATEWAY = process.env.NEXT_PUBLIC_CUSTOM_IPFS_GATEWAY || "https://tesola.mypinata.cloud";
+
 /**
- * Progressive loading image component
+ * Progressive loading image component with custom IPFS gateway
  * 
  * @param {string} src - Image URL
  * @param {string} alt - Image alt text
@@ -25,30 +28,62 @@ export default function ProgressiveImage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Process image URL to use custom IPFS gateway
+  const processImageUrl = (url) => {
+    if (!url) return "";
+    
+    // Handle IPFS URLs with your custom gateway
+    if (url.startsWith('ipfs://')) {
+      return `${CUSTOM_IPFS_GATEWAY}/ipfs/${url.replace('ipfs://', '')}`;
+    }
+    
+    // Replace any other IPFS gateways with your custom one
+    const knownGateways = [
+      'https://ipfs.io/ipfs/',
+      'https://cloudflare-ipfs.com/ipfs/',
+      'https://gateway.pinata.cloud/ipfs/', 
+      'https://ipfs.infura.io/ipfs/',
+      'https://dweb.link/ipfs/'
+    ];
+    
+    for (const gateway of knownGateways) {
+      if (url.includes(gateway)) {
+        const cid = url.split(gateway)[1];
+        return `${CUSTOM_IPFS_GATEWAY}/ipfs/${cid}`;
+      }
+    }
+    
+    return url;
+  };
+
   // 이미지 로드 상태 관리
   useEffect(() => {
     // 이미지가 없거나 이미 오류가 있는 경우 처리
     if (!src || error) return;
 
+    // Process source URL with custom gateway
+    const processedSrc = processImageUrl(src);
+    
     // 현재 로딩 중인 이미지와 다른 이미지가 제공된 경우 초기화
-    if (src !== imgSrc) {
+    if (processedSrc !== imgSrc) {
       setIsLoading(true);
-      setImgSrc(placeholder || src);
+      setImgSrc(placeholder || processedSrc);
     }
 
     // 실제 이미지 미리 로드
     const img = new Image();
-    img.src = src;
+    img.src = processedSrc;
 
     // 로드 완료 처리
     img.onload = () => {
-      setImgSrc(src);
+      setImgSrc(processedSrc);
       setIsLoading(false);
       if (onLoad) onLoad();
     };
 
     // 로드 실패 처리
     img.onerror = () => {
+      console.error(`Failed to load image: ${processedSrc}`);
       setError(true);
       setIsLoading(false);
       if (onError) onError();
@@ -74,10 +109,9 @@ export default function ProgressiveImage({
     
     const hue = hash % 360;
     const bgColor = `hsl(${hue}, 70%, 25%)`;
-    const textColor = "ffffff";
     
-    // placeholder.com API를 사용하여 동적 폴백 이미지 생성
-    return `https://placehold.co/400x400/${bgColor.replace('#', '')}/${textColor}?text=SOLARA+${nftId}`;
+    // SVG 데이터 URL 사용 (CORS 우회)
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='${encodeURIComponent(bgColor)}' /%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='24' text-anchor='middle' fill='white' dominant-baseline='middle'%3ESOLARA ${nftId}%3C/text%3E%3C/svg%3E`;
   };
 
   // 에러가 발생하면 폴백 이미지 표시

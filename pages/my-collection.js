@@ -8,7 +8,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import NFTCard from '../components/NFTCard';
 import EnhancedProgressiveImage from '../components/EnhancedProgressiveImage';
 import StakingComponent from '../components/StakingComponent';
-
+import { processNftArray } from '../utils/ipfs';
 // Layout 컴포넌트 동적 로딩
 const Layout = dynamic(() => import('../components/Layout'), { 
   ssr: false,

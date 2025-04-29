@@ -21,6 +21,7 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
   const [estimatedRewards, setEstimatedRewards] = useState(0);
   const [isStaked, setIsStaked] = useState(false);
   const [stakingInfo, setStakingInfo] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(null);
   
   const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
 
@@ -88,10 +89,12 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
     
     setLoading(true);
     setError(null);
+    setDebugInfo(null);
     
     try {
       // Step 1: Prepare staking transaction
-      const response = await fetch("/api/prepareStaking", {
+      console.log("Preparing staking transaction...");
+      const prepareResponse = await fetch("/api/prepareStaking", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,27 +106,73 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         }),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!prepareResponse.ok) {
+        const errorData = await prepareResponse.json();
+        console.error("Prepare staking error:", errorData);
+        
+        // Check if it's already staked
+        if (errorData.existingStake) {
+          setIsStaked(true);
+          setStakingInfo(errorData.existingStake);
+          throw new Error(`This NFT is already staked until ${new Date(errorData.existingStake.release_date).toLocaleDateString()}`);
+        }
+        
         throw new Error(errorData.error || "Failed to prepare staking transaction");
       }
       
-      const { transactionBase64 } = await response.json();
+      const { transactionBase64 } = await prepareResponse.json();
+      console.log("Got transaction base64, length:", transactionBase64.length);
       
       // Step 2: Sign transaction
+      console.log("Signing transaction...");
       const connection = new Connection(SOLANA_RPC_ENDPOINT);
       const transaction = Transaction.from(Buffer.from(transactionBase64, "base64"));
-      const signedTransaction = await signTransaction(transaction);
+      
+      if (!transaction.feePayer) {
+        transaction.feePayer = publicKey;
+      }
+      
+      let signedTransaction;
+      try {
+        signedTransaction = await signTransaction(transaction);
+        console.log("Transaction signed successfully");
+      } catch (signError) {
+        console.error("Signing error:", signError);
+        throw new Error(`Failed to sign transaction: ${signError.message}`);
+      }
       
       // Step 3: Send signed transaction
-      const signature = await connection.sendRawTransaction(
-        signedTransaction.serialize()
-      );
+      console.log("Sending transaction...");
+      const rawTransaction = signedTransaction.serialize();
+      let txSignature;
+      
+      try {
+        txSignature = await connection.sendRawTransaction(
+          rawTransaction,
+          {
+            skipPreflight: false,
+            preflightCommitment: 'confirmed'
+          }
+        );
+        console.log("Transaction sent:", txSignature);
+      } catch (sendError) {
+        console.error("Send transaction error:", sendError);
+        throw new Error(`Failed to send transaction: ${sendError.message}`);
+      }
       
       // Step 4: Confirm transaction
-      await connection.confirmTransaction(signature, "confirmed");
+      try {
+        console.log("Confirming transaction...");
+        await connection.confirmTransaction(txSignature, "confirmed");
+        console.log("Transaction confirmed");
+      } catch (confirmError) {
+        console.error("Confirmation error:", confirmError);
+        // Continue anyway, as the transaction might still be valid
+        console.log("Continuing despite confirmation error...");
+      }
       
       // Step 5: Record staking in backend
+      console.log("Recording staking...");
       const completeResponse = await fetch("/api/completeStaking", {
         method: "POST",
         headers: {
@@ -132,13 +181,29 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         body: JSON.stringify({
           wallet: publicKey.toString(),
           mintAddress: nft.mint,
-          txSignature: signature,
+          txSignature: txSignature,
           stakingPeriod: parseInt(stakingPeriod, 10)
         }),
       });
       
       if (!completeResponse.ok) {
         const errorData = await completeResponse.json();
+        console.error("Complete staking error:", errorData);
+        
+        // Save debug info for display
+        setDebugInfo({
+          txSignature,
+          responseStatus: completeResponse.status,
+          errorDetails: errorData
+        });
+        
+        // Check if it's a duplicate staking error but with success
+        if (errorData.stakingInfo) {
+          setIsStaked(true);
+          setStakingInfo(errorData.stakingInfo);
+          throw new Error(`This NFT is already staked. ${errorData.error}`);
+        }
+        
         throw new Error(errorData.error || "Failed to complete staking");
       }
       
@@ -298,6 +363,15 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         />
       )}
       
+      {debugInfo && (
+        <div className="bg-gray-700/70 p-3 rounded-lg mb-4 text-xs font-mono overflow-auto">
+          <h4 className="font-medium text-yellow-400 mb-1">Debug Information</h4>
+          <p>Transaction Signature: {debugInfo.txSignature}</p>
+          <p>Response Status: {debugInfo.responseStatus}</p>
+          <p>Error Details: {JSON.stringify(debugInfo.errorDetails, null, 2)}</p>
+        </div>
+      )}
+      
       {isStaked ? (
         // Staking info display
         <div className="mb-6">
@@ -331,12 +405,12 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
             <div className="mt-4">
               <div className="flex justify-between text-xs mb-1">
                 <span>Progress</span>
-                <span>{stakingInfo.progress_percentage.toFixed(1)}%</span>
+                <span>{stakingInfo.progress_percentage?.toFixed(1) || 0}%</span>
               </div>
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-purple-500 to-blue-500" 
-                  style={{width: `${stakingInfo.progress_percentage}%`}}
+                  style={{width: `${stakingInfo.progress_percentage || 0}%`}}
                 ></div>
               </div>
             </div>
@@ -345,7 +419,7 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
             <div className="mt-3 text-center">
               <p className="text-xs text-gray-400">Earned so far</p>
               <p className="text-lg font-bold text-yellow-400">
-                {stakingInfo.earned_so_far} TESOLA
+                {stakingInfo.earned_so_far || 0} TESOLA
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-// pages/api/prepareStaking.js
+// pages/api/prepareStaking.js - Fixed Version
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
 
@@ -23,6 +23,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Wallet address, mint address, and staking period are required' });
     }
     
+    console.log('Staking request received:', { wallet, mintAddress, stakingPeriod });
+    
     // Check if NFT is already staked
     const { data: existingStake, error: existingError } = await supabase
       .from('nft_staking')
@@ -34,47 +36,67 @@ export default async function handler(req, res) {
     
     if (existingError) {
       console.error('Error checking existing stake:', existingError);
-      return res.status(500).json({ error: 'Failed to check staking status' });
+      return res.status(500).json({ error: 'Failed to check staking status: ' + existingError.message });
     }
     
     if (existingStake) {
-      return res.status(400).json({ error: 'This NFT is already staked' });
+      console.log('NFT already staked:', existingStake);
+      return res.status(400).json({ error: 'This NFT is already staked', existingStake });
     }
+    
+    // Add additional logging
+    console.log('Preparing to create staking transaction');
     
     // Connect to Solana
     const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+    console.log('Connected to Solana RPC:', SOLANA_RPC_ENDPOINT);
     
     // In a real implementation, you would create a staking program transaction
     // Here we're simulating it with a small SOL transfer to a vault address
     // (representing the NFT staking deposit)
-    const walletPubkey = new PublicKey(wallet);
-    const stakingVaultPubkey = new PublicKey(STAKING_VAULT_ADDRESS);
-    
-    // Create a transaction (in production this would be your staking program instruction)
-    const transaction = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: walletPubkey,
-        toPubkey: stakingVaultPubkey,
-        lamports: 1000, // Minimal fee to record the staking action (0.000001 SOL)
-      })
-    );
-    
-    // Add recent blockhash and fee payer
-    transaction.feePayer = walletPubkey;
-    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-    
-    // Serialize transaction
-    const serializedTransaction = transaction.serialize({ 
-      requireAllSignatures: false,
-      verifySignatures: false 
-    });
-    
-    // Return the base64 encoded transaction for signing
-    return res.status(200).json({
-      transactionBase64: serializedTransaction.toString('base64')
-    });
+    try {
+      const walletPubkey = new PublicKey(wallet);
+      const stakingVaultPubkey = new PublicKey(STAKING_VAULT_ADDRESS);
+      
+      console.log('Creating transaction with pubkeys:', {
+        from: walletPubkey.toString(),
+        to: stakingVaultPubkey.toString()
+      });
+      
+      // Create a transaction (in production this would be your staking program instruction)
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: walletPubkey,
+          toPubkey: stakingVaultPubkey,
+          lamports: 1000, // Minimal fee to record the staking action (0.000001 SOL)
+        })
+      );
+      
+      // Add recent blockhash and fee payer
+      transaction.feePayer = walletPubkey;
+      const { blockhash } = await connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = blockhash;
+      
+      console.log('Transaction created with blockhash:', blockhash);
+      
+      // Serialize transaction
+      const serializedTransaction = transaction.serialize({ 
+        requireAllSignatures: false,
+        verifySignatures: false 
+      });
+      
+      console.log('Transaction serialized successfully, length:', serializedTransaction.length);
+      
+      // Return the base64 encoded transaction for signing
+      return res.status(200).json({
+        transactionBase64: serializedTransaction.toString('base64')
+      });
+    } catch (txError) {
+      console.error('Error creating transaction:', txError);
+      return res.status(500).json({ error: 'Failed to create staking transaction: ' + txError.message });
+    }
   } catch (error) {
     console.error('Error in prepareStaking API:', error);
-    return res.status(500).json({ error: 'Failed to prepare staking transaction' });
+    return res.status(500).json({ error: 'Failed to prepare staking transaction: ' + error.message });
   }
 }
