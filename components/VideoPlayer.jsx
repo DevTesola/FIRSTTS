@@ -12,33 +12,114 @@ import {
 
 export default function VideoPlayer({ src }) {
   const videoRef = useRef(null);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // 기본값을 true로 설정
   const [prevVolume, setPrevVolume] = useState(0.5);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const controlsTimeoutRef = useRef(null);
-
-  // Handle video visibility using Intersection Observer
+  
+  // 비디오 초기화 및 자동 재생 시도
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting && playing) {
-          video.pause();
-          setPlaying(false);
+    
+    console.log("Initializing video with source:", src);
+    
+    // 브라우저에서 자동 재생을 위한 설정
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    
+    const attemptPlay = () => {
+      console.log("Attempting to play video...");
+      
+      // 여러 번 재생 시도
+      const playAttempt = setInterval(() => {
+        const promise = video.play();
+        
+        if (promise !== undefined) {
+          promise.then(() => {
+            console.log("Autoplay successful");
+            setPlaying(true);
+            clearInterval(playAttempt);
+          }).catch(error => {
+            console.warn("Autoplay failed:", error);
+            // 계속 시도 (인터벌이 계속됨)
+          });
         }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(video);
-    return () => observer.unobserve(video);
-  }, [playing]);
+      }, 1000); // 1초마다 시도
+      
+      // 10초 후에는 시도 멈춤
+      setTimeout(() => {
+        clearInterval(playAttempt);
+      }, 10000);
+    };
+    
+    // 비디오 메타데이터 로드 완료 후 재생 시도
+    const handleLoadedMetadata = () => {
+      console.log("Video metadata loaded");
+      attemptPlay();
+    };
+    
+    // 비디오가 재생 가능한 상태가 되면 재생 시도
+    const handleCanPlay = () => {
+      console.log("Video can play");
+      setIsLoaded(true);
+      attemptPlay();
+    };
+    
+    const handleError = (e) => {
+      console.error("Video error:", e);
+      if (video.error) {
+        console.error("Error details:", video.error);
+      }
+      setHasError(true);
+    };
+    
+    const handlePlay = () => {
+      console.log("Video started playing");
+      setPlaying(true);
+    };
+    
+    const handlePause = () => {
+      console.log("Video paused");
+      setPlaying(false);
+    };
+    
+    // 이벤트 리스너 추가
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    
+    // 이미 로드되어 있는 경우 즉시 재생 시도
+    if (video.readyState >= 2) {
+      console.log("Video already loaded, current readyState:", video.readyState);
+      handleCanPlay();
+    }
+    
+    // 클린업 함수
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      
+      // 비디오 재생 중이면 중단
+      if (!video.paused) {
+        video.pause();
+      }
+    };
+  }, [src]);
 
+  // 여기에 기존 코드 유지 (volume, controls, etc.)
+  
   // Handle volume and mute state
   useEffect(() => {
     const video = videoRef.current;
@@ -47,32 +128,6 @@ export default function VideoPlayer({ src }) {
       video.muted = isMuted;
     }
   }, [volume, isMuted]);
-
-  // Video event handlers
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleCanPlay = () => setIsLoaded(true);
-    const handleError = () => {
-      console.error("Video error:", video.error);
-      setHasError(true);
-    };
-    const handlePlay = () => setPlaying(true);
-    const handlePause = () => setPlaying(false);
-
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('error', handleError);
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-
-    return () => {
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('error', handleError);
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
-    };
-  }, []);
 
   // Auto-hide controls
   useEffect(() => {
@@ -156,20 +211,35 @@ export default function VideoPlayer({ src }) {
 
   return (
     <div 
-      className="mt-8 w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl relative video-player-container"
+      className="mt-8 w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl relative"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onTouchStart={handleMouseEnter}
     >
       {/* Video */}
       <video
         ref={videoRef}
         src={src}
+        muted
+        playsInline
         autoPlay
         loop
-        playsInline
+        preload="auto"
         className={`w-full h-auto ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+        // poster는 없으면 제거해도 됩니다
       />
+          {/* 항상 보이는 음소거 해제 버튼 (새로 추가) */}
+    {isMuted && playing && (
+      <div className="absolute top-4 right-4 z-10 bg-black/50 rounded-full p-2 animate-pulse">
+        <button
+          onClick={toggleMute}
+          className="bg-purple-600 text-white p-2 rounded-full hover:bg-purple-500 transition-colors"
+          aria-label="Unmute video"
+        >
+          <SpeakerWaveIcon className="h-6 w-6" />
+          <span className="sr-only">소리 켜기</span>
+        </button>
+      </div>
+    )}
       
       {/* Loading indicator */}
       {!isLoaded && !hasError && (
@@ -194,58 +264,52 @@ export default function VideoPlayer({ src }) {
       
       {/* Controls overlay */}
       <div 
-        className={`absolute bottom-0 inset-x-0 flex justify-between items-center p-2 sm:p-4 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${
+        className={`absolute bottom-0 inset-x-0 flex justify-between items-center p-4 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${
           controlsVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
         {/* Left side - play/pause */}
         <button
           onClick={togglePlay}
-          className="group bg-purple-700 p-2 sm:p-3 rounded-full hover:bg-purple-600 transition-colors touch-manipulation"
+          className="group bg-purple-700 p-3 rounded-full hover:bg-purple-600 transition-colors"
           aria-label={playing ? "Pause video" : "Play video"}
         >
           {playing ? (
-            <PauseIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
+            <PauseIcon className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
           ) : (
-            <PlayIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
+            <PlayIcon className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
           )}
         </button>
         
         {/* Right side - volume controls */}
-        <div className="flex space-x-1 sm:space-x-2">
-          {/* On mobile, we only show mute toggle for simplicity */}
-          <div className="hidden sm:block">
-            <button
-              onClick={decreaseVolume}
-              className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors touch-manipulation"
-              aria-label="Decrease volume"
-            >
-              <MinusIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </button>
-          </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={decreaseVolume}
+            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
+            aria-label="Decrease volume"
+          >
+            <MinusIcon className="h-5 w-5 text-white" />
+          </button>
           
           <button
             onClick={toggleMute}
-            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors touch-manipulation"
+            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
             aria-label={isMuted ? "Unmute" : "Mute"}
           >
             {isMuted ? (
-              <SpeakerXMarkIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+              <SpeakerXMarkIcon className="h-5 w-5 text-white" />
             ) : (
-              <SpeakerWaveIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+              <SpeakerWaveIcon className="h-5 w-5 text-white" />
             )}
           </button>
           
-          {/* On mobile, we only show mute toggle for simplicity */}
-          <div className="hidden sm:block">
-            <button
-              onClick={increaseVolume}
-              className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors touch-manipulation"
-              aria-label="Increase volume"
-            >
-              <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </button>
-          </div>
+          <button
+            onClick={increaseVolume}
+            className="bg-black bg-opacity-40 p-2 rounded-full hover:bg-opacity-60 transition-colors"
+            aria-label="Increase volume"
+          >
+            <PlusIcon className="h-5 w-5 text-white" />
+          </button>
         </div>
       </div>
     </div>

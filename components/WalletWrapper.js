@@ -3,8 +3,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
-import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import { Connection } from "@solana/web3.js";
 
 // Default to devnet if environment variable is not set
@@ -16,14 +14,8 @@ export default function WalletWrapper({ children }) {
     console.error("Warning: NEXT_PUBLIC_SOLANA_RPC_ENDPOINT environment variable not set. Using default devnet endpoint.");
   }
 
-  // Create wallet adapters array
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ],
-    []
-  );
+  // 어댑터를 빈 배열로 수정 - @solana/wallet-adapter-react-ui v0.9.38는 자동으로 표준 월렛을 탐지합니다
+  const wallets = useMemo(() => [], []);
 
   // Define endpoint
   const endpoint = useMemo(() => SOLANA_RPC_ENDPOINT, []);

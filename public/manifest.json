@@ -1,0 +1,16 @@
+{
+    "name": "SOLARA GEN:0 NFT",
+    "short_name": "SOLARA",
+    "description": "SOLARA GEN:0 NFT Collection on Solana",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#4c1d95",
+    "icons": [
+      {
+        "src": "/logo2.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      }
+    ]
+  }
