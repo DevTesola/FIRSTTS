@@ -35,7 +35,7 @@ export default function VideoPlayer({ src }) {
     video.setAttribute('webkit-playsinline', '');
     
     const attemptPlay = () => {
-      console.log("Attempting to play video...");
+     
       
       // 여러 번 재생 시도
       const playAttempt = setInterval(() => {
@@ -43,7 +43,7 @@ export default function VideoPlayer({ src }) {
         
         if (promise !== undefined) {
           promise.then(() => {
-            console.log("Autoplay successful");
+          
             setPlaying(true);
             clearInterval(playAttempt);
           }).catch(error => {
@@ -61,13 +61,13 @@ export default function VideoPlayer({ src }) {
     
     // 비디오 메타데이터 로드 완료 후 재생 시도
     const handleLoadedMetadata = () => {
-      console.log("Video metadata loaded");
+
       attemptPlay();
     };
     
     // 비디오가 재생 가능한 상태가 되면 재생 시도
     const handleCanPlay = () => {
-      console.log("Video can play");
+     
       setIsLoaded(true);
       attemptPlay();
     };
@@ -81,12 +81,12 @@ export default function VideoPlayer({ src }) {
     };
     
     const handlePlay = () => {
-      console.log("Video started playing");
+    
       setPlaying(true);
     };
     
     const handlePause = () => {
-      console.log("Video paused");
+  
       setPlaying(false);
     };
     

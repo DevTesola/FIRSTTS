@@ -48,7 +48,7 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
       throw new Error('Wallet mismatch, possible front-running attempt');
     }
     
-    // 2. 결제 트랜잭션 확인
+    // 2. 결제 트랜잭션 확인 - 이부분은 꼭 필요함
     const txInfo = await connection.getTransaction(paymentTxId, {
       commitment: 'confirmed',
       maxSupportedTransactionVersion: 0
@@ -102,27 +102,27 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
       console.error('Collection verification failed:', err.message);
     }
     
-// 6. Supabase 업데이트
-console.log('Updating Supabase record:', { mintIndex, lockId });
-const { error: updateError } = await supabase
-  .from('minted_nfts')
-  .update({
-    status: 'completed',
-    mint_address: nft.address.toString(),
-    tx_signature: createResponse.signature,
-    payment_tx_signature: paymentTxId,
-    verified: verificationSuccess,
-    updated_at: new Date().toISOString()
-  })
-  .eq('mint_index', mintIndex)
-  .eq('lock_id', lockId);
+    // 6. Supabase 업데이트
+    console.log('Updating Supabase record:', { mintIndex, lockId });
+    const { error: updateError } = await supabase
+      .from('minted_nfts')
+      .update({
+        status: 'completed',
+        mint_address: nft.address.toString(),
+        tx_signature: createResponse.signature,
+        payment_tx_signature: paymentTxId,
+        verified: verificationSuccess,
+        updated_at: new Date().toISOString()
+      })
+      .eq('mint_index', mintIndex)
+      .eq('lock_id', lockId);
 
-if (updateError) {
-  console.error('Supabase update error:', updateError);
-  throw new Error('Failed to update mint record: ' + updateError.message);
-} else {
-  console.log('Supabase record updated successfully');
-}
+    if (updateError) {
+      console.error('Supabase update error:', updateError);
+      throw new Error('Failed to update mint record: ' + updateError.message);
+    } else {
+      console.log('Supabase record updated successfully');
+    }
     
     return {
       mintAddress: nft.address.toString(),
@@ -140,7 +140,8 @@ if (updateError) {
         .update({
           status: 'payment_received_mint_failed',  // 특수 상태로 표시하여 나중에 확인
           updated_at: new Date().toISOString(),
-          payment_tx_signature: paymentTxId
+          payment_tx_signature: paymentTxId,
+          error_log: err.message || 'Unknown error'
         })
         .eq('mint_index', mintIndex)
         .eq('lock_id', lockId);

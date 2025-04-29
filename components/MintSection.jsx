@@ -18,7 +18,8 @@ export default function MintSection({
   setErrorMessage,
   setErrorDetails,
   setLoading,
-  showRefundPolicy
+  showRefundPolicy,
+  mintAttempts = 0
 }) {
   const { publicKey, connected, signTransaction } = useWallet() || {};
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
@@ -129,23 +130,25 @@ export default function MintSection({
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6 mt-10 w-full max-w-sm mx-auto">
+    <div className="flex flex-col items-center space-y-6 mt-8 md:mt-10 w-full max-w-sm mx-auto">
       {/* Wallet connection guide */}
       <WalletGuide />
       
       {isClient ? (
         <>
-          <div className="wallet-button-container">
-            <WalletMultiButton />
+          <div className="wallet-button-container w-full">
+            <WalletMultiButton className="w-full max-w-xs mx-auto" />
           </div>
           {connected && publicKey && (
-            <div className="bg-gray-800 text-purple-300 font-mono text-sm md:text-base rounded-lg px-4 py-2 shadow-md">
-              Connected Wallet: {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+            <div className="bg-gray-800 text-purple-300 font-mono text-sm md:text-base rounded-lg px-4 py-2 shadow-md w-full text-center truncate">
+              Connected: {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
             </div>
           )}
         </>
       ) : (
-        <div>Loading wallet button...</div>
+        <div className="w-full text-center p-4 bg-gray-800 rounded-lg">
+          <div className="animate-pulse h-10 bg-gray-700 rounded w-3/4 mx-auto"></div>
+        </div>
       )}
       
       {isClient && connected && (
@@ -157,7 +160,7 @@ export default function MintSection({
               id="agreeToPolicy"
               checked={agreedToPolicy}
               onChange={(e) => setAgreedToPolicy(e.target.checked)}
-              className="mt-1"
+              className="mt-1 w-5 h-5" // Larger checkbox for better mobile tapping
             />
             <label htmlFor="agreeToPolicy" className="text-sm">
               I agree to the{" "}
@@ -188,7 +191,7 @@ export default function MintSection({
       )}
       
       {isClient && !connected && (
-        <div className="text-red-500 font-mono text-sm md:text-base">
+        <div className="text-red-500 font-mono text-sm md:text-base text-center w-full p-4 bg-red-900/20 rounded-lg">
           Wallet not connected. Please connect a wallet to mint.
         </div>
       )}
