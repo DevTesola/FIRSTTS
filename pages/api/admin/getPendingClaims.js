@@ -1,23 +1,38 @@
 // pages/api/admin/getPendingClaims.js
 import { createClient } from '@supabase/supabase-js';
+import { isAdminWallet } from '../../../utils/adminAuth'; // Import admin auth utility
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-// 관리자 지갑 주소 목록 (실제 구현에서는 환경 변수 등을 사용)
-const ADMIN_WALLETS = [
-  '여기에_관리자_지갑_주소_입력',
-  // 추가 관리자 지갑
-];
-
 export default async function handler(req, res) {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  // Only allow GET method
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed', allowed: ['GET'] });
+  }
+  
   try {
-    // 여기서는 간단한 구현을 위해 추가 인증은 생략
-    // 실제 구현에서는 JWT 등을 사용한 추가 인증 로직이 필요함
+    // Get wallet address from header
+    const walletAddress = req.headers['x-wallet-address'];
     
-    // 대기 중인 청구 목록 조회
+    // Validate wallet address
+    if (!walletAddress) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Check admin privileges
+    if (!isAdminWallet(walletAddress)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    // Fetch pending claims
     const { data: claims, error } = await supabase
       .from('reward_claims')
       .select('*')

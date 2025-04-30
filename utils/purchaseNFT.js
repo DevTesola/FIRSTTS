@@ -16,13 +16,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-// IPFS_GATEWAY 가져오기 및 디버깅 로그 추가
+// Get IPFS gateway from env - only log if explicitly enabled
 const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io';
-console.log('IPFS Gateway being used:', IPFS_GATEWAY);
+if (process.env.LOG_SERVICE_INFO === 'true') {
+  console.log('IPFS Gateway being used:', IPFS_GATEWAY);
+}
 
-// 기존 게이트웨이 배열 유지
+// Maintain gateway array for fallbacks
 const IPFS_GATEWAYS = [
-  IPFS_GATEWAY, // 첫 번째로 설정된 게이트웨이 사용
+  IPFS_GATEWAY,
   'https://cloudflare-ipfs.com',
   'https://gateway.pinata.cloud',
   'https://dweb.link',
@@ -45,7 +47,7 @@ export async function purchaseNFT(buyerPublicKey) {
   try {
     console.log('Selecting random NFT index...');
     
-    // 트랜잭션 락 추가 (이중 민팅 방지)
+    // Create transaction lock (prevent double minting)
     lockId = `lock_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     
     const { data, error } = await supabase.rpc('select_random_nft_index');
@@ -54,7 +56,7 @@ export async function purchaseNFT(buyerPublicKey) {
     randIndex = data[0].mint_index;
     console.log('Selected random index:', randIndex);
 
-    // NFT 레코드 예약 및 락
+    // Reserve NFT record and lock
     const lockResult = await supabase
       .from('minted_nfts')
       .update({
@@ -70,7 +72,7 @@ export async function purchaseNFT(buyerPublicKey) {
       throw new Error(`Failed to lock record: ${lockResult.error.message}`);
     }
 
-    // 결제 트랜잭션 생성
+    // Create payment transaction
     console.log('Creating SOL transfer transaction...');
     const transferTx = new Transaction().add(
       SystemProgram.transfer({
@@ -87,10 +89,10 @@ export async function purchaseNFT(buyerPublicKey) {
       throw new Error(`Transaction size exceeds limit: ${serializedTx.length} bytes`);
     }
 
-    // 결제 ID 생성
+    // Create payment ID
     const paymentId = `pending_${randIndex}_${Date.now()}`;
     
-    // payment_tx_signature 필드 업데이트
+    // Update payment_tx_signature field
     await supabase
       .from('minted_nfts')
       .update({
@@ -100,8 +102,14 @@ export async function purchaseNFT(buyerPublicKey) {
       .eq('lock_id', lockId);
 
     const filename = String(randIndex + 1).padStart(4, '0');
-    console.log('Transaction prepared successfully:', { randIndex, filename, paymentId, lockId });
+    console.log('Transaction prepared successfully:', { 
+      randIndex, 
+      filename, 
+      paymentId, 
+      lockId
+    });
 
+    // Important: return serialized transaction as base64 string
     return {
       transaction: serializedTx.toString('base64'),
       filename,

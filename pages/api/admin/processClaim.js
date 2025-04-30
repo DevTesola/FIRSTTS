@@ -1,50 +1,76 @@
 // pages/api/admin/processClaim.js
 import { createClient } from '@supabase/supabase-js';
+import { isAdminWallet } from '../../../utils/adminAuth';
+import { logAdminAction } from '../../../utils/adminLogger';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-// 관리자 지갑 주소 목록 (실제 구현에서는 환경 변수 등을 사용)
-const ADMIN_WALLETS = [
-  '여기에_관리자_지갑_주소_입력',
-  // 추가 관리자 지갑
-];
-
 export default async function handler(req, res) {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  // Only allow POST method
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', allowed: ['POST'] });
   }
   
   try {
-    const { claimId, action, adminWallet } = req.body;
+    const { claimId, action } = req.body;
+    // Get wallet address from header
+    const walletAddress = req.headers['x-wallet-address'];
     
-    if (!claimId || !action || !adminWallet) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validate request data
+    if (!claimId || !action) {
+      return res.status(400).json({ error: 'Missing required fields: claimId and action are required' });
     }
     
-    // 관리자 권한 확인
-    if (!ADMIN_WALLETS.includes(adminWallet)) {
-      return res.status(403).json({ error: 'Unauthorized: Admin access required' });
+    // Validate wallet address
+    if (!walletAddress) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
     
+    // Check admin privileges
+    if (!isAdminWallet(walletAddress)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    // Validate action
     if (action !== 'approve' && action !== 'reject') {
       return res.status(400).json({ error: 'Invalid action: Must be "approve" or "reject"' });
     }
     
-    // 청구 상태 업데이트
+    // Get current claim data for logging
+    const { data: currentClaim, error: fetchError } = await supabase
+      .from('reward_claims')
+      .select('*')
+      .eq('id', claimId)
+      .single();
+      
+    if (fetchError) {
+      throw new Error(`Failed to fetch claim data: ${fetchError.message}`);
+    }
+    
+    if (!currentClaim) {
+      return res.status(404).json({ error: 'Claim not found' });
+    }
+    
+    // Update claim status
     const newStatus = action === 'approve' ? 'approved' : 'rejected';
     
     const { data: updatedClaim, error } = await supabase
       .from('reward_claims')
       .update({
         status: newStatus,
-        processed_by: adminWallet,
-        updated_at: new Date()
+        processed_by: walletAddress,
+        updated_at: new Date().toISOString()
       })
       .eq('id', claimId)
-      .eq('status', 'pending') // 대기 중인 것만 처리 가능
+      .eq('status', 'pending') // Only process pending claims
       .select()
       .single();
     
@@ -56,8 +82,19 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Claim not found or already processed' });
     }
     
-    // 여기서 실제 토큰 전송 로직을 구현할 수 있음
-    // 현재는 데이터베이스 업데이트만 수행
+    // Log admin action to audit logs
+    await logAdminAction({
+      adminWallet: walletAddress,
+      action: `${action}_claim`,
+      targetId: claimId,
+      metadata: {
+        claim_amount: updatedClaim.amount,
+        user_wallet: updatedClaim.wallet_address,
+        previous_status: currentClaim.status,
+        new_status: newStatus
+      },
+      ipAddress: req.headers['x-forwarded-for'] || req.connection.remoteAddress
+    });
     
     return res.status(200).json({
       success: true,

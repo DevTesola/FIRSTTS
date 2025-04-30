@@ -5,54 +5,54 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// 민트 지갑 경로 설정
+// Set up mint wallet path from environment variable
 const mintWalletPath = process.env.MINT_WALLET_PATH
   ? path.resolve(process.env.MINT_WALLET_PATH)
   : path.join(__dirname, '../../mintWallet.json');
 
-// 개발 환경에서만 전체 경로 로그 출력
-if (process.env.NODE_ENV === 'development') {
+// Log path only in development AND only if explicitly enabled
+const shouldLog = process.env.NODE_ENV === 'development' && process.env.LOG_SENSITIVE_INFO === 'true';
+
+if (shouldLog) {
   console.log('Loading mintWallet.json from:', mintWalletPath);
 }
 
 let mintWallet;
 try {
-  // 파일 존재 확인
+  // Check if file exists
   if (!fs.existsSync(mintWalletPath)) {
-    throw new Error(`mintWallet.json file not found at path: ${mintWalletPath}`);
+    throw new Error(`Wallet file not found. Please check configuration.`);
   }
   
-  // 파일 읽기
+  // Read wallet file
   const rawData = fs.readFileSync(mintWalletPath, 'utf8');
   mintWallet = JSON.parse(rawData);
 
-  // 여러 형식 지원
+  // Support multiple formats
   if (Array.isArray(mintWallet)) {
     if (mintWallet.length !== 64) {
-      throw new Error(`Invalid secret key length in mintWallet.json: got ${mintWallet.length} bytes, expected 64 bytes`);
+      throw new Error(`Invalid secret key length`);
     }
   } else if (mintWallet.secretKey) {
     mintWallet = mintWallet.secretKey;
     if (!Array.isArray(mintWallet) || mintWallet.length !== 64) {
-      throw new Error(`Invalid secret key length in mintWallet.json secretKey: got ${mintWallet.length} bytes, expected 64 bytes`);
+      throw new Error(`Invalid secret key format`);
     }
   } else {
-    throw new Error('Invalid format in mintWallet.json: expected an array or object with secretKey');
+    throw new Error('Invalid wallet format');
   }
 
-  // 유효성 검증 (로그는 개발 환경에서만)
+  // Validate key (logs in development environment only if explicitly enabled)
   const secretKey = Uint8Array.from(mintWallet);
-  if (process.env.NODE_ENV === 'development') {
+  if (shouldLog) {
     console.log('Secret key length:', secretKey.length);
     const keypair = Keypair.fromSecretKey(secretKey);
     console.log('Generated public key:', keypair.publicKey.toBase58());
-    
-    // 서명 테스트를 제거합니다 - 이것이 문제였습니다
   }
 } catch (err) {
-  console.error('Failed to load mintWallet.json:', err.message);
-  throw new Error(`Failed to load mintWallet.json: ${err.message}`);
+  console.error('Failed to load wallet file:', err.message);
+  throw new Error(`Failed to load wallet configuration`);
 }
 
-// 판매자 키페어 생성 및 내보내기
+// Create and export seller keypair
 export const SELLER_KEYPAIR = Keypair.fromSecretKey(Uint8Array.from(mintWallet));

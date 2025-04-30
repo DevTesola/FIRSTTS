@@ -185,10 +185,10 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
       case 'epic':
         return 'text-pink-400 border-pink-500';
       case 'rare':
-        return 'text-purple-400 border-purple-500';
+        return 'text-blue-400 border-blue-500';
       case 'common':
       default:
-        return 'text-blue-400 border-blue-500';
+        return 'text-green-400 border-green-500';
     }
   };
 
@@ -280,8 +280,8 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
                 onClick={() => setSelectedRarity('rare')}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                   selectedRarity === 'rare'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-800 text-purple-400 hover:bg-gray-700'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-blue-400 hover:bg-gray-700'
                 }`}
               >
                 Rare ({actualDistribution.rare})
@@ -290,8 +290,8 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
                 onClick={() => setSelectedRarity('common')}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                   selectedRarity === 'common'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-blue-400 hover:bg-gray-700'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-800 text-green-400 hover:bg-gray-700'
                 }`}
               >
                 Common ({actualDistribution.common})
@@ -348,8 +348,8 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
                     <div className={`absolute top-2 right-2 px-2 py-0.5 rounded text-xs font-bold ${
                       nft.tier.toLowerCase() === 'legendary' ? 'bg-yellow-600 text-white' :
                       nft.tier.toLowerCase() === 'epic' ? 'bg-pink-600 text-white' :
-                      nft.tier.toLowerCase() === 'rare' ? 'bg-purple-600 text-white' :
-                      'bg-blue-600 text-white'
+                      nft.tier.toLowerCase() === 'rare' ? 'bg-blue-600 text-white' :
+                      'bg-green-600 text-white'
                     }`}>
                       {nft.tier}
                     </div>
@@ -392,12 +392,12 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
                     title={`Epic: ${actualDistribution.epic}`}
                   ></div>
                   <div 
-                    className="bg-purple-500 h-full" 
+                    className="bg-blue-500 h-full" 
                     style={{ width: `${(actualDistribution.rare / totalTokens) * 100}%` }}
                     title={`Rare: ${actualDistribution.rare}`}
                   ></div>
                   <div 
-                    className="bg-blue-500 h-full" 
+                    className="bg-green-500 h-full" 
                     style={{ width: `${(actualDistribution.common / totalTokens) * 100}%` }}
                     title={`Common: ${actualDistribution.common}`}
                   ></div>
@@ -414,11 +414,11 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
                   <span>Epic ({Math.round((actualDistribution.epic / totalTokens) * 100)}%)</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full mr-1"></div>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
                   <span>Rare ({Math.round((actualDistribution.rare / totalTokens) * 100)}%)</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
                   <span>Common ({Math.round((actualDistribution.common / totalTokens) * 100)}%)</span>
                 </div>
               </div>

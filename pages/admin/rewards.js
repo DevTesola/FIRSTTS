@@ -3,18 +3,13 @@ import { useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
+import { isAdminWallet } from '../../utils/adminAuth'; // Import admin auth utility
 
-// 지갑 버튼 동적 로딩
+// Dynamically load wallet button
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
   { ssr: false }
 );
-
-// 관리자 지갑 주소 목록 (실제 구현에서는 환경 변수 등을 사용)
-const ADMIN_WALLETS = [
-  '여기에_관리자_지갑_주소_입력',
-  // 추가 관리자 지갑
-];
 
 export default function AdminRewards() {
   const { publicKey, connected } = useWallet();
@@ -23,11 +18,11 @@ export default function AdminRewards() {
   const [loading, setLoading] = useState(true);
   const [processLoading, setProcessLoading] = useState({});
   
-  // 관리자 권한 확인
-  const isAdmin = connected && publicKey && ADMIN_WALLETS.includes(publicKey.toString());
+  // Check admin privileges using the utility function instead of hardcoded array
+  const isAdmin = connected && publicKey && isAdminWallet(publicKey.toString());
   
   useEffect(() => {
-    // 권한 없는 경우 리디렉션
+    // Redirect if not admin
     if (connected && publicKey && !isAdmin) {
       alert('You do not have permission to access this page.');
       router.push('/');
@@ -40,7 +35,12 @@ export default function AdminRewards() {
       
       setLoading(true);
       try {
-        const res = await fetch('/api/admin/getPendingClaims');
+        const res = await fetch('/api/admin/getPendingClaims', {
+          headers: {
+            'X-Wallet-Address': publicKey.toString() // Add wallet address to header
+          }
+        });
+        
         if (!res.ok) throw new Error('Failed to fetch claims');
         
         const data = await res.json();
@@ -54,9 +54,9 @@ export default function AdminRewards() {
     };
     
     fetchClaims();
-  }, [connected, isAdmin]);
+  }, [connected, isAdmin, publicKey]);
   
-  // 청구 처리 함수
+  // Process claim handler
   const handleProcessClaim = async (claimId, action) => {
     if (!connected || !isAdmin) return;
     
@@ -65,12 +65,12 @@ export default function AdminRewards() {
       const res = await fetch('/api/admin/processClaim', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Wallet-Address': publicKey.toString() // Add wallet address to header
         },
         body: JSON.stringify({
           claimId,
-          action, // 'approve' 또는 'reject'
-          adminWallet: publicKey.toString()
+          action, // 'approve' or 'reject'
         })
       });
       
@@ -79,10 +79,10 @@ export default function AdminRewards() {
         throw new Error(error.error || 'Failed to process claim');
       }
       
-      // 성공 메시지
+      // Success message
       alert(`Claim ${action}d successfully!`);
       
-      // 목록에서 해당 청구 제거
+      // Remove claim from list
       setClaims(claims.filter(claim => claim.id !== claimId));
     } catch (err) {
       console.error(`Error ${action}ing claim:`, err);
