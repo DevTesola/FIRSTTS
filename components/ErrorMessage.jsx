@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { useAppState } from "../pages/_app";
+import React, { useState, useEffect } from "react";
 
 /**
  * User-friendly error message component
@@ -36,11 +35,11 @@ export default function ErrorMessage({
   const [showDetails, setShowDetails] = useState(false);
   // 자동 닫기 타이머 상태
   const [autoCloseProgress, setAutoCloseProgress] = useState(autoClose ? 100 : 0);
-  // 앱 상태 컨텍스트 사용
-  const { isOffline } = useAppState();
+  // 오프라인 상태 확인 (간소화 버전)
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
   
   // 자동 닫기 효과
-  React.useEffect(() => {
+  useEffect(() => {
     if (!autoClose || !onDismiss) return;
     
     const startTime = Date.now();
@@ -119,26 +118,26 @@ export default function ErrorMessage({
     
     // 오류 메시지 패턴에 따른 해결책
     if (typeof message === 'string') {
-        if (message.includes("wallet")) {
-          return "Check that your wallet is connected and unlocked. If the problem persists, refresh the page.";
-        } else if (message.includes("insufficient") || message.includes("balance")) {
-          return "You don't have enough SOL in your wallet to complete this transaction. Please add more funds and try again.";
-        } else if (message.includes("network") || message.includes("timeout")) {
-          return "Network issues detected. Check your internet connection and try again later.";
-        } else if (message.includes("rejected") || message.includes("cancelled")) {
-          return "Transaction was rejected or cancelled. Please approve the transaction in your wallet to continue.";
-        } else if (message.includes("Failed to fetch") || message.includes("no response")) {
-          return "Server connection issue occurred. Check your internet connection or try again later.";
-        } else if (message.includes("mint") || message.includes("NFT")) {
-          return "Issue occurred during NFT minting. Check your wallet balance and try again. If the problem persists, try using a different wallet.";
-        }
+      if (message.includes("wallet")) {
+        return "Check that your wallet is connected and unlocked. If the problem persists, refresh the page.";
+      } else if (message.includes("insufficient") || message.includes("balance")) {
+        return "You don't have enough SOL in your wallet to complete this transaction. Please add more funds and try again.";
+      } else if (message.includes("network") || message.includes("timeout")) {
+        return "Network issues detected. Check your internet connection and try again later.";
+      } else if (message.includes("rejected") || message.includes("cancelled")) {
+        return "Transaction was rejected or cancelled. Please approve the transaction in your wallet to continue.";
+      } else if (message.includes("Failed to fetch") || message.includes("no response")) {
+        return "Server connection issue occurred. Check your internet connection or try again later.";
+      } else if (message.includes("mint") || message.includes("NFT")) {
+        return "Issue occurred during NFT minting. Check your wallet balance and try again. If the problem persists, try using a different wallet.";
       }
-      
-      return "If this error persists, please contact support through our Telegram channel.";
-    };
+    }
+    
+    return "If this error persists, please contact support through our Telegram channel.";
+  };
 
   return (
-    <div className={`rounded-lg ${bgColor} border ${borderColor} p-4 ${className}`}>
+    <div className={`rounded-lg ${bgColor} border ${borderColor} p-4 relative ${className}`}>
       {/* 자동 닫기 진행 표시줄 */}
       {autoClose && onDismiss && (
         <div className="absolute top-0 left-0 right-0">

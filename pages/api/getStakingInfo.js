@@ -1,22 +1,24 @@
-// pages/api/getStakingInfo.js - Optimized Version
+// pages/api/getStakingInfo.js - Integrated Version
 import { createClient } from '@supabase/supabase-js';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
+// 향상된 보상 계산기 import
+import { calculateEarnedRewards } from '../../utils/staking/reward-calculator';
 
-// Initialize Supabase client
+// Supabase 클라이언트 초기화
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-// Initialize Solana connection
+// Solana 연결 설정
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 
 export default async function handler(req, res) {
   try {
     const { wallet, mintAddress } = req.query;
     
-    // Parameter validation
+    // 파라미터 검증
     if (!wallet || !mintAddress) {
       return res.status(400).json({ 
         error: 'Wallet address and mint address are required',
@@ -24,7 +26,7 @@ export default async function handler(req, res) {
       });
     }
     
-    // Validate wallet address format
+    // 지갑 주소 형식 검증
     let walletPubkey;
     try {
       walletPubkey = new PublicKey(wallet);
@@ -35,7 +37,7 @@ export default async function handler(req, res) {
       });
     }
     
-    // Validate mint address format
+    // 민트 주소 형식 검증
     let mintPubkey;
     try {
       mintPubkey = new PublicKey(mintAddress);
@@ -46,16 +48,16 @@ export default async function handler(req, res) {
       });
     }
     
-    // Connect to Solana
+    // Solana 연결
     console.log('Connecting to Solana RPC:', SOLANA_RPC_ENDPOINT);
     const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
     
-    // Verify NFT ownership - Try token accounts method first (more reliable)
+    // NFT 소유권 검증 - 토큰 계정 방식 먼저 시도 (더 신뢰할 수 있음)
     console.log('[getStakingInfo] Verifying NFT ownership...');
     let isOwner = false;
     
     try {
-      // Try to verify ownership using token accounts first
+      // 토큰 계정으로 먼저 소유권 확인 시도
       const tokenAccounts = await connection.getTokenAccountsByOwner(walletPubkey, {
         mint: mintPubkey
       });
@@ -66,12 +68,12 @@ export default async function handler(req, res) {
       } else {
         console.log(`[getStakingInfo] Ownership verification failed: ${wallet} does not own ${mintAddress} (token accounts check)`);
         
-        // Fall back to Metaplex check if token account check fails
+        // 토큰 계정 확인이 실패하면 Metaplex 확인으로 대체
         try {
           const metaplex = new Metaplex(connection);
           const nft = await metaplex.nfts().findByMint({ mintAddress: mintPubkey });
           
-          // Enhanced ownership check with multiple property paths
+          // 다양한 경로로 소유권 확인
           const ownerAddress = nft.token?.ownerAddress?.toString() || 
                               nft.ownership?.owner?.toString() ||
                               nft.ownerAddress?.toString() ||
@@ -87,15 +89,15 @@ export default async function handler(req, res) {
           }
         } catch (metaplexError) {
           console.error('[getStakingInfo] Metaplex ownership check failed:', metaplexError);
-          // Continue with database check anyway
+          // 데이터베이스 확인은 계속 진행
         }
       }
     } catch (ownershipError) {
       console.warn('[getStakingInfo] Ownership verification error:', ownershipError);
-      // Continue with database check anyway, but log the error
+      // 데이터베이스 확인은 계속 진행, 오류만 로그
     }
     
-    // Get staking info from database
+    // 데이터베이스에서 스테이킹 정보 가져오기
     const { data, error } = await supabase
       .from('nft_staking')
       .select('*')
@@ -105,7 +107,7 @@ export default async function handler(req, res) {
       .single();
     
     if (error && error.code !== 'PGRST116') {
-      // PGRST116 is "no rows returned" error, we handle this differently
+      // PGRST116은 "반환된 행 없음" 오류, 다르게 처리
       console.error('[getStakingInfo] Database query error:', error);
       return res.status(500).json({ 
         error: 'Failed to fetch staking info', 
@@ -114,7 +116,7 @@ export default async function handler(req, res) {
       });
     }
     
-    // If no staking record found
+    // 스테이킹 기록이 없는 경우
     if (!data) {
       return res.status(200).json({ 
         isStaked: false,
@@ -123,39 +125,48 @@ export default async function handler(req, res) {
       });
     }
     
-    // Calculate progress percentage and earned rewards so far
+    // 현재 날짜와 필요한 날짜 설정
     const stakingStartDate = new Date(data.staked_at);
     const releaseDate = new Date(data.release_date);
     const currentDate = new Date();
+    const stakingPeriod = data.staking_period;
+    const nftTier = data.nft_tier || 'COMMON';
     
-    // Calculate total staking duration in milliseconds
-    const totalStakingDuration = releaseDate.getTime() - stakingStartDate.getTime();
-    
-    // Calculate elapsed duration (capped at total duration)
-    const elapsedDuration = Math.min(
-      currentDate.getTime() - stakingStartDate.getTime(),
-      totalStakingDuration
+    // 향상된 보상 계산기를 사용한 리워드 정보 계산
+    const rewardInfo = calculateEarnedRewards(
+      nftTier, 
+      stakingStartDate, 
+      currentDate, 
+      stakingPeriod
     );
     
-    // Calculate progress percentage (prevent division by zero)
-    const progressPercentage = totalStakingDuration > 0 
-      ? (elapsedDuration / totalStakingDuration) * 100
-      : 0;
-    
-    // Calculate earned rewards so far (linear accrual)
-    const earnedSoFar = (data.total_rewards * progressPercentage) / 100;
-    
-    // Calculate remaining days
+    // 남은 일수 계산
     const daysRemaining = Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24)));
     
-    // Add calculated fields to the staking info
+    // 현재 적용 중인 보너스 배율 계산
+    const currentBonusMultiplier = calculateCurrentBonusMultiplier(
+      Math.floor(rewardInfo.elapsedDays), 
+      stakingPeriod
+    );
+    
+    // 계산된 필드를 추가한 스테이킹 정보
     const stakingInfo = {
       ...data,
-      progress_percentage: parseFloat(progressPercentage.toFixed(2)),
-      earned_so_far: parseFloat(earnedSoFar.toFixed(2)),
+      progress_percentage: rewardInfo.progressPercentage,
+      earned_so_far: rewardInfo.earnedRewards,
+      remaining_rewards: rewardInfo.remainingRewards,
       days_remaining: daysRemaining,
       is_unlocked: currentDate >= releaseDate,
-      lockup_complete: currentDate >= releaseDate
+      lockup_complete: currentDate >= releaseDate,
+      elapsed_days: rewardInfo.elapsedDays,
+      current_bonus_multiplier: currentBonusMultiplier,
+      // 보너스 세부 정보 제공
+      bonus_info: {
+        baseRate: data.base_reward_rate || data.daily_reward_rate,
+        currentMultiplier: currentBonusMultiplier,
+        // 애플리케이션 표시용
+        multiplierLabel: `${currentBonusMultiplier}x (${(currentBonusMultiplier - 1) * 100}% bonus)`
+      }
     };
     
     return res.status(200).json({
@@ -172,4 +183,28 @@ export default async function handler(req, res) {
       success: false
     });
   }
+}
+
+/**
+ * 현재 적용 중인 보너스 배율 계산
+ * @param {number} elapsedDays - 경과 일수
+ * @param {number} stakingPeriod - 스테이킹 총 기간(일)
+ * @returns {number} 현재 적용되는 보너스 배율
+ */
+function calculateCurrentBonusMultiplier(elapsedDays, stakingPeriod) {
+  // 초기 스파이크 보너스
+  let initialBonus = 1.0;
+  if (elapsedDays <= 7) initialBonus = 2.0;      // 첫 7일: 2배
+  else if (elapsedDays <= 14) initialBonus = 1.75;    // 8-14일: 1.75배
+  else if (elapsedDays <= 30) initialBonus = 1.5;     // 15-30일: 1.5배
+  
+  // 장기 스테이킹 보너스
+  let longTermBonus = 1.0;
+  if (stakingPeriod >= 365) longTermBonus = 2.0;    // 1년 이상: 2배 (100% 보너스)
+  else if (stakingPeriod >= 180) longTermBonus = 1.7;    // 6개월 이상: 1.7배 (70% 보너스)
+  else if (stakingPeriod >= 90) longTermBonus = 1.4;     // 3개월 이상: 1.4배 (40% 보너스)
+  else if (stakingPeriod >= 30) longTermBonus = 1.2;     // 1개월 이상: 1.2배 (20% 보너스)
+  
+  // 더 큰 보너스 적용
+  return Math.max(initialBonus, longTermBonus);
 }

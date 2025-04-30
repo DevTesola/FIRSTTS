@@ -1,8 +1,9 @@
-// pages/api/prepareStaking.js - Full Improved Version
+// pages/api/prepareStaking.js - 업데이트된 버전
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
 import { Metaplex } from '@metaplex-foundation/js';
-
+// 보상 계산기 모듈 import
+import { calculateEstimatedRewards } from '../../utils/staking/reward-calculator';
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -11,7 +12,7 @@ const supabase = createClient(
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 const STAKING_PROGRAM_ADDRESS = process.env.NEXT_PUBLIC_STAKING_PROGRAM_ADDRESS || 'StakeHzWTJ7mxTTk3XnYbMCRCr7v9a5MvzTEFVwA1Ce5G';
 const STAKING_VAULT_ADDRESS = process.env.NEXT_PUBLIC_STAKING_VAULT_ADDRESS || 'VauLTYvPNJv55P7joHYzFV66bRXVDrEi6sbfVUvFmNQ';
-// Stake transaction minimum amount - 0.001 SOL in lamports
+// 스테이킹 트랜잭션 최소 금액 - 0.001 SOL in lamports
 const STAKE_TX_AMOUNT = 0.001 * LAMPORTS_PER_SOL;
 
 export default async function handler(req, res) {
@@ -22,12 +23,12 @@ export default async function handler(req, res) {
   try {
     const { wallet, mintAddress, stakingPeriod } = req.body;
     
-    // Input validation
+    // 입력 검증
     if (!wallet || !mintAddress || !stakingPeriod) {
       return res.status(400).json({ error: 'Wallet address, mint address, and staking period are required' });
     }
     
-    // Validate wallet address format
+    // 지갑 주소 형식 검증
     let walletPubkey;
     try {
       walletPubkey = new PublicKey(wallet);
@@ -35,7 +36,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid wallet address format' });
     }
     
-    // Validate mint address format
+    // 민트 주소 형식 검증
     let mintPubkey;
     try {
       mintPubkey = new PublicKey(mintAddress);
@@ -43,7 +44,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid mint address format' });
     }
     
-    // Validate staking period
+    // 스테이킹 기간 검증
     const stakingPeriodNum = parseInt(stakingPeriod, 10);
     if (isNaN(stakingPeriodNum) || stakingPeriodNum <= 0 || stakingPeriodNum > 365) {
       return res.status(400).json({ error: 'Staking period must be between 1 and 365 days' });
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
     
     console.log('Staking request received:', { wallet, mintAddress, stakingPeriod: stakingPeriodNum });
     
-    // Check if NFT is already staked
+    // NFT가 이미 스테이킹되어 있는지 확인
     const { data: existingStake, error: existingError } = await supabase
       .from('nft_staking')
       .select('*')
@@ -73,14 +74,14 @@ export default async function handler(req, res) {
       });
     }
     
-    // Connect to Solana
+    // Solana 연결
     console.log('Connecting to Solana RPC:', SOLANA_RPC_ENDPOINT);
     const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
     
-    // Verify NFT ownership - USE TOKEN ACCOUNTS METHOD FIRST (more reliable)
+    // NFT 소유권 확인 - 토큰 계정 메서드 먼저 사용 (더 신뢰할 수 있음)
     console.log('Verifying NFT ownership...');
     
-    // Try to verify ownership using token accounts first
+    // 토큰 계정으로 먼저 소유권 확인 시도
     try {
       const tokenAccounts = await connection.getTokenAccountsByOwner(walletPubkey, {
         mint: mintPubkey
@@ -95,20 +96,20 @@ export default async function handler(req, res) {
     } catch (tokenCheckError) {
       console.error('Error checking token accounts:', tokenCheckError);
       
-      // Fall back to Metaplex check if token account check fails
+      // 토큰 계정 확인이 실패하면 Metaplex 확인으로 대체
       try {
         const metaplex = new Metaplex(connection);
         const nft = await metaplex.nfts().findByMint({ mintAddress: mintPubkey });
         
-        // Log full NFT structure to debug
+        // 디버깅용 전체 NFT 구조 로깅
         console.log('NFT data structure:', JSON.stringify(nft, null, 2));
         
-        // Check if NFT exists
+        // NFT 존재 확인
         if (!nft) {
           return res.status(404).json({ error: 'NFT not found' });
         }
         
-        // Enhanced ownership check with multiple property paths
+        // 다양한 경로로 소유권 확인
         const ownerAddress = nft.token?.ownerAddress?.toString() || 
                             nft.ownership?.owner?.toString() ||
                             nft.ownerAddress?.toString() ||
@@ -128,37 +129,68 @@ export default async function handler(req, res) {
       }
     }
     
-    // Create a stake vault if needed
+    // NFT 등급 조회 (리워드 계산에 필요)
+    let nftTier = "COMMON"; // 기본 등급
+    
+    try {
+      // 데이터베이스에서 NFT 등급 조회
+      const { data: nftData } = await supabase
+        .from('minted_nfts')
+        .select('metadata')
+        .eq('mint_address', mintAddress)
+        .maybeSingle();
+      
+      if (nftData && nftData.metadata) {
+        const metadata = typeof nftData.metadata === 'string' 
+          ? JSON.parse(nftData.metadata) 
+          : nftData.metadata;
+        
+        const tierAttr = metadata.attributes?.find(attr => 
+          attr.trait_type === "Tier" || attr.trait_type === "tier"
+        );
+        
+        if (tierAttr && tierAttr.value) {
+          // 등급 값을 대문자로 표준화
+          nftTier = tierAttr.value.toUpperCase();
+          console.log('Found NFT tier:', nftTier);
+        }
+      }
+    } catch (tierError) {
+      console.error('Error fetching NFT tier:', tierError);
+      // 기본 등급으로 계속 진행
+    }
+    
+    // 필요한 경우 스테이킹 볼트 생성
     let stakingVaultPubkey;
     try {
       stakingVaultPubkey = new PublicKey(STAKING_VAULT_ADDRESS);
     } catch (err) {
       console.error('Invalid vault address, using fallback:', err);
-      // Use a fallback address - ideally the program's PDA
+      // 대체 주소 사용 - 이상적으로는 프로그램의 PDA
       stakingVaultPubkey = new PublicKey(STAKING_PROGRAM_ADDRESS);
     }
     
     console.log('Creating staking transaction...');
     
-    // Get recent blockhash for transaction
+    // 최근 블록해시 조회
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
     
-    // Create the staking transaction
-    // In a production environment, this would be an actual staking program instruction
-    // For now, we simulate with a small SOL transfer to mark the staking action
+    // 스테이킹 트랜잭션 생성
+    // 실제 환경에서는 실제 스테이킹 프로그램 명령어로 대체
+    // 현재는 작은 SOL 전송으로 스테이킹 액션을 시뮬레이션
     const transaction = new Transaction().add(
       SystemProgram.transfer({
         fromPubkey: walletPubkey,
         toPubkey: stakingVaultPubkey,
-        lamports: STAKE_TX_AMOUNT, // Small amount to record the staking action
+        lamports: STAKE_TX_AMOUNT, // 스테이킹 액션을 기록하기 위한 작은 금액
       })
     );
     
-    // Set transaction properties
+    // 트랜잭션 속성 설정
     transaction.feePayer = walletPubkey;
     transaction.recentBlockhash = blockhash;
     
-    // Serialize transaction
+    // 트랜잭션 직렬화
     const serializedTransaction = transaction.serialize({ 
       requireAllSignatures: false,
       verifySignatures: false 
@@ -170,22 +202,42 @@ export default async function handler(req, res) {
       lastValidBlockHeight
     });
     
-    // Create staking metadata for frontend
+    // 업데이트된 보상 계산기 사용
+    const rewardCalculation = calculateEstimatedRewards(nftTier, stakingPeriodNum);
+    
+    // 프론트엔드용 스테이킹 메타데이터 생성
     const stakingMetadata = {
       walletAddress: wallet,
       mintAddress: mintAddress,
       stakingPeriod: stakingPeriodNum,
       requestTimestamp: Date.now(),
-      // Calculate tier-based rewards (to be used by the frontend)
-      estimatedRewardRate: calculateRewardRate(req.body.tier || 'Common'),
-      transactionExpiry: lastValidBlockHeight + 150 // Approximately 150 blocks expiry window
+      // 계산된 리워드 정보
+      nftTier,
+      baseRate: rewardCalculation.baseRate,
+      longTermBonus: rewardCalculation.longTermBonus,
+      totalEstimatedRewards: rewardCalculation.totalRewards,
+      averageDailyReward: rewardCalculation.averageDailyReward,
+      // 트랜잭션 만료 관련
+      transactionExpiry: lastValidBlockHeight + 150 // 약 150블록 만료 기간
     };
     
-    // Return the transaction for signing
+    // 서명을 위해 트랜잭션 반환
     return res.status(200).json({
       transactionBase64: serializedTransaction.toString('base64'),
       stakingMetadata,
-      expiresAt: new Date(Date.now() + 120000).toISOString() // 2 minute expiry for the frontend
+      rewardDetails: {
+        baseRate: rewardCalculation.baseRate,
+        longTermBonus: rewardCalculation.longTermBonus,
+        totalRewards: rewardCalculation.totalRewards,
+        // 초기 일별 보상이 더 높다는 것을 보여주기 위해 일부 일별 보상 포함
+        sampleDailyRewards: {
+          day1: rewardCalculation.dailyRewards[0],
+          day7: rewardCalculation.dailyRewards[6],
+          day15: rewardCalculation.dailyRewards.length > 14 ? rewardCalculation.dailyRewards[14] : null,
+          day30: rewardCalculation.dailyRewards.length > 29 ? rewardCalculation.dailyRewards[29] : null
+        }
+      },
+      expiresAt: new Date(Date.now() + 120000).toISOString() // 프론트엔드용 2분 만료
     });
   } catch (error) {
     console.error('Error in prepareStaking API:', error);
@@ -193,20 +245,5 @@ export default async function handler(req, res) {
       error: 'Failed to prepare staking transaction: ' + error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
-  }
-}
-
-// Helper function to calculate reward rate based on NFT tier
-function calculateRewardRate(tier) {
-  switch(tier.toLowerCase()) {
-    case 'legendary':
-      return 2.0;  // 2 TESOLA per day
-    case 'rare':
-      return 1.5;  // 1.5 TESOLA per day
-    case 'uncommon':
-      return 1.0;  // 1 TESOLA per day
-    case 'common':
-    default:
-      return 0.5;  // 0.5 TESOLA per day
   }
 }

@@ -1,6 +1,8 @@
-// pages/api/completeUnstaking.js
+// pages/api/completeUnstaking.js - 업데이트된 버전
 import { createClient } from '@supabase/supabase-js';
 import { Connection } from '@solana/web3.js';
+// 향상된 보상 계산기 import
+import { calculateUnstakingPenalty } from '../../utils/reward-calculator';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -55,53 +57,41 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Staking record not found' });
     }
     
-    // Calculate earned rewards
+    // 향상된 계산기 사용 - 언스테이킹 페널티 계산
+    const currentDate = new Date();
     const stakingStartDate = new Date(stakingData.staked_at);
     const releaseDate = new Date(stakingData.release_date);
-    const currentDate = new Date();
+    const nftTier = stakingData.nft_tier || 'COMMON';
+    const stakingPeriod = stakingData.staking_period;
     
-    // Calculate total staking duration in milliseconds
-    const totalStakingDuration = releaseDate.getTime() - stakingStartDate.getTime();
-    
-    // Calculate elapsed duration (capped at total duration)
-    const elapsedDuration = Math.min(
-      currentDate.getTime() - stakingStartDate.getTime(),
-      totalStakingDuration
+    // 계산기 사용하여 정확한 페널티와 최종 보상 계산
+    const penaltyInfo = calculateUnstakingPenalty(
+      nftTier,
+      stakingStartDate,
+      currentDate,
+      stakingPeriod
     );
     
-    // Calculate progress percentage
-    const progressPercentage = (elapsedDuration / totalStakingDuration) * 100;
+    console.log('Unstaking penalty calculation:', {
+      earnedRewards: penaltyInfo.earnedRewards,
+      isPremature: penaltyInfo.isPremature,
+      penaltyAmount: penaltyInfo.penaltyAmount,
+      penaltyPercentage: penaltyInfo.penaltyPercentage,
+      finalReward: penaltyInfo.finalReward
+    });
     
-    // Calculate earned rewards
-    let earnedRewards = (stakingData.total_rewards * progressPercentage) / 100;
-    
-    // Apply early unstaking penalty if applicable
-    let penalty = 0;
-    if (currentDate < releaseDate) {
-      // Calculate remaining time
-      const remainingTime = releaseDate.getTime() - currentDate.getTime();
-      const remainingPercentage = remainingTime / totalStakingDuration;
-      
-      // Penalty is 50% of rewards for remaining time
-      penalty = stakingData.total_rewards * remainingPercentage * 0.5;
-      
-      // Apply penalty
-      earnedRewards = Math.max(0, earnedRewards - penalty);
-    }
-    
-    // Format earned rewards to 2 decimal places
-    earnedRewards = parseFloat(earnedRewards.toFixed(2));
-    
-    // Update staking record
+    // Update staking record - 기존 필드 이름 유지
     const { data: updatedStaking, error: updateError } = await supabase
       .from('nft_staking')
       .update({
         status: 'unstaked',
-        unstaked_at: new Date().toISOString(),
-        unstake_tx_signature: txSignature,
-        earned_rewards: earnedRewards,
-        early_unstake_penalty: parseFloat(penalty.toFixed(2)),
-        updated_at: new Date().toISOString()
+        unstaked_at: currentDate.toISOString(),
+        unstake_tx_signature: txSignature, // 기존 필드 이름 사용
+        earned_rewards: penaltyInfo.earnedRewards,
+        early_unstake_penalty: penaltyInfo.penaltyAmount, // 기존 필드 이름 사용
+        unstake_penalty_percentage: penaltyInfo.penaltyPercentage, // 새 필드 추가(있으면)
+        final_reward: penaltyInfo.finalReward, // 새 필드 추가(있으면)
+        updated_at: currentDate.toISOString()
       })
       .eq('id', stakingId)
       .select()
@@ -112,17 +102,19 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to update staking record' });
     }
     
-    // Add rewards to user's balance
-    if (earnedRewards > 0) {
+    // Add rewards to user's balance - 기존 방식 유지
+    if (penaltyInfo.finalReward > 0) {
       const { error: rewardError } = await supabase
         .from('rewards')
         .insert([
           {
             wallet_address: wallet,
-            amount: earnedRewards,
+            amount: penaltyInfo.finalReward,
             reward_type: 'staking_reward',
-            reference_id: `staking_${stakingId}`,
-            description: `Staking rewards for NFT ${mintAddress}`,
+            reference_id: `staking_${stakingId}`, // 기존 필드 이름 사용
+            description: penaltyInfo.isPremature 
+              ? `Staking rewards for NFT ${mintAddress.slice(0, 8)}... (Early unstake with ${penaltyInfo.penaltyPercentage}% penalty)`
+              : `Staking rewards for NFT ${mintAddress.slice(0, 8)}... (Complete staking period)`,
             claimed: false
           }
         ]);
@@ -135,9 +127,12 @@ export default async function handler(req, res) {
     
     return res.status(200).json({
       success: true,
-      message: 'NFT unstaked successfully',
-      earnedRewards,
-      penalty: parseFloat(penalty.toFixed(2))
+      message: penaltyInfo.isPremature
+        ? `NFT unstaked early with a ${penaltyInfo.penaltyPercentage}% penalty.`
+        : 'NFT unstaked successfully after completing the staking period.',
+      earnedRewards: penaltyInfo.earnedRewards,
+      penalty: penaltyInfo.penaltyAmount, // 기존 응답 필드 이름 유지
+      finalReward: penaltyInfo.finalReward
     });
   } catch (error) {
     console.error('Error in completeUnstaking API:', error);
