@@ -5,8 +5,11 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 
-// 동적 임포트
-const BackgroundVideo = dynamic(() => import("./BackgroundVideo"), { ssr: false });
+// Dynamic import for better performance
+const BackgroundVideo = dynamic(() => import("./BackgroundVideo"), { 
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black -z-30"></div>  // 로딩 중 대체 컴포넌트 제공
+});
 
 // Section modal components
 const ValueModal = ({ onClose }) => (
@@ -324,38 +327,94 @@ const RoadmapModal = ({ onClose }) => (
   </div>
 );
 
-export default function Layout({ children }) {
+const ProjectLinks = () => {
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  if (!isClient) return null;
+  
+  // Get current path to highlight active link
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+  
+  return (
+    <div className="w-full bg-gray-800/50 rounded-lg p-3 mb-6">
+      <div className="flex flex-wrap justify-center items-center gap-2">
+        <Link 
+          href="/"
+          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            pathname === '/' 
+              ? 'bg-gray-700 text-white' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          Home
+        </Link>
+        
+        <Link 
+          href="/nft"
+          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            pathname === '/nft' 
+              ? 'bg-purple-600 text-white' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          <span className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            SOLARA NFT
+          </span>
+        </Link>
+        
+        <Link 
+          href="/presale"
+          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            pathname === '/presale' 
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          <span className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            TESOLA Token
+          </span>
+        </Link>
+        
+        <Link 
+          href="/my-collection"
+          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            pathname === '/my-collection' 
+              ? 'bg-blue-600 text-white' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          <span className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            My Collection
+          </span>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+const Layout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // Currently active modal
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Navigation link click handler
-  const handleNavClick = (e, href, label) => {
-    e.preventDefault();
-    
-    if (href === '#value') {
-      setActiveModal('value');
-    } else if (href === '#roadmap') {
-      setActiveModal('roadmap');
-    } else {
-      // For other pages, navigate using window.location for simplicity
-      if (href === '/') {
-        window.location.href = href;
-      } else if (label === "MY COLLECTION") {
-        window.location.href = '/my-collection';
-      } else if (label === "TRANSACTIONS") {
-        window.location.href = '/transactions';
-      } else {
-        window.location.href = href;
-      }
-    }
-
-    // Close mobile menu after clicking
-    setIsMenuOpen(false);
-  };
-
-  // Close modal when ESC key is pressed
   useEffect(() => {
+    setIsClient(true);
+    
+    // Close modal when ESC key is pressed
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && activeModal) {
         setActiveModal(null);
@@ -380,12 +439,68 @@ export default function Layout({ children }) {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [isMenuOpen]);
 
+  // Navigation link click handler
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
+    
+    if (href === '#value') {
+      setActiveModal('value');
+    } else if (href === '#roadmap') {
+      setActiveModal('roadmap');
+    } else {
+      // For other pages, use client-side navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = href;
+      }
+    }
+
+    // Close mobile menu after clicking
+    setIsMenuOpen(false);
+  };
+
+  // Check if current page is presale
+  const isPresalePage = isClient && typeof window !== 'undefined' && window.location.pathname === '/presale';
+
+  // Get page context text
+  const getPageContextText = () => {
+    if (isPresalePage) {
+      return (
+        <>
+          <span className="font-bold">TESOLA Token Presale:</span> Early access discount ends in <span className="text-yellow-300">limited time</span>!
+        </>
+      );
+    }
+    return (
+      <>
+        <span className="font-bold">SOLARA NFT Collection:</span> Mint your unique NFT from our limited collection of 1,000 pieces.
+      </>
+    );
+  };
+
+  // Navigation items
+  const navItems = [
+    { href: "/", label: "HOME" },
+    { href: "#value", label: "VALUE" },
+    { href: "#roadmap", label: "ROADMAP" },
+    { href: "/my-collection", label: "MY COLLECTION" },
+    { href: "/transactions", label: "TRANSACTIONS" },
+  ];
+
+  if (isPresalePage) {
+    // Add presale specific links
+    navItems.splice(2, 0, { href: "/nft", label: "NFT MINT" });
+  } else {
+    // Add NFT specific links
+    navItems.splice(2, 0, { href: "/presale", label: "TOKEN PRESALE" });
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden text-white font-orbitron">
       {/* Modal components */}
       {activeModal === 'value' && <ValueModal onClose={() => setActiveModal(null)} />}
       {activeModal === 'roadmap' && <RoadmapModal onClose={() => setActiveModal(null)} />}
       
+      {/* Background video */}
       <BackgroundVideo />
       
       {/* Background image */}
@@ -424,17 +539,11 @@ export default function Layout({ children }) {
           
           {/* Desktop Navigation */}
           <nav aria-label="Main navigation" className="hidden md:flex items-center space-x-4">
-            {[
-              ["/", "HOME"],
-              ["#value", "Value Proposition"],
-              ["#roadmap", "Roadmap"],
-              ["/my-collection", "MY COLLECTION"],
-              ["/transactions", "TRANSACTIONS"],
-            ].map(([href, label]) => (
+            {navItems.map(({ href, label }) => (
               <a 
                 key={label} 
                 href={href}
-                onClick={(e) => handleNavClick(e, href, label)}
+                onClick={(e) => handleNavClick(e, href)}
                 className="nav-button px-4 py-2 text-sm font-semibold text-purple-300 hover:text-white hover:bg-purple-600 rounded transition"
                 aria-label={`Navigate to ${label}`}
               >
@@ -460,17 +569,11 @@ export default function Layout({ children }) {
             aria-label="Mobile navigation"
             className="mobile-menu md:hidden bg-gray-900 px-4 py-3 flex flex-col space-y-2 animate-fade-in rounded-lg mx-4 shadow-lg"
           >
-            {[
-              ["/", "HOME"],
-              ["#value", "Value Proposition"],
-              ["#roadmap", "Roadmap"],
-              ["/my-collection", "MY COLLECTION"],
-              ["/transactions", "TRANSACTIONS"],
-            ].map(([href, label]) => (
+            {navItems.map(({ href, label }) => (
               <a
                 key={label} 
                 href={href}
-                onClick={(e) => handleNavClick(e, href, label)}
+                onClick={(e) => handleNavClick(e, href)}
                 className="nav-button px-4 py-3 text-sm font-semibold text-purple-300 hover:text-white hover:bg-purple-600 rounded transition w-full text-left min-h-[44px] flex items-center"
                 aria-label={`Navigate to ${label}`}
               >
@@ -480,12 +583,39 @@ export default function Layout({ children }) {
           </nav>
         )}
         
-        <main className="relative px-4 md:px-16 py-8 overflow-visible">{children}</main>
+        {/* Context Banner */}
+        <div className="mt-4 mb-6 mx-4 bg-gradient-to-r from-purple-900/30 to-pink-900/30 p-3 rounded-lg text-center">
+          <p className="text-sm text-white">
+            {getPageContextText()}
+          </p>
+        </div>
         
-        <footer className="text-center py-4 text-sm text-gray-300 mt-8">
-          © 2025 SOLARA • Built on Solana
+        {/* Project Navigation Links */}
+        <ProjectLinks />
+        
+        <main className="relative px-4 md:px-8 py-4 overflow-visible">
+          {children}
+        </main>
+        
+        <footer className="text-center py-6 mt-12 text-sm text-gray-300 border-t border-gray-800">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <img src="/logo2.png" alt="Logo" className="h-8 w-auto" />
+                <span>© 2025 SOLARA & TESOLA</span>
+              </div>
+              <div className="flex space-x-6">
+                <a href="https://twitter.com/tesola_token" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">Twitter</a>
+                <a href="https://discord.gg/tesola" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">Discord</a>
+                <a href="/terms" className="text-gray-400 hover:text-white">Terms</a>
+                <a href="/privacy" className="text-gray-400 hover:text-white">Privacy</a>
+              </div>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
   );
-}
+};
+
+export default Layout;

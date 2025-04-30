@@ -1,9 +1,9 @@
 // preload-json-and-images.cjs
 const fetch = require("node-fetch");
 
-const JSON_CID = "bafybeidqncesx63zh3czbtukj2vhzukagedgqofapejqzmwymm4plcvmfq";
+const JSON_CID = "";
 const IMG_CID = "bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike";
-const BASE_URL = "https://ipfs.io/ipfs";
+const BASE_URL = "https://tesola.mypinata.cloud/ipfs";
 
 (async () => {
   for (let i = 1; i <= 1000; i++) {

@@ -13,8 +13,25 @@ import ErrorMessage from "./ErrorMessage";
 import NFTPreviewMinter from "./NFTPreviewMinter";
 import WalletGuide from "./WalletGuide";
 
-// Dynamic import for better performance
-const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
+// 클라이언트 전용 컴포넌트 래퍼
+const ClientOnly = ({ children }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  return mounted ? children : null;
+};
+
+// Dynamic import for better performance - 수정된 방식
+const VideoPlayer = dynamic(
+  () => import("./VideoPlayer").then(mod => mod.default), 
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-64 bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    )
+  }
+);
 
 const COLLECTION_SIZE = 1000;
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
@@ -37,6 +54,9 @@ export default function HomePage({ initialMintedCount = 0 }) {
   // Client-side initialization
   useEffect(() => {
     setIsClient(true);
+    
+    // 컴포넌트 디버깅을 위한 로그 추가
+    console.log("VideoPlayer type:", typeof VideoPlayer);
     
     // Check local storage for previously visited previews
     const hasSeenPreview = localStorage.getItem("hasSeen_NFTPreview");
@@ -135,15 +155,29 @@ export default function HomePage({ initialMintedCount = 0 }) {
     setShowWalletGuide(true);
   };
 
+  // 표시 전에 VideoPlayer 유효성 확인
+  const isVideoPlayerValid = typeof VideoPlayer === 'function' || 
+                             (typeof VideoPlayer === 'object' && VideoPlayer !== null);
+
+  // 서버 측 렌더링 중에는 로딩 상태 표시
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+        <div className="ml-3">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative z-20 mx-auto w-full max-w-3xl px-4">
       {/* Loading overlay */}
       {loading && <LoadingOverlay message="Processing transaction..." />}
       
       {/* Modals */}
-      <MintResultModal result={mintResult} onClose={() => setMintResult(null)} />
-      <RefundPolicyModal isVisible={showRefundPolicy} onClose={() => setShowRefundPolicy(false)} />
-      <WalletGuide forceShow={showWalletGuide} onClose={() => setShowWalletGuide(false)} />
+      {mintResult && <MintResultModal result={mintResult} onClose={() => setMintResult(null)} />}
+      {showRefundPolicy && <RefundPolicyModal isVisible={showRefundPolicy} onClose={() => setShowRefundPolicy(false)} />}
+      {showWalletGuide && <WalletGuide forceShow={showWalletGuide} onClose={() => setShowWalletGuide(false)} />}
       
       {/* Collection Story Modal */}
       {showCollectionStory && (
@@ -152,13 +186,13 @@ export default function HomePage({ initialMintedCount = 0 }) {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-b from-purple-600/20 to-transparent pointer-events-none rounded-t-xl"></div>
               <video 
-    autoPlay
-    loop
-    muted
-    playsInline
-    className="w-full h-48 object-cover rounded-t-xl"
-    src="/nft-previews/tsts.mp4"
-  />
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-48 object-cover rounded-t-xl"
+                src="/nft-previews/tsts.mp4"
+              />
               <button 
                 onClick={() => setShowCollectionStory(false)}
                 className="absolute top-3 right-3 text-gray-200 hover:text-white bg-black/40 hover:bg-black/60 p-1.5 rounded-full transition-colors"
@@ -269,7 +303,18 @@ export default function HomePage({ initialMintedCount = 0 }) {
       
       {/* Main content */}
       <SolaraHeader />
-      <VideoPlayer src="/SOLARA.mp4" />
+      
+      {/* VideoPlayer - 클라이언트 측에서만 렌더링 */}
+      <ClientOnly>
+        {isVideoPlayerValid ? (
+          <VideoPlayer src="/SOLARA.mp4" />
+        ) : (
+          <div className="w-full h-64 bg-gray-800 flex items-center justify-center text-gray-500 mb-8">
+            <div>비디오를 로드할 수 없습니다</div>
+          </div>
+        )}
+      </ClientOnly>
+      
       <CollectionInfo minted={minted} collectionSize={COLLECTION_SIZE} />
       
       {/* Collection Story Button */}
@@ -288,16 +333,18 @@ export default function HomePage({ initialMintedCount = 0 }) {
       
       {/* Mint section */}
       <div className="mint-section">
-        <MintSection
-          mintPrice={mintPrice}
-          onMintComplete={handleMintComplete}
-          isClient={isClient}
-          setErrorMessage={setErrorMessage}
-          setErrorDetails={setErrorDetails}
-          setLoading={setLoading}
-          showRefundPolicy={() => setShowRefundPolicy(true)}
-          mintAttempts={mintAttempts}
-        />
+        <ClientOnly>
+          <MintSection
+            mintPrice={mintPrice}
+            onMintComplete={handleMintComplete}
+            isClient={isClient}
+            setErrorMessage={setErrorMessage}
+            setErrorDetails={setErrorDetails}
+            setLoading={setLoading}
+            showRefundPolicy={() => setShowRefundPolicy(true)}
+            mintAttempts={mintAttempts}
+          />
+        </ClientOnly>
       </div>
       
       {/* Error message display */}
