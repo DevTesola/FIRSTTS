@@ -1,4 +1,4 @@
-import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction, Connection } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
 import { validateSolanaAddress } from '../../../middleware/apiSecurity';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,8 +7,11 @@ import { SELLER_KEYPAIR } from '../../../server/utils/sellerKeypair';
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
+
+// Solana RPC endpoint
+const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 
 // Seller wallet - derived from keypair
 const SELLER_PUBLIC_KEY = SELLER_KEYPAIR.publicKey.toString();
@@ -31,6 +34,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid token amount. Minimum purchase is 1,000 TESOLA' });
     }
     
+    // 수량을 숫자로 확실하게 변환
+    const tokenAmount = parseInt(amount);
+    
     // Validate address
     if (typeof validateSolanaAddress === 'function') {
       const validation = validateSolanaAddress(wallet);
@@ -41,6 +47,9 @@ export default async function handler(req, res) {
     
     // Create PublicKey object from wallet address
     const buyerPublicKey = new PublicKey(wallet);
+    
+    // Create Solana connection
+    const connection = new Connection(SOLANA_RPC_ENDPOINT);
     
     // Verify presale status and settings
     const { data: presaleSettings, error: settingsError } = await supabase
@@ -92,57 +101,34 @@ export default async function handler(req, res) {
       }
     }
     
-    // Check max per wallet limit
-    if (presaleSettings.max_per_wallet > 0) {
-      const { data: userPurchases, error: purchasesError } = await supabase
-        .from('minted_nfts')
-        .select('sum(token_amount)')
-        .eq('wallet', wallet)
-        .eq('is_presale', true)
-        .or('status.eq.completed,status.eq.pending');
-        
-      if (!purchasesError) {
-        const currentTotal = parseInt(userPurchases[0]?.sum || 0);
-        const newTotal = currentTotal + parseInt(amount);
-        
-        if (newTotal > presaleSettings.max_per_wallet) {
-          return res.status(403).json({ 
-            error: `Exceeds maximum tokens per wallet (${presaleSettings.max_per_wallet.toLocaleString()}). You've already purchased ${currentTotal.toLocaleString()} tokens.` 
-          });
-        }
-      }
-    }
+    // 남은 물량 확인
+    const totalSupply = parseInt(presaleSettings.total_supply);
     
-    // Check remaining allocation
-    const { data: availableData, error: availableError } = await supabase
-      .from('presale_settings')
-      .select('total_supply')
-      .single();
-      
-    if (availableError) {
-      console.error('Error checking available supply:', availableError);
-      return res.status(500).json({ error: 'Error checking available tokens' });
-    }
-    
-    const { data: soldData } = await supabase
+    // 모든 판매 내역을 가져와서 직접 합산
+    const { data: allSales, error: salesError } = await supabase
       .from('minted_nfts')
-      .select('sum(token_amount)')
+      .select('token_amount')
       .eq('is_presale', true)
       .or('status.eq.completed,status.eq.pending');
       
-    const totalSupply = availableData.total_supply;
-    const soldAmount = parseInt(soldData[0]?.sum || 0);
+    if (salesError) {
+      console.error('Error calculating sold amount:', salesError);
+      return res.status(500).json({ error: 'Error calculating sold amount' });
+    }
+    
+    // 직접 합산 계산
+    const soldAmount = allSales ? allSales.reduce((sum, item) => sum + (parseInt(item.token_amount) || 0), 0) : 0;
     const remainingAmount = totalSupply - soldAmount;
     
-    if (amount > remainingAmount) {
+    if (tokenAmount > remainingAmount) {
       return res.status(403).json({ 
         error: `Not enough tokens available. Only ${remainingAmount.toLocaleString()} tokens remaining.` 
       });
     }
     
     // Calculate cost in SOL
-    const tokenPrice = presaleSettings.price_sol;
-    const totalCost = amount * tokenPrice;
+    const tokenPrice = parseFloat(presaleSettings.price_sol);
+    const totalCost = tokenAmount * tokenPrice;
     
     // Check minimum purchase requirement
     if (presaleSettings.min_sol && totalCost < presaleSettings.min_sol) {
@@ -162,20 +148,36 @@ export default async function handler(req, res) {
     const paymentId = uuidv4();
     
     // Store pending purchase record
-    await supabase
+    const { data: insertData, error: insertError } = await supabase
       .from('minted_nfts')
       .insert({
         wallet: wallet,
         status: 'pending',
         is_presale: true,
         presale_price: tokenPrice,
-        token_amount: amount,
+        token_amount: tokenAmount,
         payment_id: paymentId,
         updated_at: new Date().toISOString()
-      });
+      })
+      .select();
       
+    if (insertError) {
+      console.error('Error creating pending purchase record:', insertError);
+      return res.status(500).json({ error: 'Failed to create purchase record' });
+    }
+    
+    console.log('Created pending purchase record:', insertData);
+    
     // Create a transaction for SOL transfer
-    const transferTx = new Transaction().add(
+    let transferTx = new Transaction();
+    
+    // 1. 트랜잭션에 최근 블록해시 설정 (중요!)
+    const { blockhash } = await connection.getLatestBlockhash('confirmed');
+    transferTx.recentBlockhash = blockhash;
+    transferTx.feePayer = buyerPublicKey;
+    
+    // 2. 트랜잭션에 전송 명령 추가
+    transferTx.add(
       SystemProgram.transfer({
         fromPubkey: buyerPublicKey,
         toPubkey: new PublicKey(SELLER_PUBLIC_KEY),
@@ -187,7 +189,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       transaction: transferTx.serialize({ requireAllSignatures: false }).toString('base64'),
       paymentId: paymentId,
-      tokenAmount: amount,
+      tokenAmount: tokenAmount,
       totalCost: totalCost
     });
     

@@ -5,7 +5,7 @@ import { validateSolanaAddress } from '../../../middleware/apiSecurity';
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''  // 수정: SUPABASE_SERVICE_ROLE_KEY로 변경
 );
 
 // Solana RPC endpoint

@@ -1,12 +1,9 @@
-"use client";
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Connection, Transaction } from "@solana/web3.js";
 import Image from "next/image";
 import ErrorMessage from "../ErrorMessage";
-import WalletGuide from "../WalletGuide";
 import { toast } from "react-toastify";
 
 // Environment variables and defaults
@@ -24,7 +21,7 @@ export default function PresaleSection({
   setErrorMessage,
   setErrorDetails,
   setLoading,
-  showTerms  // 이 prop이 반드시 전달되어야 합니다
+  showTerms 
 }) {
   const { publicKey, connected, signTransaction } = useWallet() || {};
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
@@ -122,13 +119,13 @@ export default function PresaleSection({
     { label: "100K", value: 100000 },
   ];
 
-  // 이 함수가 비어 있거나 undefined인 경우를 대비한 안전한 처리
+  // Safe handling of showTerms function
   const handleShowTerms = () => {
     if (typeof showTerms === 'function') {
       showTerms();
     } else {
       console.error("showTerms is not defined or not a function");
-      // 대체 방법: 알림 표시
+      // Fallback method
       toast?.error?.("Terms and conditions not available", { autoClose: 3000 });
     }
   };
@@ -288,9 +285,6 @@ export default function PresaleSection({
 
   return (
     <div className="flex flex-col items-center space-y-6 mt-10 w-full max-w-sm mx-auto">
-      {/* Wallet connection guidance */}
-      <WalletGuide />
-      
       {isClient ? (
         <>
           <div className="wallet-button-container">

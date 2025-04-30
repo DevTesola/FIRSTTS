@@ -60,9 +60,6 @@ export default function PresalePage({ initialSupply = 0 }) {
   useEffect(() => {
     setIsClient(true);
     fetchPresaleConfig();
-    
-    // 컴포넌트 디버깅을 위한 로그 추가
-    console.log("VideoPlayer type:", typeof VideoPlayer);
   }, []);
 
   // Fetch presale configuration
@@ -214,7 +211,7 @@ export default function PresalePage({ initialSupply = 0 }) {
   const isVideoPlayerValid = typeof VideoPlayer === 'function' || 
                              (typeof VideoPlayer === 'object' && VideoPlayer !== null);
 
-  // Terms 모달을 열기 위한 함수 - 이 함수를 PresaleSection에 전달
+  // Terms 모달을 열기 위한 함수
   const handleShowTerms = () => {
     setShowTerms(true);
   };
@@ -310,7 +307,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     setErrorMessage={setErrorMessage}
                     setErrorDetails={setErrorDetails}
                     setLoading={setLoading}
-                    showTerms={handleShowTerms} // 여기서 함수를 전달
+                    showTerms={handleShowTerms}
                   />
                 )}
               </ClientOnly>
@@ -342,7 +339,7 @@ export default function PresalePage({ initialSupply = 0 }) {
       {/* Social Links */}
       <div className="flex justify-center space-x-4 mb-8">
         <a 
-          href="https://twitter.com/tesola_token" 
+          href="https://twitter.com/teslainsolana" 
           target="_blank" 
           rel="noopener noreferrer" 
           className="bg-gray-800 hover:bg-gray-700 p-3 rounded-full transition-colors"
