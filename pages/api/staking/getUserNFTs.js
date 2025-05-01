@@ -1,3 +1,4 @@
+// pages/api/staking/getUserNFTs.js
 import { Connection, PublicKey } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
 
@@ -10,12 +11,10 @@ const supabase = createClient(
 // Solana RPC endpoint
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 
-// Collection mint address (update with your actual collection mint address)
-const COLLECTION_MINT = process.env.NEXT_PUBLIC_COLLECTION_MINT || '';
-
 /**
  * API to fetch user's NFTs from the SOLARA collection for staking
  * This includes both on-chain verification and database lookups
+ * This version properly filters out already staked NFTs
  */
 export default async function handler(req, res) {
   // Only allow GET method
@@ -79,22 +78,44 @@ export default async function handler(req, res) {
       }
     }
     
-    // Step 2: Check which NFTs are already staked to avoid duplicates
+    // Step 2: IMPORTANT - Check which NFTs are already staked to avoid duplicates and confusion
     try {
       const { data: stakedNFTs, error: stakingError } = await supabase
         .from('nft_staking')
-        .select('mint_address')
+        .select('mint_address, nft_name, is_claimed, status')
         .eq('wallet_address', wallet)
-        .eq('status', 'staked');
+        .in('status', ['staked', 'claimed']);
       
       if (!stakingError && stakedNFTs && stakedNFTs.length > 0) {
+        console.log(`Found ${stakedNFTs.length} already staked NFTs`);
+        
+        // Create staked NFTs map for quick lookup
         const stakedMints = new Set(stakedNFTs.map(item => item.mint_address));
         
-        // Filter out NFTs that are already staked
-        const beforeCount = userNFTs.length;
-        userNFTs = userNFTs.filter(nft => !stakedMints.has(nft.mint));
+        // Mark NFTs that are staked in the response
+        userNFTs = userNFTs.map(nft => {
+          const isStaked = stakedMints.has(nft.mint);
+          const stakedInfo = isStaked ? 
+            stakedNFTs.find(stake => stake.mint_address === nft.mint) : null;
+          
+          return {
+            ...nft,
+            isStaked: isStaked,
+            stakeStatus: stakedInfo?.status || null
+          };
+        });
         
-        console.log(`Filtered out ${beforeCount - userNFTs.length} already staked NFTs`);
+        // By default, filter out staked NFTs - user will see them in dashboard
+        const stakableNFTs = userNFTs.filter(nft => !nft.isStaked);
+        
+        console.log(`Returning ${stakableNFTs.length} NFTs available for staking`);
+        return res.status(200).json({
+          success: true,
+          nfts: stakableNFTs,
+          count: stakableNFTs.length,
+          totalCount: userNFTs.length,
+          stakedCount: stakedNFTs.length
+        });
       }
     } catch (stakingError) {
       console.error('Error checking staked NFTs:', stakingError);

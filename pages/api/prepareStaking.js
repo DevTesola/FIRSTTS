@@ -1,12 +1,14 @@
-// pages/api/prepareStaking.js - 업데이트된 버전
+// pages/api/prepareStaking.js - 최종 개선 버전
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
 import { Metaplex } from '@metaplex-foundation/js';
 // 보상 계산기 모듈 import
-import { calculateEstimatedRewards } from '../../utils/staking/reward-calculator';
+import { calculateEstimatedRewards, standardizeTier } from './reward-calculator';
+
+// Supabase 클라이언트 초기화
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
@@ -131,32 +133,64 @@ export default async function handler(req, res) {
     
     // NFT 등급 조회 (리워드 계산에 필요)
     let nftTier = "COMMON"; // 기본 등급
+    let nftName = "";
+    let rawTierValue = null; // 원본 등급 값 저장용
     
     try {
       // 데이터베이스에서 NFT 등급 조회
+      console.log('Fetching NFT metadata for mint:', mintAddress);
       const { data: nftData } = await supabase
         .from('minted_nfts')
-        .select('metadata')
+        .select('metadata, name')
         .eq('mint_address', mintAddress)
         .maybeSingle();
       
-      if (nftData && nftData.metadata) {
-        const metadata = typeof nftData.metadata === 'string' 
-          ? JSON.parse(nftData.metadata) 
-          : nftData.metadata;
+      if (nftData) {
+        nftName = nftData.name || `SOLARA NFT #${Date.now().toString().slice(-4)}`;
         
-        const tierAttr = metadata.attributes?.find(attr => 
-          attr.trait_type === "Tier" || attr.trait_type === "tier"
-        );
-        
-        if (tierAttr && tierAttr.value) {
-          // 등급 값을 대문자로 표준화
-          nftTier = tierAttr.value.toUpperCase();
-          console.log('Found NFT tier:', nftTier);
+        if (nftData.metadata) {
+          let metadata;
+          
+          try {
+            metadata = typeof nftData.metadata === 'string' 
+              ? JSON.parse(nftData.metadata) 
+              : nftData.metadata;
+              
+            console.log('NFT 메타데이터:', JSON.stringify(metadata, null, 2)); // 전체 메타데이터 로깅
+            
+            // 다양한 형식의 등급 속성 검색
+            let tierAttr = metadata.attributes?.find(attr => 
+              attr.trait_type?.toLowerCase() === "tier"
+            );
+            
+            console.log('티어 속성 (첫 번째 검색):', tierAttr);
+            
+            // 값이 없으면 추가 검색
+            if (!tierAttr || !tierAttr.value) {
+              // 다른 가능한 형식 시도
+              tierAttr = metadata.attributes?.find(attr => 
+                (attr.trait_type?.toLowerCase() || '').includes("tier") || 
+                (attr.trait_type?.toLowerCase() || '').includes("rarity")
+              );
+              
+              console.log('티어 속성 (두 번째 검색):', tierAttr);
+            }
+            
+            if (tierAttr && tierAttr.value) {
+              rawTierValue = tierAttr.value; // 원본 값 저장
+              // standardizeTier 함수를 사용하여 등급 값 정규화
+              nftTier = standardizeTier(tierAttr.value);
+              console.log('찾은 NFT 등급:', nftTier, '원본 값:', tierAttr.value);
+            } else {
+              console.log('NFT 등급 속성을 찾을 수 없음, 기본값 사용:', nftTier);
+            }
+          } catch (parseError) {
+            console.error('메타데이터 파싱 오류:', parseError);
+          }
         }
       }
     } catch (tierError) {
-      console.error('Error fetching NFT tier:', tierError);
+      console.error('NFT 등급 조회 오류:', tierError);
       // 기본 등급으로 계속 진행
     }
     
@@ -202,6 +236,9 @@ export default async function handler(req, res) {
       lastValidBlockHeight
     });
     
+    // 등급 로그 추가
+    console.log('계산에 사용할 최종 NFT 등급:', nftTier, '원본 값:', rawTierValue);
+    
     // 업데이트된 보상 계산기 사용
     const rewardCalculation = calculateEstimatedRewards(nftTier, stakingPeriodNum);
     
@@ -209,10 +246,12 @@ export default async function handler(req, res) {
     const stakingMetadata = {
       walletAddress: wallet,
       mintAddress: mintAddress,
+      nftName: nftName,
       stakingPeriod: stakingPeriodNum,
       requestTimestamp: Date.now(),
       // 계산된 리워드 정보
-      nftTier,
+      nftTier: nftTier,
+      rawTierValue: rawTierValue, // 원본 등급 값도 함께 전달
       baseRate: rewardCalculation.baseRate,
       longTermBonus: rewardCalculation.longTermBonus,
       totalEstimatedRewards: rewardCalculation.totalRewards,
@@ -226,6 +265,8 @@ export default async function handler(req, res) {
       transactionBase64: serializedTransaction.toString('base64'),
       stakingMetadata,
       rewardDetails: {
+        nftTier: nftTier,
+        rawTierValue: rawTierValue,
         baseRate: rewardCalculation.baseRate,
         longTermBonus: rewardCalculation.longTermBonus,
         totalRewards: rewardCalculation.totalRewards,

@@ -1,19 +1,51 @@
-// components/staking/NFTGallery.jsx - 단순화된 버전
-import React, { useState } from "react";
-import { GlassButton, PrimaryButton } from "../Buttons";
+// components/staking/NFTGallery.jsx - UI 개선 버전
+import React, { useState, useEffect } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { GlassButton, PrimaryButton, SecondaryButton } from "../Buttons";
 
 /**
- * NFTGallery Component - My Collection과 동일한 방식으로 NFT 표시
+ * NFTGallery Component - UI 개선 및 사용자 경험 향상
  * Displays user's NFTs and allows for selection for staking
  */
 const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [stats, setStats] = useState({ total: 0, staked: 0 });
+  const [showInfoBanner, setShowInfoBanner] = useState(true);
+  const [hoveredNFT, setHoveredNFT] = useState(null);
+  const { publicKey, connected } = useWallet();
   
-  console.log("NFTGallery received nfts:", nfts); // 디버깅용 로그
+  // 컴포넌트 마운트 시 스테이킹 통계 가져오기
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!connected || !publicKey) return;
+      
+      try {
+        const response = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.activeStakes) {
+            setStats(prev => ({ ...prev, staked: data.activeStakes.length }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching staking stats:", error);
+      }
+    };
+    
+    fetchStats();
+  }, [connected, publicKey]);
+  
+  // 컴포넌트가 nfts 받을 때마다 총 NFT 개수 업데이트
+  useEffect(() => {
+    setStats(prev => ({ ...prev, total: nfts.length }));
+  }, [nfts]);
   
   // Filter NFTs based on tier and search term
   const filteredNFTs = nfts.filter((nft) => {
+    // 먼저 이미 스테이킹된 NFT 제외 (API에서 미리 필터링되었지만 추가 확인)
+    if (nft.isStaked) return false;
+    
     // Get NFT tier from attributes
     const tierAttribute = nft.attributes?.find(
       (attr) => attr.trait_type === "Tier" || attr.trait_type === "tier"
@@ -50,49 +82,33 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
     return "bg-blue-900 text-blue-300"; // Common default
   };
   
-  // Get NFT tier text
+  // Get NFT tier text and standardize
   const getTierText = (nft) => {
     const tierAttribute = nft.attributes?.find(
       (attr) => attr.trait_type === "Tier" || attr.trait_type === "tier"
     );
-    return tierAttribute ? tierAttribute.value : "Common";
+    
+    if (!tierAttribute || !tierAttribute.value) return "Common";
+    
+    const tier = tierAttribute.value.trim().toUpperCase();
+    if (tier.includes("LEGEND")) return "Legendary";
+    if (tier.includes("EPIC")) return "Epic";
+    if (tier.includes("RARE")) return "Rare";
+    return "Common";
+  };
+  
+  // Get daily reward rate based on tier
+  const getDailyRewardRate = (tier) => {
+    if (tier.toLowerCase().includes("legendary")) return 200;
+    if (tier.toLowerCase().includes("epic")) return 100;
+    if (tier.toLowerCase().includes("rare")) return 50;
+    return 25; // Common
   };
   
   // Format NFT ID for display
   const formatNftId = (id) => {
     if (!id) return "";
     return String(id).padStart(4, '0');
-  };
-  
-  // Process image URL to use custom IPFS gateway (from NFTCard.jsx)
-  const processImageUrl = (url) => {
-    if (!url) return "/placeholder-nft.jpg";
-    
-    // Use environment variable or default gateway
-    const CUSTOM_IPFS_GATEWAY = process.env.NEXT_PUBLIC_CUSTOM_IPFS_GATEWAY || "https://tesola.mypinata.cloud";
-    
-    // Handle IPFS URLs with custom gateway
-    if (url.startsWith('ipfs://')) {
-      return `${CUSTOM_IPFS_GATEWAY}/ipfs/${url.replace('ipfs://', '')}`;
-    }
-    
-    // Replace any other IPFS gateways with custom one
-    const knownGateways = [
-      'https://ipfs.io/ipfs/',
-      'https://cloudflare-ipfs.com/ipfs/',
-      'https://gateway.pinata.cloud/ipfs/', 
-      'https://ipfs.infura.io/ipfs/',
-      'https://dweb.link/ipfs/'
-    ];
-    
-    for (const gateway of knownGateways) {
-      if (url.includes(gateway)) {
-        const cid = url.split(gateway)[1];
-        return `${CUSTOM_IPFS_GATEWAY}/ipfs/${cid}`;
-      }
-    }
-    
-    return url;
   };
   
   // Handle image error
@@ -116,7 +132,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
     </div>
   );
   
-  // Render empty state
+  // Render empty state with expanded options
   const renderEmptyState = () => (
     <div className="text-center py-16 bg-gray-800/50 rounded-lg">
       <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -126,9 +142,11 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
       <p className="text-gray-500 max-w-md mx-auto mb-6">
         {searchTerm || filter !== "all" 
           ? "Try adjusting your search or filter settings" 
-          : "You don't have any SOLARA NFTs in your wallet. Purchase NFTs to stake and earn rewards."}
+          : stats.staked > 0 
+            ? `You have ${stats.staked} NFT${stats.staked !== 1 ? 's' : ''} already staked. View them in the Dashboard tab.`
+            : "You don't have any SOLARA NFTs in your wallet. Purchase NFTs to stake and earn rewards."}
       </p>
-      <div className="flex justify-center space-x-4">
+      <div className="flex flex-wrap justify-center gap-3">
         {(searchTerm || filter !== "all") && (
           <GlassButton
             onClick={() => {
@@ -139,22 +157,89 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             Clear Filters
           </GlassButton>
         )}
-        <GlassButton onClick={onRefresh}>Refresh NFTs</GlassButton>
+        <GlassButton onClick={onRefresh}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+          </svg>
+          Refresh NFTs
+        </GlassButton>
+        {stats.staked > 0 && (
+          <GlassButton
+            onClick={() => {
+              // Change to Dashboard tab
+              document.querySelector('[aria-controls="dashboard"]')?.click();
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+            </svg>
+            View Staked NFTs
+          </GlassButton>
+        )}
       </div>
     </div>
   );
   
   return (
     <div className="space-y-6">
-      {/* Filters and search */}
+      {/* Enhanced info banner for first-time users */}
+      {showInfoBanner && (
+        <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-4 border border-blue-500/30 relative">
+          <button 
+            className="absolute top-2 right-2 text-gray-400 hover:text-white"
+            onClick={() => setShowInfoBanner(false)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+          <div className="flex items-start">
+            <div className="bg-blue-500/20 p-2 rounded-full mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-white mb-1">How Staking Works</h3>
+              <p className="text-gray-300 mb-2">
+                Select an NFT below to stake it and start earning TESOLA tokens. Higher tier NFTs earn more rewards.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                <div className="bg-gray-800/50 p-2 rounded-lg text-center">
+                  <span className="text-yellow-400 font-bold">200</span>
+                  <span className="text-gray-400 text-xs ml-1">TESOLA/day</span>
+                  <div className="text-xs text-gray-500">(Legendary)</div>
+                </div>
+                <div className="bg-gray-800/50 p-2 rounded-lg text-center">
+                  <span className="text-pink-400 font-bold">100</span>
+                  <span className="text-gray-400 text-xs ml-1">TESOLA/day</span>
+                  <div className="text-xs text-gray-500">(Epic)</div>
+                </div>
+                <div className="bg-gray-800/50 p-2 rounded-lg text-center">
+                  <span className="text-purple-400 font-bold">50</span>
+                  <span className="text-gray-400 text-xs ml-1">TESOLA/day</span>
+                  <div className="text-xs text-gray-500">(Rare)</div>
+                </div>
+                <div className="bg-gray-800/50 p-2 rounded-lg text-center">
+                  <span className="text-blue-400 font-bold">25</span>
+                  <span className="text-gray-400 text-xs ml-1">TESOLA/day</span>
+                  <div className="text-xs text-gray-500">(Common)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Filters and search with improved UI */}
       <div className="bg-gray-800/50 rounded-lg p-4 border border-purple-500/20">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search input */}
+          {/* Search input with clearer placeholder */}
           <div className="w-full md:w-1/2">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search by name or ID..."
+                placeholder="Search by name, ID or #tag..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -164,24 +249,34 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                   <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                 </svg>
               </div>
+              {searchTerm && (
+                <button 
+                  className="absolute right-3 top-2.5 text-gray-500 hover:text-white"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
           
-          {/* Tier filters */}
+          {/* Tier filters with improved visuals */}
           <div className="flex space-x-2 overflow-x-auto pb-1">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "all"
                   ? "bg-purple-600 text-white"
                   : "bg-gray-900 text-gray-300 hover:bg-gray-700"
               }`}
             >
-              All
+              All Tiers
             </button>
             <button
               onClick={() => setFilter("legendary")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "legendary"
                   ? "bg-yellow-700 text-white"
                   : "bg-gray-900 text-yellow-300 hover:bg-gray-700"
@@ -191,7 +286,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             </button>
             <button
               onClick={() => setFilter("epic")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "epic"
                   ? "bg-pink-700 text-white"
                   : "bg-gray-900 text-pink-300 hover:bg-gray-700"
@@ -201,7 +296,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             </button>
             <button
               onClick={() => setFilter("rare")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "rare"
                   ? "bg-purple-700 text-white"
                   : "bg-gray-900 text-purple-300 hover:bg-gray-700"
@@ -211,7 +306,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             </button>
             <button
               onClick={() => setFilter("common")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "common"
                   ? "bg-blue-700 text-white"
                   : "bg-gray-900 text-blue-300 hover:bg-gray-700"
@@ -230,12 +325,13 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
             </svg>
-            My SOLARA NFTs
+            Available NFTs for Staking
           </h3>
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-400">
-              {filteredNFTs.length} NFT{filteredNFTs.length !== 1 ? "s" : ""}
+              {filteredNFTs.length} NFT{filteredNFTs.length !== 1 ? "s" : ""} available
+              {stats.staked > 0 && ` (${stats.staked} already staked)`}
             </span>
             <GlassButton 
               size="small" 
@@ -256,6 +352,21 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             >
               Refresh
             </GlassButton>
+            
+            {stats.staked > 0 && (
+              <GlassButton
+                size="small"
+                onClick={() => {
+                  // Change to Dashboard tab
+                  document.querySelector('[aria-controls="dashboard"]')?.click();
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                </svg>
+                View Staked
+              </GlassButton>
+            )}
           </div>
         </div>
         
@@ -263,52 +374,119 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
           renderSkeleton()
         ) : filteredNFTs.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredNFTs.map((nft) => (
-              <div 
-                key={nft.mint || nft.id} 
-                className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 hover:border-purple-500/50 transition-colors cursor-pointer transform hover:scale-[1.02] duration-200"
-                onClick={() => onSelectNFT(nft)}
-              >
-                {/* NFT Image - 단순화 및 IPFS 처리 */}
-                <div className="aspect-square w-full bg-gray-800 relative">
-                  <img 
-                    src={processImageUrl(nft.image)} 
-                    alt={nft.name || `NFT #${nft.id}`}
-                    className="w-full h-full object-cover"
-                    onError={handleImageError}
-                    loading="lazy"
-                  />
-                  
-                  {/* Tier badge */}
-                  <div className="absolute top-2 right-2 z-10">
-                    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getTierBadge(nft)}`}>
-                      {getTierText(nft)}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* NFT info */}
-                <div className="p-3">
-                  <h4 className="font-medium text-white truncate">{nft.name || `SOLARA #${formatNftId(nft.id)}`}</h4>
-                  <div className="flex justify-between items-center mt-2">
-                    <div className="text-xs text-gray-400">
-                      ID: {formatNftId(nft.id) || nft.mint?.slice(0, 6) || "Unknown"}
+            {filteredNFTs.map((nft) => {
+              const tier = getTierText(nft);
+              const dailyRate = getDailyRewardRate(tier);
+              const isHovered = hoveredNFT === nft.mint;
+              
+              return (
+                <div 
+                  key={nft.mint || nft.id} 
+                  className={`group bg-gray-900 rounded-lg overflow-hidden border border-gray-800 hover:border-purple-500/50 transition-all cursor-pointer transform hover:scale-[1.02] duration-200 ${isHovered ? 'ring-2 ring-purple-500' : ''}`}
+                  onClick={() => onSelectNFT(nft)}
+                  onMouseEnter={() => setHoveredNFT(nft.mint)}
+                  onMouseLeave={() => setHoveredNFT(null)}
+                >
+                  {/* NFT Image with hover effect */}
+                  <div className="aspect-square w-full bg-gray-800 relative">
+                    <img 
+                      src={nft.image} 
+                      alt={nft.name || `NFT #${nft.id}`}
+                      className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-110"
+                      onError={handleImageError}
+                      loading="lazy"
+                    />
+                    
+                    {/* Tier badge */}
+                    <div className="absolute top-2 right-2 z-10">
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getTierBadge(nft)}`}>
+                        {tier}
+                      </span>
                     </div>
-                    <PrimaryButton size="small" onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectNFT(nft);
-                    }}>
-                      Stake
-                    </PrimaryButton>
+                    
+                    {/* Hover overlay with reward info */}
+                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-white font-bold mb-1">Stake to Earn</span>
+                      <div className="flex items-center">
+                        <span className="text-2xl font-bold text-yellow-400">{dailyRate}</span>
+                        <span className="text-yellow-200 text-sm ml-1">TESOLA/day</span>
+                      </div>
+                      <span className="text-gray-300 text-xs mt-1">Higher rates for longer staking</span>
+                    </div>
+                  </div>
+                  
+                  {/* NFT info */}
+                  <div className="p-3">
+                    <h4 className="font-medium text-white truncate">{nft.name || `SOLARA #${formatNftId(nft.id)}`}</h4>
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="text-xs text-gray-400">
+                        ID: {formatNftId(nft.id) || nft.mint?.slice(0, 6) || "Unknown"}
+                      </div>
+                      <PrimaryButton size="small" onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectNFT(nft);
+                      }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                        </svg>
+                        Stake
+                      </PrimaryButton>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           renderEmptyState()
         )}
       </div>
+      
+      {/* Info Banner - NFT 목록이 비어있지 않고 Staked NFT가 있을 때 표시 */}
+      {stats.staked > 0 && filteredNFTs.length > 0 && (
+        <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4 text-blue-300 flex items-start">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          <div>
+            <h4 className="font-medium mb-1">Already Staked NFTs</h4>
+            <p className="text-sm">
+              You currently have {stats.staked} NFT{stats.staked !== 1 ? 's' : ''} staked. 
+              View your staked NFTs and earned rewards in the 
+              <button 
+                className="text-blue-200 font-medium underline mx-1 hover:text-white"
+                onClick={() => {
+                  // Change to Dashboard tab
+                  document.querySelector('[aria-controls="dashboard"]')?.click();
+                }}
+              >
+                Dashboard
+              </button> 
+              tab.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {/* Custom animation styles */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        .hover-scale {
+          transition: transform 0.2s ease-out;
+        }
+        
+        .hover-scale:hover {
+          transform: scale(1.05);
+        }
+      `}</style>
     </div>
   );
 };

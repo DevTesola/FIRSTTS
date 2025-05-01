@@ -1,6 +1,6 @@
 import StakingComponent from "../components/StakingComponent";
 import Head from "next/head";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Layout from "../components/Layout";
@@ -20,6 +20,7 @@ export default function StakingPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(false);
   const [selectedNFT, setSelectedNFT] = useState(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
   
   // Load staking stats when wallet connects
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function StakingPage() {
       setUserNFTs([]);
       setSelectedNFT(null);
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, lastRefreshTime]);
   
   // Fetch user's staking stats
   const fetchStakingStats = async () => {
@@ -42,12 +43,14 @@ export default function StakingPage() {
     setError(null); // Clear any previous errors
     
     try {
-      const response = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}`);
+      console.log("Fetching staking stats...");
+      const response = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
       if (!response.ok) {
         throw new Error("Failed to fetch staking statistics");
       }
       
       const data = await response.json();
+      console.log("Staking stats loaded:", data);
       setStakingStats(data);
     } catch (err) {
       console.error("Error fetching staking stats:", err);
@@ -57,7 +60,7 @@ export default function StakingPage() {
     }
   };
   
-  // 수정된 fetchUserNFTs 함수 - My Collection과 동일한 API 사용
+  // 수정된 fetchUserNFTs 함수 - My Collection과 동일한 API 사용 및 스테이킹된 NFT 필터링
   const fetchUserNFTs = async () => {
     if (!publicKey) return;
     
@@ -65,8 +68,9 @@ export default function StakingPage() {
     setError(null); // Clear any previous errors
     
     try {
+      console.log("Fetching NFTs for staking...");
       // My Collection 페이지와 동일한 API 사용
-      const response = await fetch(`/api/getNFTs?wallet=${publicKey.toString()}&limit=100`);
+      const response = await fetch(`/api/getNFTs?wallet=${publicKey.toString()}&limit=100&nocache=${Date.now()}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -77,8 +81,8 @@ export default function StakingPage() {
       const data = await response.json();
       console.log('API Data received for staking:', data);
       
-      // 스테이킹된 NFT 필터링
-      const stakedResponse = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}`);
+      // 스테이킹된 NFT 필터링 - 최신 상태 가져오기
+      const stakedResponse = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
       if (!stakedResponse.ok) {
         throw new Error("Failed to fetch staking data for filtering");
       }
@@ -87,6 +91,7 @@ export default function StakingPage() {
       const stakedMints = new Set();
       
       if (stakingData && stakingData.activeStakes) {
+        console.log(`Found ${stakingData.activeStakes.length} staked NFTs to filter out`);
         stakingData.activeStakes.forEach(stake => {
           stakedMints.add(stake.mint_address);
         });
@@ -95,15 +100,15 @@ export default function StakingPage() {
       // 스테이킹되지 않은 NFT만 필터링
       const availableNFTs = data.nfts.filter(nft => !stakedMints.has(nft.mint));
       
+      console.log(`Filtered NFTs: ${availableNFTs.length} available out of ${data.nfts.length} total`);
       setUserNFTs(availableNFTs || []);
-      console.log('Available NFTs for staking:', availableNFTs.length);
     } catch (err) {
       console.error("Error fetching user NFTs:", err);
       
       // 실패 시 기존 방식으로 시도
       try {
         console.log("Falling back to original getUserNFTs API");
-        const fallbackResponse = await fetch(`/api/staking/getUserNFTs?wallet=${publicKey.toString()}`);
+        const fallbackResponse = await fetch(`/api/staking/getUserNFTs?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
         
         if (!fallbackResponse.ok) {
           throw new Error("Fallback API failed too");
@@ -166,15 +171,40 @@ export default function StakingPage() {
     setActiveTab("stake");
   };
   
-  // Handle successful staking or unstaking
+  // Handle successful staking or unstaking with full data refresh
   const handleStakingSuccess = () => {
-    // Refresh data
-    fetchStakingStats();
-    fetchUserNFTs();
+    // Show success message
+    const successMessage = document.createElement('div');
+    successMessage.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fadeIn';
+    successMessage.innerHTML = `
+      <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span>Staking transaction successful! Refreshing data...</span>
+      </div>
+    `;
+    document.body.appendChild(successMessage);
+    setTimeout(() => {
+      successMessage.remove();
+    }, 5000);
+    
     // Reset selection
     setSelectedNFT(null);
+    
     // Return to dashboard
     setActiveTab("dashboard");
+    
+    // Force data refresh with a delay to ensure backend updates are complete
+    setTimeout(() => {
+      // This will force re-fetching of both stats and NFTs
+      setLastRefreshTime(Date.now());
+    }, 1000);
+  };
+  
+  // Function to refresh all data - useful for manual refresh buttons
+  const refreshAllData = () => {
+    setLastRefreshTime(Date.now());
   };
   
   // Render different content based on active tab
@@ -201,7 +231,7 @@ export default function StakingPage() {
           <StakingDashboard 
             stats={stakingStats} 
             isLoading={isLoading} 
-            onRefresh={fetchStakingStats}
+            onRefresh={refreshAllData}
           />
         );
       case "nfts":
@@ -210,7 +240,7 @@ export default function StakingPage() {
             nfts={userNFTs} 
             isLoading={isLoadingNFTs} 
             onSelectNFT={handleSelectNFT}
-            onRefresh={fetchUserNFTs}
+            onRefresh={refreshAllData}
           />
         );
       case "stake":
@@ -286,7 +316,7 @@ export default function StakingPage() {
               )}
             </div>
             <div>
-              <StakingRewards stats={stakingStats} isLoading={isLoading} />
+              <StakingRewards stats={stakingStats} isLoading={isLoading} onSuccess={refreshAllData} />
             </div>
           </div>
         );
@@ -399,6 +429,19 @@ export default function StakingPage() {
           </div>
         </div>
         
+        {/* Sync Status Indicator */}
+        <div className="flex justify-center mb-4">
+          <button 
+            onClick={refreshAllData}
+            className="flex items-center space-x-1 bg-gray-800/30 hover:bg-gray-800/50 px-3 py-1 rounded-full text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+            </svg>
+            <span>Refresh Data</span>
+          </button>
+        </div>
+        
         {/* Tab Content */}
         <div className="mb-12">
           {renderTabContent()}
@@ -500,6 +543,17 @@ export default function StakingPage() {
             </ul>
           </div>
         </div>
+        
+        {/* Custom styles for animations */}
+        <style jsx>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+          }
+        `}</style>
       </Layout>
     </>
   );

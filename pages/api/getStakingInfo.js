@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
 // 향상된 보상 계산기 import
-import { calculateEarnedRewards } from '../../utils/staking/reward-calculator';
+import { calculateEstimatedRewards } from './reward-calculator';
 
 // Supabase 클라이언트 초기화
 const supabase = createClient(

@@ -1,7 +1,7 @@
 // pages/api/prepareUnstaking.js - Integrated Version
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
-import { calculateUnstakingPenalty } from '../../utils/reward-calculator';
+import { calculateUnstakingPenalty } from './reward-calculator';
 
 // Supabase 클라이언트 초기화
 const supabase = createClient(

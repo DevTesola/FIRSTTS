@@ -1,12 +1,13 @@
-// pages/api/completeStaking.js - 업데이트된 버전
+// pages/api/completeStaking.js - 최종 개선 버전
 import { createClient } from '@supabase/supabase-js';
 import { Connection, PublicKey } from '@solana/web3.js';
 // 보상 계산기 모듈 import
-import { calculateEstimatedRewards } from '../../utils/staking/reward-calculator';
+import { calculateEstimatedRewards, standardizeTier } from './reward-calculator';
+
 // Supabase 클라이언트 초기화
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
@@ -17,9 +18,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { wallet, mintAddress, txSignature, stakingPeriod } = req.body;
+    const { wallet, mintAddress, txSignature, stakingPeriod, nftTier, rawTierValue, nftName } = req.body;
     
-    console.log('Complete staking request received:', { wallet, mintAddress, txSignature, stakingPeriod });
+    console.log('Complete staking request received:', { 
+      wallet, 
+      mintAddress, 
+      txSignature, 
+      stakingPeriod,
+      nftTier,
+      rawTierValue,
+      nftName
+    });
     
     if (!wallet || !mintAddress || !txSignature || !stakingPeriod) {
       return res.status(400).json({ 
@@ -161,43 +170,67 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: checkError.message });
     }
     
-    // NFT 등급 및 메타데이터 조회
-    let nftTier = "COMMON"; // 기본 등급
-    let nftName = "";
+    // NFT 등급 및 메타데이터 조회 또는 요청에서 가져오기
+    let finalNftTier = "COMMON"; // 기본 등급
+    let finalNftName = nftName || "";
     
-    try {
-      // 데이터베이스에서 NFT 등급 조회
-      const { data: nftData } = await supabase
-        .from('minted_nfts')
-        .select('metadata, name')
-        .eq('mint_address', mintAddress)
-        .maybeSingle();
-      
-      if (nftData && nftData.metadata) {
-        const metadata = typeof nftData.metadata === 'string' 
-          ? JSON.parse(nftData.metadata) 
-          : nftData.metadata;
+    // 클라이언트에서 전달받은 NFT 등급이 있으면 사용
+    if (nftTier) {
+      finalNftTier = standardizeTier(nftTier);
+      console.log('클라이언트에서 받은 NFT 등급:', nftTier, '-> 표준화:', finalNftTier);
+    } else {
+      // 클라이언트에서 등급을 전달받지 못한 경우 데이터베이스에서 조회
+      try {
+        console.log('데이터베이스에서 NFT 메타데이터 조회 중...');
+        const { data: nftData } = await supabase
+          .from('minted_nfts')
+          .select('metadata, name')
+          .eq('mint_address', mintAddress)
+          .maybeSingle();
         
-        const tierAttr = metadata.attributes?.find(attr => 
-          attr.trait_type === "Tier" || attr.trait_type === "tier"
-        );
-        
-        if (tierAttr && tierAttr.value) {
-          // 등급 값을 대문자로 표준화
-          nftTier = tierAttr.value.toUpperCase();
-          console.log('Found NFT tier:', nftTier);
+        if (nftData) {
+          finalNftName = nftData.name || `SOLARA NFT #${Date.now().toString().slice(-4)}`;
+          
+          if (nftData.metadata) {
+            let metadata;
+            
+            try {
+              metadata = typeof nftData.metadata === 'string' 
+                ? JSON.parse(nftData.metadata) 
+                : nftData.metadata;
+                
+              console.log('데이터베이스에서 가져온 NFT 메타데이터:', metadata);
+              
+              const tierAttr = metadata.attributes?.find(attr => 
+                (attr.trait_type?.toLowerCase() || '').includes("tier") || 
+                (attr.trait_type?.toLowerCase() || '').includes("rarity")
+              );
+              
+              if (tierAttr && tierAttr.value) {
+                finalNftTier = standardizeTier(tierAttr.value);
+                console.log('데이터베이스에서 찾은 NFT 등급:', tierAttr.value, '-> 표준화:', finalNftTier);
+              }
+            } catch (parseError) {
+              console.error('메타데이터 파싱 오류:', parseError);
+            }
+          }
         }
-        
-        nftName = nftData.name || metadata.name || `SOLARA NFT`;
+      } catch (tierError) {
+        console.error('데이터베이스에서 NFT 정보 조회 오류:', tierError);
       }
-    } catch (tierError) {
-      console.error('Error fetching NFT tier:', tierError);
-      // 기본 등급으로 계속 진행
     }
+    
+    // 원본 등급 값도 저장 (디버깅용)
+    const originalTierValue = rawTierValue || nftTier || finalNftTier;
+    console.log('저장할 최종 NFT 정보:', {
+      tier: finalNftTier,
+      originalValue: originalTierValue,
+      name: finalNftName
+    });
     
     // 업데이트된 보상 계산기 사용
     const stakingPeriodDays = parseInt(stakingPeriod, 10);
-    const rewardCalculation = calculateEstimatedRewards(nftTier, stakingPeriodDays);
+    const rewardCalculation = calculateEstimatedRewards(finalNftTier, stakingPeriodDays);
     
     // 스테이킹 시작 및 종료 날짜 계산
     const stakingStartDate = new Date();
@@ -209,7 +242,9 @@ export default async function handler(req, res) {
       mintAddress,
       stakingPeriod: stakingPeriodDays,
       totalRewards: rewardCalculation.totalRewards,
-      releaseDate: releaseDate.toISOString()
+      releaseDate: releaseDate.toISOString(),
+      nftTier: finalNftTier,
+      originalTierValue
     });
     
     // 재시도 메커니즘이 있는 데이터베이스에 스테이킹 기록 생성
@@ -225,7 +260,7 @@ export default async function handler(req, res) {
             {
               wallet_address: wallet,
               mint_address: mintAddress,
-              nft_name: nftName,
+              nft_name: finalNftName,
               staking_period: stakingPeriodDays,
               staked_at: stakingStartDate.toISOString(),
               release_date: releaseDate.toISOString(),
@@ -233,7 +268,8 @@ export default async function handler(req, res) {
               daily_reward_rate: rewardCalculation.baseRate,
               tx_signature: txSignature,
               status: 'staked',
-              nft_tier: nftTier,
+              nft_tier: finalNftTier,
+              original_tier_value: originalTierValue,
               
               // 새로운 필드 추가: 보상 계산기에서 얻은 값
               base_reward_rate: rewardCalculation.baseRate,
@@ -283,6 +319,8 @@ export default async function handler(req, res) {
       stakingInfo,
       // 더 많은 세부 정보 제공
       rewardDetails: {
+        nftTier: finalNftTier,
+        originalValue: originalTierValue,
         baseRate: rewardCalculation.baseRate,
         totalRewards: rewardCalculation.totalRewards,
         averageDailyReward: rewardCalculation.averageDailyReward

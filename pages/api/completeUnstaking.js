@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Connection } from '@solana/web3.js';
 // 향상된 보상 계산기 import
-import { calculateUnstakingPenalty } from '../../utils/reward-calculator';
+import { calculateUnstakingPenalty } from './reward-calculator';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
