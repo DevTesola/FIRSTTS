@@ -182,18 +182,18 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
   const getTierStyle = (tier) => {
     const lowerTier = (tier || "").toLowerCase();
     if (lowerTier.includes("legendary")) return "bg-yellow-900/30 border-yellow-500/30 text-yellow-300";
-    if (lowerTier.includes("epic")) return "bg-pink-900/30 border-pink-500/30 text-pink-300";
-    if (lowerTier.includes("rare")) return "bg-purple-900/30 border-purple-500/30 text-purple-300";
-    return "bg-blue-900/30 border-blue-500/30 text-blue-300"; // Common default
+    if (lowerTier.includes("epic")) return "bg-purple-900/30 border-purple-500/30 text-purple-300";
+    if (lowerTier.includes("rare")) return "bg-blue-900/30 border-blue-500/30 text-blue-300";
+    return "bg-green-900/30 border-green-500/30 text-green-300"; // Common default
   };
   
   // Get the appropriate tier badge color
   const getTierBadge = (tier) => {
     const lowerTier = (tier || "").toLowerCase();
     if (lowerTier.includes("legendary")) return "bg-yellow-900 text-yellow-300";
-    if (lowerTier.includes("epic")) return "bg-pink-900 text-pink-300";
-    if (lowerTier.includes("rare")) return "bg-purple-900 text-purple-300";
-    return "bg-blue-900 text-blue-300"; // Common default
+    if (lowerTier.includes("epic")) return "bg-purple-900 text-purple-300";
+    if (lowerTier.includes("rare")) return "bg-blue-900 text-blue-300";
+    return "bg-green-900 text-green-300"; // Common default
   };
   
   // Extract NFT name or use placeholder

@@ -429,9 +429,9 @@ const Layout = ({ children }) => {
         />
       </div>
       
-      {/* Gradient overlay */}
+      {/* Gradient overlay - 단일 레이어로 수정 */}
       <div
-        className="fixed inset-0 -z-10 pointer-events-none"
+        className="fixed inset-0 -z-20 pointer-events-none"
         style={{
           background:
             "radial-gradient(circle at center, transparent 0%, rgba(25,25,112,0.05) 50%, rgba(75,0,130,0.1) 75%, rgba(0,0,0,0.2) 100%)",

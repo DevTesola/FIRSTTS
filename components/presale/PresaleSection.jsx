@@ -284,45 +284,12 @@ export default function PresaleSection({
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6 mt-10 w-full max-w-sm mx-auto">
+    <div className="flex flex-col items-center space-y-6 w-full max-w-sm mx-auto">
       {isClient ? (
         <>
-          <div className="wallet-button-container">
-            <WalletMultiButton />
-          </div>
-          
-          {connected && publicKey && (
-            <div className="bg-gray-800 text-purple-300 font-mono text-sm md:text-base rounded-lg px-4 py-2 shadow-md w-full">
-              <div className="flex items-center justify-between">
-                <span className="truncate">Wallet: {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
-                
-                {solBalance !== null && (
-                  <span className={`ml-2 font-bold ${hasSufficientFunds ? 'text-green-400' : 'text-red-400'}`}>
-                    {solBalance.toFixed(4)} SOL
-                  </span>
-                )}
-              </div>
-              
-              {/* Whitelist status */}
-              {whitelistChecked && (
-                <div className="mt-1 text-xs flex items-center">
-                  <span className={isWhitelisted ? 'text-green-400' : 'text-yellow-400'}>
-                    {isWhitelisted ? '✓ Whitelisted' : 'Public Presale'}
-                  </span>
-                </div>
-              )}
-              
-              {/* Insufficient funds warning */}
-              {!hasSufficientFunds && solBalance !== null && (
-                <div className="mt-1 text-xs text-red-400">
-                  Insufficient funds. You need at least {totalCost.toFixed(6)} SOL plus fees.
-                </div>
-              )}
-            </div>
-          )}
         </>
       ) : (
-        <div>Loading wallet button...</div>
+        <div>Loading...</div>
       )}
       
       {isClient && connected && (

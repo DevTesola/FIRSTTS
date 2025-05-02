@@ -1,9 +1,16 @@
 // pages/api/recordTweetReward.js
 import { createClient } from '@supabase/supabase-js';
 
+// 일반 클라이언트 (제한된 권한)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
+
+// 서비스 역할 클라이언트 (관리자 권한, RLS 우회)
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 // 환경 변수에서 보상 금액 가져오기
@@ -15,7 +22,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { wallet, txSignature, reference_id, reward_type, nft_id, mint_address } = req.body;
+    const { wallet, txSignature, reference_id, reward_type, nft_id, mint_address, tweet_text, share_text } = req.body;
     
     // 요청 데이터 로깅
     console.log('Reward request received:', {
@@ -24,7 +31,9 @@ export default async function handler(req, res) {
       reference_id, 
       reward_type, 
       nft_id, 
-      mint_address
+      mint_address,
+      tweet_text, // 트윗 텍스트 저장 (나중에 검증에 사용 가능)
+      share_text  // 텔레그램 공유 텍스트 저장
     });
     
     if (!wallet) {
@@ -152,30 +161,139 @@ export default async function handler(req, res) {
     if (nft_id) rewardData.nft_id = nft_id;
     if (mint_address) rewardData.mint_address = mint_address;
     if (txSignature) rewardData.tx_signature = txSignature;
+    if (tweet_text) rewardData.tweet_text = tweet_text;
+    if (share_text) rewardData.share_text = share_text;
     
     // 최종 저장 데이터 로깅
     console.log('Saving reward to database:', rewardData);
     
-    const { data: newReward, error } = await supabase
+    // 환경 설정 로깅 (민감한 키 값은 포함하지 않음)
+    console.log('Supabase 설정 확인:', {
+      publicUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? '설정됨' : '없음',
+      publicKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '설정됨' : '없음',
+      serviceUrl: process.env.SUPABASE_URL ? '설정됨' : '없음',
+      serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? '설정됨' : '없음'
+    });
+    
+    // 먼저 테이블 접근 권한 확인 (읽기는 모든 사용자에게 허용됨)
+    console.log('테이블 접근 권한 확인 중...');
+    const { data: tableCheck, error: tableError } = await supabase
       .from('rewards')
-      .insert([rewardData])
-      .select()
-      .single();
+      .select('id')
+      .limit(1);
+      
+    if (tableError) {
+      console.error('테이블 접근 확인 실패:', tableError);
+      throw new Error(`테이블 접근 오류: ${tableError.message}`);
+    }
+    
+    console.log('테이블 접근 확인 성공, 서비스 역할로 삽입 진행');
+    
+    // 서비스 역할로 삽입하여 RLS 우회
+    console.log('서비스 역할로 rewards 테이블에 데이터 삽입 시도');
+    
+    // 삽입 시 최소한의 데이터만 반환하도록 설정
+    const insertOptions = { returning: 'minimal' };
+    
+    // supabaseAdmin(서비스 역할)으로 삽입 시도
+    const { data: newReward, error } = await supabaseAdmin
+      .from('rewards')
+      .insert([rewardData], insertOptions);
     
     if (error) {
       console.error('Failed to create reward:', error);
       throw new Error(`Failed to create reward: ${error.message}`);
     }
     
+    // 삽입 결과 확인
+    if (error) {
+      console.error('보상 생성 실패:', error);
+      
+      // 오류가 RLS 정책 관련이면 더 자세한 정보 제공
+      if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
+        console.error('RLS 정책 오류 발생. 서비스 역할이 제대로 적용되지 않았습니다.');
+        
+        // 대체 접근법: 보류 중 보상 테이블에 로깅
+        try {
+          console.log('대체 접근법 시도: 보류 중 보상 기록...');
+          
+          // 관리자가 나중에 처리할 수 있도록 임시 테이블에 저장
+          // reward_requests 또는 reward_pending 테이블이 있다면 사용
+          let fallbackSuccess = false;
+          
+          // 먼저 reward_requests 테이블 시도
+          const { data: requestsData, error: requestsError } = await supabaseAdmin
+            .from('reward_requests')
+            .insert([{
+              ...rewardData,
+              status: 'pending',
+              created_at: new Date().toISOString(),
+              error_message: error.message
+            }]);
+            
+          if (!requestsError) {
+            console.log('reward_requests 테이블에 성공적으로 기록됨');
+            fallbackSuccess = true;
+          } else {
+            console.log('reward_requests 테이블 접근 실패, reward_pending 테이블 시도');
+            
+            // reward_pending 테이블 시도
+            const { data: pendingData, error: pendingError } = await supabaseAdmin
+              .from('reward_pending')
+              .insert([{
+                ...rewardData,
+                status: 'pending',
+                created_at: new Date().toISOString(),
+                error_message: error.message
+              }]);
+              
+            if (!pendingError) {
+              console.log('reward_pending 테이블에 성공적으로 기록됨');
+              fallbackSuccess = true;
+            }
+          }
+          
+          if (fallbackSuccess) {
+            return res.status(200).json({
+              success: true,
+              message: '보상이 관리자 승인을 위해 대기열에 추가되었습니다',
+              pending: true
+            });
+          }
+        } catch (fallbackError) {
+          console.error('대체 접근법 실패:', fallbackError);
+        }
+      }
+      
+      throw new Error(`보상 생성 실패: ${error.message}`);
+    }
+    
     // 생성된 보상 기록 로깅
-    console.log('New reward created:', newReward);
+    console.log('New reward created successfully');
     
     return res.status(200).json({
-      success: true,
-      reward: newReward
+      success: true
     });
   } catch (error) {
     console.error('Error in recordTweetReward API:', error);
-    return res.status(500).json({ error: 'Failed to record reward: ' + error.message });
+    // Convert to user-friendly error message
+    let userFriendlyMessage = 'We encountered an issue recording your share. Please try again later.';
+    
+    // Specific user-friendly messages for different error types
+    if (error.message.includes('share_text')) {
+      userFriendlyMessage = 'Sharing feature is temporarily unavailable. We are updating our systems.';
+    } else if (error.message.includes('schema cache')) {
+      userFriendlyMessage = 'System maintenance in progress. Please try again in a few minutes.';
+    } else if (error.message.includes('already claimed')) {
+      userFriendlyMessage = 'You have already received rewards for sharing this NFT.';
+    }
+    
+    // Include original error in development environment
+    const isDev = process.env.NODE_ENV === 'development';
+    const errorDetail = isDev ? ` (${error.message})` : '';
+    
+    return res.status(500).json({ 
+      error: userFriendlyMessage + errorDetail
+    });
   }
 }

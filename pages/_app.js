@@ -6,7 +6,10 @@ import Head from "next/head";
 import "../styles/globals.css";
 import "../styles/wallet.css"; // 월렛 커스텀 스타일
 import "../styles/mobile-responsive.css"; // 모바일 최적화 스타일
+import "../styles/community.css"; // Community page styles
 import { AnalyticsProvider, PageViewTracker } from "../components/AnalyticsProvider";
+import ErrorBoundary from "../components/ErrorBoundary";
+import { NotificationProvider } from "../components/Notifications";
 
 // Context for managing application-wide network and error states
 export const AppStateContext = createContext({
@@ -19,21 +22,31 @@ export const AppStateContext = createContext({
 
 export const useAppState = () => useContext(AppStateContext);
 
+// Import the fallback component
+import FallbackLoading from "../components/FallbackLoading";
+
 // 오프라인 감지 컴포넌트 동적 로드
-const OfflineDetector = dynamic(() => import("../components/OfflineDetector"), {
-  ssr: false
+const OfflineDetector = dynamic(() => import("../components/OfflineDetector").catch(err => {
+  console.error("Failed to load OfflineDetector:", err);
+  return () => null; // Return empty component on error
+}), {
+  ssr: false,
+  loading: () => null // No loading state for this component
 });
 
 // 월렛 래퍼 동적 로드
-const WalletWrapper = dynamic(() => import("../components/WalletWrapper"), { 
-  ssr: false,
-  loading: () => (
-    <div className="flex justify-center items-center min-h-screen bg-black text-white">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-      <div className="ml-3">Loading wallet services...</div>
-    </div>
-  )
-});
+const WalletWrapper = dynamic(() => 
+  import("../components/WalletWrapper")
+    .catch(err => {
+      console.error("Failed to load WalletWrapper:", err);
+      // Return a simple wrapper that just renders children
+      return ({ children }) => <>{children}</>; 
+    }), 
+  { 
+    ssr: false,
+    loading: () => <FallbackLoading message="Loading wallet services..." />
+  }
+);
 
 export default function MyApp({ Component, pageProps }) {
   const [mounted, setMounted] = useState(false);
@@ -139,45 +152,52 @@ export default function MyApp({ Component, pageProps }) {
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </Head>
       
-      <AnalyticsProvider disabled={true}>
-        <PageViewTracker />
-        <WalletWrapper>
-          {/* 개선된 오프라인 감지기 */}
-          <OfflineDetector onStatusChange={handleNetworkStatusChange} />
-          
-          {/* 전역 오류 표시 */}
-          {globalError && (
-            <div className="fixed top-4 left-0 right-0 z-50 mx-auto w-full max-w-md px-4">
-              <div className="bg-red-900/80 border border-red-500 text-white p-4 rounded-lg shadow-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 text-red-400">
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <h3 className="text-sm font-medium">{globalError.message}</h3>
-                    {globalError.details && (
-                      <p className="mt-1 text-xs">{globalError.details}</p>
-                    )}
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        onClick={clearGlobalError}
-                        className="bg-red-800 hover:bg-red-700 text-white text-xs px-2 py-1 rounded"
-                      >
-                        Dismiss
-                      </button>
+      <ErrorBoundary>
+        <AnalyticsProvider disabled={true}>
+          <NotificationProvider>
+            <PageViewTracker />
+            <WalletWrapper>
+              {/* 개선된 오프라인 감지기 */}
+              <OfflineDetector onStatusChange={handleNetworkStatusChange} />
+              
+              {/* 전역 오류 표시 */}
+              {globalError && (
+                <div className="fixed top-4 left-0 right-0 z-50 mx-auto w-full max-w-md px-4 animate-fade-down">
+                  <div className="bg-gradient-to-r from-red-900/90 to-red-800/90 backdrop-blur-lg border border-red-500 text-white p-4 rounded-lg shadow-xl animate-pulse-slow">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 text-red-400 relative">
+                        <div className="absolute -inset-1 bg-red-500/20 rounded-full blur-xl animate-pulse-slow"></div>
+                        <div className="relative">
+                          <svg className="h-6 w-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="ml-3 flex-1">
+                        <h3 className="text-sm font-medium animate-fade-in">{globalError.message}</h3>
+                        {globalError.details && (
+                          <p className="mt-1 text-xs opacity-80 animate-fade-in delay-100">{globalError.details}</p>
+                        )}
+                        <div className="mt-2">
+                          <button
+                            type="button"
+                            onClick={clearGlobalError}
+                            className="bg-red-800 hover:bg-red-700 transition-all duration-300 text-white text-xs px-3 py-1.5 rounded-md border border-red-600/50 hover:border-red-500 hover:shadow-[0_0_8px_rgba(220,38,38,0.5)] hover:scale-105"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-          
-          <Component {...pageProps} />
-        </WalletWrapper>
-      </AnalyticsProvider>
+              )}
+              
+              <Component {...pageProps} />
+            </WalletWrapper>
+          </NotificationProvider>
+        </AnalyticsProvider>
+      </ErrorBoundary>
     </AppStateContext.Provider>
   );
 }

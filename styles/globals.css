@@ -30,6 +30,36 @@
   .animate-neon {
     animation: neonGlow 1.5s ease-in-out infinite alternate;
   }
+  
+  /* Pulse slow animation */
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+  }
+  .animate-pulse-slow {
+    animation: pulse-slow 4s ease-in-out infinite;
+  }
+  .animation-delay-1000 {
+    animation-delay: 1s;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-3000 {
+    animation-delay: 3s;
+  }
+  
+  /* Shimmer animation */
+  @keyframes shimmer {
+    0% { background-position: 100% 0%; }
+    100% { background-position: -100% 0%; }
+  }
+  .animate-shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+  
+  /* Fade animations */
   @keyframes fade-in {
     from {
       opacity: 0;
@@ -40,9 +70,109 @@
       transform: scale(1);
     }
   }
-  
   .animate-fade-in {
     animation: fade-in 0.3s ease-in-out forwards;
+  }
+  
+  /* Slide in animations for notifications */
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out forwards;
+  }
+  
+  .delay-100 {
+    animation-delay: 0.1s;
+  }
+  .delay-200 {
+    animation-delay: 0.2s;
+  }
+  .delay-300 {
+    animation-delay: 0.3s;
+  }
+  .delay-500 {
+    animation-delay: 0.5s;
+  }
+  
+  @keyframes fade-right {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  .animate-fade-right {
+    animation: fade-right 0.4s ease-out forwards;
+  }
+  
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out forwards;
+  }
+  
+  @keyframes fade-down {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-down {
+    animation: fade-down 0.4s ease-out forwards;
+  }
+  
+  /* Loading animations */
+  @keyframes bounce-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.85); opacity: 0.8; }
+  }
+  .animate-bounce-pulse {
+    animation: bounce-pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes wave {
+    0% { transform: rotate(0deg); }
+    20% { transform: rotate(25deg); }
+    40% { transform: rotate(-15deg); }
+    60% { transform: rotate(10deg); }
+    80% { transform: rotate(-5deg); }
+    100% { transform: rotate(0deg); }
+  }
+  .animate-wave {
+    animation: wave 2s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  
+  /* Stripe animation */
+  @keyframes stripe {
+    0% { background-position: 0 0; }
+    100% { background-position: 30px 0; }
+  }
+  .animate-stripe {
+    animation: stripe 1s linear infinite;
   }
   /* Hero background */
   .hero-background {
@@ -91,6 +221,42 @@
   .wallet-button-container {
     @apply rounded-lg bg-gray-800 bg-opacity-50 p-4 flex justify-center
            border border-purple-500 border-opacity-30 shadow-lg;
+  }
+  
+  /* Neon glow button effects */
+  .neon-glow-purple {
+    @apply transition-all duration-300;
+  }
+  .neon-glow-purple:hover {
+    @apply shadow-[0_0_5px_rgba(168,85,247,0.7),0_0_10px_rgba(168,85,247,0.5),0_0_15px_rgba(168,85,247,0.3)];
+  }
+  
+  .neon-glow-pink {
+    @apply transition-all duration-300;
+  }
+  .neon-glow-pink:hover {
+    @apply shadow-[0_0_5px_rgba(236,72,153,0.7),0_0_10px_rgba(236,72,153,0.5),0_0_15px_rgba(236,72,153,0.3)];
+  }
+  
+  .neon-glow-blue {
+    @apply transition-all duration-300;
+  }
+  .neon-glow-blue:hover {
+    @apply shadow-[0_0_5px_rgba(59,130,246,0.7),0_0_10px_rgba(59,130,246,0.5),0_0_15px_rgba(59,130,246,0.3)];
+  }
+  
+  .neon-glow-cyan {
+    @apply transition-all duration-300;
+  }
+  .neon-glow-cyan:hover {
+    @apply shadow-[0_0_5px_rgba(34,211,238,0.7),0_0_10px_rgba(34,211,238,0.5),0_0_15px_rgba(34,211,238,0.3)];
+  }
+  
+  .neon-glow-green {
+    @apply transition-all duration-300;
+  }
+  .neon-glow-green:hover {
+    @apply shadow-[0_0_5px_rgba(16,185,129,0.7),0_0_10px_rgba(16,185,129,0.5),0_0_15px_rgba(16,185,129,0.3)];
   }
 
   /* Minting button */

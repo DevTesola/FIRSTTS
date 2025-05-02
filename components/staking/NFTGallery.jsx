@@ -77,9 +77,9 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
     const tier = tierAttribute ? tierAttribute.value.toLowerCase() : "common";
     
     if (tier.includes("legendary")) return "bg-yellow-900 text-yellow-300";
-    if (tier.includes("epic")) return "bg-pink-900 text-pink-300";
-    if (tier.includes("rare")) return "bg-purple-900 text-purple-300";
-    return "bg-blue-900 text-blue-300"; // Common default
+    if (tier.includes("epic")) return "bg-purple-900 text-purple-300";
+    if (tier.includes("rare")) return "bg-blue-900 text-blue-300";
+    return "bg-green-900 text-green-300"; // Common default
   };
   
   // Get NFT tier text and standardize
@@ -211,17 +211,17 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                   <div className="text-xs text-gray-500">(Legendary)</div>
                 </div>
                 <div className="bg-gray-800/50 p-2 rounded-lg text-center">
-                  <span className="text-pink-400 font-bold">100</span>
+                  <span className="text-purple-400 font-bold">100</span>
                   <span className="text-gray-400 text-xs ml-1">TESOLA/day</span>
                   <div className="text-xs text-gray-500">(Epic)</div>
                 </div>
                 <div className="bg-gray-800/50 p-2 rounded-lg text-center">
-                  <span className="text-purple-400 font-bold">50</span>
+                  <span className="text-blue-400 font-bold">50</span>
                   <span className="text-gray-400 text-xs ml-1">TESOLA/day</span>
                   <div className="text-xs text-gray-500">(Rare)</div>
                 </div>
                 <div className="bg-gray-800/50 p-2 rounded-lg text-center">
-                  <span className="text-blue-400 font-bold">25</span>
+                  <span className="text-green-400 font-bold">25</span>
                   <span className="text-gray-400 text-xs ml-1">TESOLA/day</span>
                   <div className="text-xs text-gray-500">(Common)</div>
                 </div>
@@ -288,8 +288,8 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
               onClick={() => setFilter("epic")}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "epic"
-                  ? "bg-pink-700 text-white"
-                  : "bg-gray-900 text-pink-300 hover:bg-gray-700"
+                  ? "bg-purple-700 text-white"
+                  : "bg-gray-900 text-purple-300 hover:bg-gray-700"
               }`}
             >
               Epic
@@ -298,8 +298,8 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
               onClick={() => setFilter("rare")}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "rare"
-                  ? "bg-purple-700 text-white"
-                  : "bg-gray-900 text-purple-300 hover:bg-gray-700"
+                  ? "bg-blue-700 text-white"
+                  : "bg-gray-900 text-blue-300 hover:bg-gray-700"
               }`}
             >
               Rare
@@ -308,8 +308,8 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
               onClick={() => setFilter("common")}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === "common"
-                  ? "bg-blue-700 text-white"
-                  : "bg-gray-900 text-blue-300 hover:bg-gray-700"
+                  ? "bg-green-700 text-white"
+                  : "bg-gray-900 text-green-300 hover:bg-gray-700"
               }`}
             >
               Common

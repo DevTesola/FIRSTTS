@@ -137,43 +137,50 @@ export default function ErrorMessage({
   };
 
   return (
-    <div className={`rounded-lg ${bgColor} border ${borderColor} p-4 relative ${className}`}>
+    <div className={`rounded-lg ${bgColor} backdrop-blur-md border ${borderColor} p-4 relative animate-fade-in shadow-lg ${className}`}>
       {/* 자동 닫기 진행 표시줄 */}
       {autoClose && onDismiss && (
         <div className="absolute top-0 left-0 right-0">
           <div 
-            className="h-1 bg-white/30 rounded-t-lg transition-all duration-100"
+            className="h-1 bg-gradient-to-r from-white/50 to-white/30 rounded-t-lg transition-all duration-100 animate-pulse-slow"
             style={{ width: `${autoCloseProgress}%` }}
           ></div>
         </div>
       )}
       
       <div className="flex items-start">
-        <div className={`flex-shrink-0 ${iconColor}`}>
-          {icon}
+        <div className={`flex-shrink-0 ${iconColor} relative`}>
+          <div className="absolute -inset-1 rounded-full blur-md opacity-70 animate-pulse-slow" 
+               style={{ backgroundColor: `rgba(${type === 'error' ? '239,68,68' : type === 'warning' ? '245,158,11' : type === 'success' ? '34,197,94' : '59,130,246'},0.2)` }}>
+          </div>
+          <div className="relative animate-bounce-pulse">
+            {icon}
+          </div>
         </div>
         <div className="ml-3 flex-1">
-          <h3 className="text-sm font-medium text-white">
-            {type === "error" ? "Error: " : type === "warning" ? "Warning: " : type === "success" ? "Success: " : "Info: "}
+          <h3 className="text-sm font-medium text-white animate-fade-in">
+            <span className="font-bold">
+              {type === "error" ? "Error: " : type === "warning" ? "Warning: " : type === "success" ? "Success: " : "Info: "}
+            </span>
             {message}
           </h3>
-          <div className="mt-2 text-sm text-gray-300">
+          <div className="mt-2 text-sm text-gray-300 animate-fade-in delay-100">
             <p>{getSolutionText()}</p>
             {children}
           </div>
           
           {/* 상세 오류 정보 (개발자용) */}
           {errorDetails && (
-            <div className="mt-3">
+            <div className="mt-3 animate-fade-in delay-200">
               <button
                 type="button"
-                className="text-xs text-gray-400 hover:text-gray-300 flex items-center"
+                className="text-xs text-gray-400 hover:text-gray-300 flex items-center transition-all duration-300"
                 onClick={() => setShowDetails(!showDetails)}
               >
                 <span>{showDetails ? "Hide" : "Show"} technical details</span>
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 
-                  className={`ml-1 h-4 w-4 transform ${showDetails ? 'rotate-180' : ''}`} 
+                  className={`ml-1 h-4 w-4 transform transition-transform duration-300 ${showDetails ? 'rotate-180' : ''}`} 
                   fill="none" 
                   viewBox="0 0 24 24" 
                   stroke="currentColor"
@@ -182,7 +189,7 @@ export default function ErrorMessage({
                 </svg>
               </button>
               {showDetails && (
-                <pre className="mt-2 p-2 bg-gray-800 rounded text-xs text-gray-300 overflow-x-auto">
+                <pre className="mt-2 p-3 bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-md text-xs text-gray-300 overflow-x-auto shadow-inner animate-fade-down">
                   {typeof errorDetails === 'object' 
                     ? JSON.stringify(errorDetails, null, 2) 
                     : errorDetails}
@@ -193,11 +200,14 @@ export default function ErrorMessage({
           
           {/* 재시도 또는 닫기 버튼 */}
           {(onRetry || onDismiss) && (
-            <div className="mt-4 flex space-x-3">
+            <div className="mt-4 flex space-x-3 animate-fade-in delay-300">
               {onRetry && (
                 <button
                   type="button"
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 
+                             text-white px-3 py-1.5 text-sm rounded-md shadow-md 
+                             transition-all duration-300 hover:shadow-[0_0_10px_rgba(168,85,247,0.5)]
+                             hover:scale-105 transform"
                   onClick={onRetry}
                 >
                   Retry
@@ -206,7 +216,9 @@ export default function ErrorMessage({
               {onDismiss && (
                 <button
                   type="button"
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700
+                             text-white px-3 py-1.5 text-sm rounded-md shadow-md
+                             transition-all duration-300 border border-gray-600/30 hover:border-gray-500/50"
                   onClick={onDismiss}
                 >
                   Dismiss

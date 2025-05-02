@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import ErrorMessage from "./ErrorMessage";
+import ErrorBoundary from "./ErrorBoundary";
 
 /**
  * NFT Staking Component for SOLARA
@@ -277,7 +278,21 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         console.log("Transaction sent:", txSignature);
       } catch (sendError) {
         console.error("Send transaction error:", sendError);
-        throw new Error(`Failed to send transaction: ${sendError.message}`);
+        
+        // 더 상세한 로그 확인
+        if (sendError.logs) {
+          console.log("Transaction logs:", sendError.logs);
+        }
+        
+        // Error number 추출해서 디버깅
+        const errorMatch = sendError.message.match(/Error Number: (\d+)/);
+        const errorCode = errorMatch ? errorMatch[1] : "unknown";
+        
+        if (errorCode === "101") {
+          throw new Error(`InstructionFallbackNotFound 오류 발생 (코드 101): 온체인 프로그램이 이 명령어 식별자를 인식하지 못했습니다. 관리자에게 문의하세요.`);
+        } else {
+          throw new Error(`Failed to send transaction: ${sendError.message}`);
+        }
       }
       
       // Step 4: Set a timeout for transaction confirmation
@@ -596,8 +611,9 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
   }
 
   return (
-    <div className="bg-gray-800 border border-purple-500/30 rounded-lg p-6 shadow-lg relative">
-      {/* Success popup overlay */}
+    <ErrorBoundary>
+      <div className="bg-gray-800 border border-purple-500/30 rounded-lg p-6 shadow-lg relative">
+        {/* Success popup overlay */}
       {showSuccessPopup && successData && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
           <div className="bg-gray-900 border-2 border-purple-500 rounded-xl p-6 max-w-md mx-auto shadow-2xl animate-fadeIn transform transition-all">
@@ -962,5 +978,6 @@ export default function StakingComponent({ nft, onSuccess, onError }) {
         }
       `}</style>
     </div>
+    </ErrorBoundary>
   );
 }

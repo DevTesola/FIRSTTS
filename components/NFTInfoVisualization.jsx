@@ -17,8 +17,8 @@ export default function NFTInfoVisualization({ tierDistribution }) {
   // 실제 희귀도 분포 (없으면 기본값 사용)
   const distribution = tierDistribution || {
     legendary: { ratio: 5, color: 'yellow' },
-    rare: { ratio: 15, color: 'purple' },
-    uncommon: { ratio: 30, color: 'blue' },
+    epic: { ratio: 15, color: 'purple' },
+    rare: { ratio: 30, color: 'blue' },
     common: { ratio: 50, color: 'green' }
   };
   
@@ -168,8 +168,8 @@ export default function NFTInfoVisualization({ tierDistribution }) {
               // 티어별 색상 매핑
               const textColor = 
                 tier === 'legendary' ? 'text-yellow-400' :
-                tier === 'rare' ? 'text-purple-400' :
-                tier === 'uncommon' ? 'text-blue-400' :
+                tier === 'epic' ? 'text-purple-400' :
+                tier === 'rare' ? 'text-blue-400' :
                 'text-green-400';
               
               return (
@@ -183,8 +183,8 @@ export default function NFTInfoVisualization({ tierDistribution }) {
                           <div 
                             className={
                               tier === 'legendary' ? 'bg-yellow-500' :
-                              tier === 'rare' ? 'bg-purple-500' :
-                              tier === 'uncommon' ? 'bg-blue-500' :
+                              tier === 'epic' ? 'bg-purple-500' :
+                              tier === 'rare' ? 'bg-blue-500' :
                               'bg-green-500'
                             }
                             style={{ width: `${trait.probability}%` }}

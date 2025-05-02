@@ -7,6 +7,7 @@ import Layout from "../components/Layout";
 import StakingDashboard from "../components/staking/StakingDashboard";
 import StakingRewards from "../components/staking/StakingRewards";
 import NFTGallery from "../components/staking/NFTGallery";
+import Leaderboard from "../components/staking/Leaderboard";
 import LoadingOverlay from "../components/LoadingOverlay";
 import ErrorMessage from "../components/ErrorMessage";
 import { GlassButton, PrimaryButton } from "../components/Buttons";
@@ -243,6 +244,14 @@ export default function StakingPage() {
             onRefresh={refreshAllData}
           />
         );
+      case "leaderboard":
+        return (
+          <Leaderboard 
+            stats={stakingStats}
+            isLoading={isLoading}
+            onRefresh={refreshAllData}
+          />
+        );
       case "stake":
         return (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -412,6 +421,16 @@ export default function StakingPage() {
                 }`}
               >
                 My NFTs
+              </button>
+              <button
+                onClick={() => setActiveTab("leaderboard")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "leaderboard" 
+                    ? "bg-purple-600 text-white" 
+                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                Leaderboard
               </button>
               {selectedNFT && (
                 <button

@@ -38,7 +38,7 @@ export const PrimaryButton = ({
         ${sizeClasses}
         ${loading || disabled 
           ? 'bg-gray-700 text-gray-300 cursor-not-allowed' 
-          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-lg hover:shadow-purple-500/20 active:from-purple-700 active:to-pink-700'
+          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-lg hover:shadow-purple-500/20 active:from-purple-700 active:to-pink-700 neon-glow-purple'
         }
         ${className}
       `}
@@ -115,7 +115,7 @@ export const SecondaryButton = ({
         ${sizeClasses}
         ${loading || disabled 
           ? 'bg-gray-800 text-gray-400 border border-gray-700 cursor-not-allowed' 
-          : 'bg-transparent text-purple-400 border border-purple-500/50 hover:border-purple-400 hover:text-white hover:bg-purple-500/20 active:bg-purple-600/30'
+          : 'bg-transparent text-purple-400 border border-purple-500/50 hover:border-purple-400 hover:text-white hover:bg-purple-500/20 active:bg-purple-600/30 neon-glow-purple'
         }
         ${className}
       `}
@@ -185,7 +185,7 @@ export const GlassButton = ({
         ${sizeClasses}
         ${loading || disabled 
           ? 'bg-black/30 text-gray-400 border border-gray-700/50 cursor-not-allowed' 
-          : 'bg-white/10 text-white border border-white/20 hover:bg-white/20 hover:border-white/30 active:bg-white/30'
+          : 'bg-white/10 text-white border border-white/20 hover:bg-white/20 hover:border-white/30 active:bg-white/30 neon-glow-blue'
         }
         ${className}
       `}
@@ -244,11 +244,11 @@ export const AccentButton = ({
   if (size === "small") sizeClasses = "px-4 py-2 text-xs";
   if (size === "large") sizeClasses = "px-6 py-3 text-base";
 
-  // Configure color variants
-  let colorClasses = "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500";
-  if (variant === "green") colorClasses = "bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500";
+  // Configure color variants with neon glow effects
+  let colorClasses = "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 neon-glow-blue";
+  if (variant === "green") colorClasses = "bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 neon-glow-green";
   if (variant === "yellow") colorClasses = "bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400";
-  if (variant === "red") colorClasses = "bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500";
+  if (variant === "red") colorClasses = "bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 neon-glow-pink";
 
   return (
     <button
@@ -318,10 +318,10 @@ export const IconButton = ({
   if (size === "small") sizeClasses = "p-1.5";
   if (size === "large") sizeClasses = "p-3";
 
-  // Configure variants
+  // Configure variants with neon glow effects
   let variantClasses = "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white";
-  if (variant === "primary") variantClasses = "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500";
-  if (variant === "glass") variantClasses = "bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 hover:border-white/30";
+  if (variant === "primary") variantClasses = "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 neon-glow-purple";
+  if (variant === "glass") variantClasses = "bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 hover:border-white/30 neon-glow-blue";
 
   return (
     <button
@@ -387,7 +387,7 @@ export const TextButton = ({
   );
 };
 
-// Tab button - for tab navigation
+// Tab button - for tab navigation with enhanced styling and animations
 export const TabButton = ({
   children,
   onClick,
@@ -403,10 +403,10 @@ export const TabButton = ({
       onClick={onClick}
       disabled={disabled}
       className={`
-        relative px-4 py-2 font-medium rounded-lg transition-all duration-200
+        group relative px-4 py-2.5 font-medium rounded-lg transition-all duration-300
         ${isActive 
-          ? 'bg-purple-600 text-white' 
-          : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+          ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-md shadow-purple-900/30' 
+          : 'text-gray-300 hover:text-white hover:bg-gray-700/60 hover:shadow-sm'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
@@ -414,20 +414,37 @@ export const TabButton = ({
       {...props}
     >
       <div className="flex items-center">
-        {icon && <span className={`mr-1.5 ${isActive ? 'text-white' : 'text-gray-400'}`}>{icon}</span>}
-        {children}
+        {icon && (
+          <span className={`
+            relative mr-1.5 transform transition-transform duration-300 
+            ${isActive ? 'text-white scale-110' : 'text-gray-400 group-hover:scale-110 group-hover:text-gray-200'}
+          `}>
+            {/* Subtle glow effect for icon */}
+            {isActive && <span className="absolute inset-0 bg-white opacity-20 rounded-full blur-sm"></span>}
+            <span className="relative">{icon}</span>
+          </span>
+        )}
         
-        {/* Badge counter */}
+        <span className={`
+          transition-all duration-300
+          ${isActive ? 'text-white' : 'group-hover:text-white'}
+        `}>
+          {children}
+        </span>
+        
+        {/* Badge counter with animations */}
         {badgeCount !== null && badgeCount > 0 && (
-          <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white min-w-[20px] text-center">
+          <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white min-w-[20px] text-center animate-pulse-slow shadow-sm">
             {badgeCount > 99 ? '99+' : badgeCount}
           </span>
         )}
       </div>
       
-      {/* Active indicator line */}
-      {isActive && (
-        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/50 rounded-full"></span>
+      {/* Enhanced active indicator with glow effect */}
+      {isActive ? (
+        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2/3 h-0.5 bg-gradient-to-r from-purple-300/90 to-pink-300/90 rounded-full shadow-[0_0_3px_rgba(168,85,247,0.5)]"></span>
+      ) : (
+        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-purple-400/60 to-pink-400/60 rounded-full group-hover:w-1/2 transition-all duration-300"></span>
       )}
     </button>
   );
@@ -456,8 +473,8 @@ export const ConnectWalletButton = ({
         relative group flex items-center font-medium rounded-lg
         transition-all duration-200 px-5 py-2.5
         ${connected 
-          ? 'bg-green-800/50 text-white border border-green-700/50 hover:bg-green-700/40' 
-          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500'
+          ? 'bg-green-800/50 text-white border border-green-700/50 hover:bg-green-700/40 neon-glow-green' 
+          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 neon-glow-purple'
         }
         ${loading ? 'opacity-70 cursor-wait' : ''}
         ${className}
@@ -494,13 +511,5 @@ export const ConnectWalletButton = ({
   );
 };
 
-export default {
-  PrimaryButton,
-  SecondaryButton,
-  GlassButton,
-  AccentButton,
-  IconButton,
-  TextButton,
-  TabButton,
-  ConnectWalletButton
-};
+// Export as named exports only, don't provide a default export
+// This ensures all components can be imported directly

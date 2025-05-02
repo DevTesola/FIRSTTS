@@ -1,17 +1,71 @@
-/* Custom styles for wallet adapter button to fix icon size */
+/* Animation keyframes */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes stripe {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 30px 30px;
+  }
+}
+
+/* Animation utility classes */
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1000ms;
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite linear;
+  background: linear-gradient(90deg, 
+    rgba(255,255,255,0) 0%, 
+    rgba(255,255,255,0.05) 50%, 
+    rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+}
+
+.animate-stripe {
+  animation: stripe 1.5s linear infinite;
+}
+
+/* Custom styles for wallet adapter button */
 .wallet-adapter-button {
-  font-size: 1rem !important;
-  padding: 0.75rem 1.5rem !important;
+  font-size: 0.95rem !important;
+  padding: 0.6rem 1.3rem !important;
   border-radius: 0.5rem !important;
-  background-color: #4c1d95 !important;
+  background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%) !important;
   color: white !important;
   border: none !important;
   cursor: pointer !important;
   font-weight: 600 !important;
-  transition: background-color 0.2s ease-in-out !important;
+  transition: all 0.3s ease-in-out !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  box-shadow: 0 4px 12px rgba(76, 29, 149, 0.3) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Fix the icon size and spacing */
@@ -22,35 +76,51 @@
 }
 
 .wallet-adapter-button:hover { 
-  background-color: #6d28d9 !important; 
+  background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%) !important;
+  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.4) !important;
+  transform: translateY(-2px) !important;
+}
+
+.wallet-adapter-button:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 2px 8px rgba(76, 29, 149, 0.3) !important;
 }
 
 /* Container styling */
 .wallet-button-container {
   display: flex;
   justify-content: center;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-radius: 0.5rem;
-  background-color: rgba(55, 48, 163, 0.2);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  position: relative;
 }
 
 /* Fix the wallet dropdown */
 .wallet-adapter-dropdown {
   position: relative;
   display: inline-block;
+  z-index: 40;
+}
+
+/* Wallet container in presale info */
+.wallet-container {
+  margin: 0.75rem 0;
+  display: flex;
+  justify-content: center;
 }
 
 .wallet-adapter-dropdown-list {
-  background: #1f1f1f !important;
+  background: rgba(31, 31, 31, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
   border-radius: 0.5rem !important;
-  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 92, 246, 0.2) !important;
   margin-top: 0.5rem !important;
   padding: 0.5rem !important;
   position: absolute !important;
   right: 0 !important;
   top: 100% !important;
   z-index: 50 !important;
+  min-width: 200px !important;
 }
 
 .wallet-adapter-dropdown-list-item {
@@ -61,9 +131,33 @@
   font-weight: 500 !important;
   padding: 0.5rem 0.75rem !important;
   align-items: center !important;
-  transition: background-color 0.2s ease-in-out !important;
+  transition: all 0.2s ease-in-out !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .wallet-adapter-dropdown-list-item:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(139, 92, 246, 0.15) !important;
+  color: white !important;
+}
+
+/* Header wallet button positioning */
+.header-wallet-button {
+  position: relative;
+  margin-left: 1rem;
+  margin-right: 0.5rem;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .wallet-button-container {
+    margin: 0.5rem auto;
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  .wallet-adapter-button {
+    width: 100%;
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+  }
 }

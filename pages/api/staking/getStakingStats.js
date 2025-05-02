@@ -1,29 +1,46 @@
+// pages/api/getStakingStats.js
 import { createClient } from '@supabase/supabase-js';
+import { Connection, PublicKey } from '@solana/web3.js';
+import idl from '../../idl/nft_staking.json';
 
-// Initialize Supabase client
+const { Program, AnchorProvider, web3, BN } = require('@coral-xyz/anchor');
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-/**
- * API to fetch user's staking statistics
- * Provides active staking records and overall staking metrics
- */
+const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
+const STAKING_PROGRAM_ADDRESS = 'CnpcsE2eJSfULpikfkbdd31wo6WeoL2jw8YyKSWG3Cfu';
+
 export default async function handler(req, res) {
   try {
-    const { wallet } = req.query;
+    const { wallet, nocache } = req.query;
     
     if (!wallet) {
       return res.status(400).json({ error: 'Wallet address is required' });
     }
     
-    console.log(`Fetching staking stats for wallet: ${wallet}`);
+    let walletPubkey;
+    try {
+      walletPubkey = new PublicKey(wallet);
+    } catch (err) {
+      return res.status(400).json({ error: 'Invalid wallet address format' });
+    }
     
-    // Get active staking records
-    const { data: stakingData, error: stakingError } = await supabase
+    const cacheStr = nocache || Date.now();
+    console.log(`Fetching staking stats for wallet: ${wallet} (cache: ${cacheStr})`);
+    
+    // Connect to Solana and create Anchor program
+    const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+    const programId = new PublicKey(STAKING_PROGRAM_ADDRESS);
+    const provider = new AnchorProvider(connection, null, { commitment: 'confirmed' });
+    const program = new Program(idl, programId, provider);
+    
+    // Get all NFTs owned by wallet or staked in our program
+    // First, get all active stakes from database
+    const { data: dbStakingData, error: stakingError } = await supabase
       .from('nft_staking')
-      .select('*')
+      .select('*, nft_tier')
       .eq('wallet_address', wallet)
       .eq('status', 'staked')
       .order('staked_at', { ascending: false });
@@ -33,76 +50,125 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to fetch staking data' });
     }
     
-    // Process staking data to add calculated fields
+    // Process each stake and check on-chain status
     const currentDate = new Date();
     let projectedRewards = 0;
     let earnedToDate = 0;
+    const activeStakes = [];
     
-    const activeStakes = stakingData.map(stake => {
-      const stakingStartDate = new Date(stake.staked_at);
-      const releaseDate = new Date(stake.release_date);
-      
-      // Calculate total staking duration in milliseconds
-      const totalStakingDuration = releaseDate.getTime() - stakingStartDate.getTime();
-      
-      // Calculate elapsed duration (capped at total duration)
-      const elapsedDuration = Math.min(
-        currentDate.getTime() - stakingStartDate.getTime(),
-        totalStakingDuration
-      );
-      
-      // Calculate progress percentage
-      const progressPercentage = (elapsedDuration / totalStakingDuration) * 100;
-      
-      // Calculate earned rewards so far
-      const earnedSoFar = (stake.total_rewards * progressPercentage) / 100;
-      
-      // Add to totals
-      projectedRewards += parseFloat(stake.total_rewards);
-      earnedToDate += parseFloat(earnedSoFar);
-      
-      // Calculate days remaining
-      const daysRemaining = Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24)));
-      
-      // Determine if the staking period is complete
-      const isUnlocked = currentDate >= releaseDate;
-      
-      // Return stake with additional calculated fields
-      return {
-        ...stake,
-        progress_percentage: parseFloat(progressPercentage.toFixed(2)),
-        earned_so_far: parseFloat(earnedSoFar.toFixed(2)),
-        days_remaining: daysRemaining,
-        is_unlocked: isUnlocked
-      };
-    });
+    for (const stake of dbStakingData || []) {
+      try {
+        let mintPubkey;
+        try {
+          mintPubkey = new PublicKey(stake.mint_address);
+        } catch (e) {
+          console.error('Invalid mint address in DB:', stake.mint_address);
+          continue;
+        }
+        
+        // Find stake info PDA using the same seeds as in the IDL
+        const [stakeInfoPDA] = PublicKey.findProgramAddressSync(
+          [Buffer.from("stake"), mintPubkey.toBuffer()],
+          programId
+        );
+        
+        // Try to fetch on-chain stake info
+        let onChainStakeInfo = null;
+        try {
+          onChainStakeInfo = await program.account.StakeInfo.fetch(stakeInfoPDA);
+          console.log(`Found on-chain stake info for ${stake.mint_address}`);
+        } catch (error) {
+          console.log(`No on-chain stake info found for ${stake.mint_address}`);
+        }
+        
+        // Merge on-chain and off-chain data
+        let stakingData;
+        
+        if (onChainStakeInfo) {
+          // Use on-chain data as primary source
+          const stakedAt = new Date(onChainStakeInfo.stakedAt.toNumber() * 1000);
+          const stakingPeriod = onChainStakeInfo.stakingPeriod.toNumber();
+          const releaseDate = new Date(stakedAt);
+          releaseDate.setDate(releaseDate.getDate() + stakingPeriod);
+          
+          // Calculate progress
+          const totalStakingDuration = releaseDate.getTime() - stakedAt.getTime();
+          const elapsedDuration = Math.min(
+            currentDate.getTime() - stakedAt.getTime(),
+            totalStakingDuration
+          );
+          const progressPercentage = (elapsedDuration / totalStakingDuration) * 100;
+          const earnedSoFar = (stake.total_rewards * progressPercentage) / 100;
+          
+          stakingData = {
+            ...stake,
+            staked_at: stakedAt.toISOString(),
+            release_date: releaseDate.toISOString(),
+            staking_period: stakingPeriod,
+            progress_percentage: parseFloat(progressPercentage.toFixed(2)),
+            earned_so_far: parseFloat(earnedSoFar.toFixed(2)),
+            days_remaining: Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24))),
+            days_elapsed: Math.min(
+              Math.ceil(elapsedDuration / (1000 * 60 * 60 * 24)),
+              stakingPeriod
+            ),
+            is_unlocked: currentDate >= releaseDate,
+            onChainStatus: true
+          };
+        } else {
+          // Fall back to database data
+          const stakingStartDate = new Date(stake.staked_at);
+          const releaseDate = new Date(stake.release_date);
+          
+          const totalStakingDuration = releaseDate.getTime() - stakingStartDate.getTime();
+          const elapsedDuration = Math.min(
+            currentDate.getTime() - stakingStartDate.getTime(),
+            totalStakingDuration
+          );
+          const progressPercentage = (elapsedDuration / totalStakingDuration) * 100;
+          const earnedSoFar = (stake.total_rewards * progressPercentage) / 100;
+          
+          stakingData = {
+            ...stake,
+            progress_percentage: parseFloat(progressPercentage.toFixed(2)),
+            earned_so_far: parseFloat(earnedSoFar.toFixed(2)),
+            days_remaining: Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24))),
+            days_elapsed: Math.min(
+              Math.ceil(elapsedDuration / (1000 * 60 * 60 * 24)),
+              stake.staking_period
+            ),
+            is_unlocked: currentDate >= releaseDate,
+            onChainStatus: false
+          };
+        }
+        
+        // Add to totals
+        projectedRewards += parseFloat(stake.total_rewards);
+        earnedToDate += parseFloat(stakingData.earned_so_far);
+        
+        // Add calculated data to stake
+        activeStakes.push(stakingData);
+        
+      } catch (error) {
+        console.error(`Error processing stake ${stake.mint_address}:`, error);
+        // Continue with next stake
+      }
+    }
     
     // Format decimal values
     projectedRewards = parseFloat(projectedRewards.toFixed(2));
     earnedToDate = parseFloat(earnedToDate.toFixed(2));
     
-    // If no stakes are found, try to generate mock data for testing
-    if (activeStakes.length === 0 && process.env.NODE_ENV === 'development') {
-      console.log('No staking data found, generating mock data for testing');
-      
-      // This code only runs in development mode for testing UI
-      const mockStats = generateMockStakingData(wallet);
-      
-      return res.status(200).json({
-        activeStakes: mockStats.activeStakes,
-        stats: mockStats.stats,
-        isMockData: true // Flag to indicate this is mock data
-      });
-    }
-    
-    // Return the processed data
+    // Return the processed data with timestamp for tracking freshness
     return res.status(200).json({
       activeStakes,
       stats: {
         totalStaked: activeStakes.length,
         projectedRewards,
         earnedToDate
-      }
+      },
+      fetchTime: new Date().toISOString(),
+      message: 'Stats include both on-chain and off-chain data'
     });
   } catch (error) {
     console.error('Error in getStakingStats API:', error);
@@ -111,95 +177,20 @@ export default async function handler(req, res) {
 }
 
 /**
- * Generate mock staking data for testing purposes
- * @param {string} wallet - Wallet address
- * @returns {Object} Object with activeStakes and stats
+ * Calculate current APY (Annual Percentage Yield) for a stake
+ * @param {Object} stake - Staking data object
+ * @returns {number} Annual percentage yield
  */
-function generateMockStakingData(wallet) {
-  // Create 1-3 mock staked NFTs
-  const mockStakes = [];
-  const tiers = [
-    { name: 'Legendary', dailyRate: 200 },
-    { name: 'Epic', dailyRate: 100 },
-    { name: 'Rare', dailyRate: 50 },
-    { name: 'Common', dailyRate: 25 }
-  ];
+function calculateCurrentAPY(stake) {
+  const dailyRate = stake.daily_reward_rate || 25;
   
-  // Hash the wallet address for consistent results
-  const hash = Array.from(wallet).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const stakesCount = (hash % 3) + 1; // 1-3 stakes
+  const baseAPY = (dailyRate * 365 / stake.total_rewards) * 100;
   
-  let totalProjected = 0;
-  let totalEarned = 0;
+  let stakingBonus = 0;
+  if (stake.staking_period >= 365) stakingBonus = 100;
+  else if (stake.staking_period >= 180) stakingBonus = 70;
+  else if (stake.staking_period >= 90) stakingBonus = 40;
+  else if (stake.staking_period >= 30) stakingBonus = 20;
   
-  for (let i = 0; i < stakesCount; i++) {
-    // Generate a unique ID based on wallet and index
-    const id = ((hash + i) % 999) + 1;
-    
-    // Select a tier based on wallet hash (weighted for testing)
-    const tierIndex = (hash + i) % 4;
-    const tier = tiers[tierIndex];
-    
-    // Create varied staking dates and periods
-    const now = new Date();
-    
-    // Staking start date between 1-60 days ago
-    const daysAgo = ((hash + i * 13) % 60) + 1;
-    const stakingStartDate = new Date(now);
-    stakingStartDate.setDate(stakingStartDate.getDate() - daysAgo);
-    
-    // Staking period between 30-365 days
-    const stakingPeriod = [30, 90, 180, 365][((hash + i * 7) % 4)];
-    const releaseDate = new Date(stakingStartDate);
-    releaseDate.setDate(releaseDate.getDate() + stakingPeriod);
-    
-    // Calculate rewards
-    const totalRewards = tier.dailyRate * stakingPeriod;
-    
-    // Calculate progress
-    const totalStakingDuration = releaseDate.getTime() - stakingStartDate.getTime();
-    const elapsedDuration = Math.min(
-      now.getTime() - stakingStartDate.getTime(),
-      totalStakingDuration
-    );
-    const progressPercentage = (elapsedDuration / totalStakingDuration) * 100;
-    const earnedSoFar = (totalRewards * progressPercentage) / 100;
-    
-    // Calculate days remaining
-    const daysRemaining = Math.max(0, Math.ceil((releaseDate - now) / (1000 * 60 * 60 * 24)));
-    
-    // Mock stake object
-    const mockStake = {
-      id: `mock-stake-${i}-${id}`,
-      wallet_address: wallet,
-      mint_address: `mock${id}${wallet.substr(0, 8)}`,
-      nft_name: `SOLARA #${id}`,
-      nft_tier: tier.name,
-      staking_period: stakingPeriod,
-      staked_at: stakingStartDate.toISOString(),
-      release_date: releaseDate.toISOString(),
-      total_rewards: totalRewards,
-      daily_reward_rate: tier.dailyRate,
-      status: 'staked',
-      
-      // Calculated fields
-      progress_percentage: parseFloat(progressPercentage.toFixed(2)),
-      earned_so_far: parseFloat(earnedSoFar.toFixed(2)),
-      days_remaining: daysRemaining,
-      is_unlocked: now >= releaseDate
-    };
-    
-    mockStakes.push(mockStake);
-    totalProjected += totalRewards;
-    totalEarned += earnedSoFar;
-  }
-  
-  return {
-    activeStakes: mockStakes,
-    stats: {
-      totalStaked: mockStakes.length,
-      projectedRewards: parseFloat(totalProjected.toFixed(2)),
-      earnedToDate: parseFloat(totalEarned.toFixed(2))
-    }
-  };
+  return parseFloat((baseAPY * (1 + stakingBonus / 100)).toFixed(2));
 }

@@ -65,24 +65,28 @@ export default function PresaleTimer({ endDate }) {
           <h3 className="text-xl font-bold mb-3 text-gray-200">Presale Ends In</h3>
           
           <div className="flex justify-center gap-3 md:gap-4">
-            <div className="flex-1 max-w-[70px] bg-gray-800 rounded-lg p-2 border border-purple-500/20 shadow-lg">
-              <div className="text-3xl md:text-4xl font-bold text-white">{formatNumber(timeLeft.days)}</div>
-              <div className="text-xs text-gray-400 mt-1">Days</div>
+            <div className="flex-1 max-w-[70px] bg-gray-800/60 backdrop-blur-sm rounded-lg p-2 border border-purple-500/30 shadow-lg relative overflow-hidden">
+              <div className="relative z-10 text-3xl md:text-4xl font-bold text-white">{formatNumber(timeLeft.days)}</div>
+              <div className="relative z-10 text-xs text-gray-300 mt-1 font-medium">Days</div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-blue-600/10 animate-pulse-slow"></div>
             </div>
             
-            <div className="flex-1 max-w-[70px] bg-gray-800 rounded-lg p-2 border border-purple-500/20 shadow-lg">
-              <div className="text-3xl md:text-4xl font-bold text-white">{formatNumber(timeLeft.hours)}</div>
-              <div className="text-xs text-gray-400 mt-1">Hours</div>
+            <div className="flex-1 max-w-[70px] bg-gray-800/60 backdrop-blur-sm rounded-lg p-2 border border-purple-500/30 shadow-lg relative overflow-hidden animation-delay-1000">
+              <div className="relative z-10 text-3xl md:text-4xl font-bold text-white">{formatNumber(timeLeft.hours)}</div>
+              <div className="relative z-10 text-xs text-gray-300 mt-1 font-medium">Hours</div>
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-purple-600/10 animate-pulse-slow"></div>
             </div>
             
-            <div className="flex-1 max-w-[70px] bg-gray-800 rounded-lg p-2 border border-purple-500/20 shadow-lg">
-              <div className="text-3xl md:text-4xl font-bold text-white">{formatNumber(timeLeft.minutes)}</div>
-              <div className="text-xs text-gray-400 mt-1">Mins</div>
+            <div className="flex-1 max-w-[70px] bg-gray-800/60 backdrop-blur-sm rounded-lg p-2 border border-purple-500/30 shadow-lg relative overflow-hidden">
+              <div className="relative z-10 text-3xl md:text-4xl font-bold text-white">{formatNumber(timeLeft.minutes)}</div>
+              <div className="relative z-10 text-xs text-gray-300 mt-1 font-medium">Mins</div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-cyan-600/10 animate-pulse-slow"></div>
             </div>
             
-            <div className="flex-1 max-w-[70px] bg-gray-800 rounded-lg p-2 border border-purple-500/20 shadow-lg">
-              <div className="text-3xl md:text-4xl font-bold text-white">{formatNumber(timeLeft.seconds)}</div>
-              <div className="text-xs text-gray-400 mt-1">Secs</div>
+            <div className="flex-1 max-w-[70px] bg-gray-800/60 backdrop-blur-sm rounded-lg p-2 border border-purple-500/30 shadow-lg relative overflow-hidden animation-delay-1000">
+              <div className="relative z-10 text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-300 bg-clip-text text-transparent animate-pulse-slow">{formatNumber(timeLeft.seconds)}</div>
+              <div className="relative z-10 text-xs text-gray-300 mt-1 font-medium">Secs</div>
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-600/10 to-purple-600/10 animate-pulse-slow"></div>
             </div>
           </div>
           

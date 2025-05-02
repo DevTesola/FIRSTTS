@@ -1,7 +1,7 @@
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import { createVerifyCollectionInstruction } from "@metaplex-foundation/mpl-token-metadata";
 import { SOLANA_RPC_ENDPOINT } from "../../utils/cluster";
-import { SELLER_KEYPAIR } from "../../utils/sellerKeypair";
+import { SELLER_KEYPAIR } from "../../server/utils/sellerKeypair";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });

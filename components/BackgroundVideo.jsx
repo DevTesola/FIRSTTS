@@ -19,9 +19,14 @@ export default function BackgroundVideo() {
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
     
-    // 재생 시도 함수
+    // 재생 시도 함수 - 개선된 버전
     const attemptAutoplay = () => {
-     
+      console.log("Attempting to autoplay background video");
+      
+      // 기존 인터벌 클리어
+      if (playAttemptRef.current) {
+        clearInterval(playAttemptRef.current);
+      }
       
       // 반복적으로 재생 시도
       playAttemptRef.current = setInterval(() => {
@@ -29,7 +34,7 @@ export default function BackgroundVideo() {
         
         if (playPromise !== undefined) {
           playPromise.then(() => {
-            
+            console.log("Background video playing successfully");
             clearInterval(playAttemptRef.current);
           }).catch(error => {
             console.warn("Background: autoplay failed:", error);
@@ -48,13 +53,13 @@ export default function BackgroundVideo() {
     
     // 비디오 로딩 상태 핸들러
     const handleCanPlay = () => {
-      
+      console.log("Video can play now");
       setIsLoaded(true);
       attemptAutoplay();
     };
     
     const handleMetadataLoaded = () => {
-     
+      console.log("Video metadata loaded");
       // 메타데이터 로드 시에도 재생 시도
       attemptAutoplay();
     };
@@ -74,7 +79,7 @@ export default function BackgroundVideo() {
     
     // 이미 로드되어 있는 경우 즉시 재생 시도
     if (video.readyState >= 2) {
-     
+      console.log("Video already loaded, attempting to play immediately");
       handleCanPlay();
     }
     
@@ -117,13 +122,20 @@ export default function BackgroundVideo() {
     <>
       <video
         ref={videoRef}
-        className={`absolute inset-0 w-full h-full object-cover -z-30 ${isLoaded ? 'opacity-60' : 'opacity-0'} transition-opacity duration-1000`}
-        src="/space.mp4"
+        className={`fixed inset-0 min-w-full min-h-full max-w-none object-cover -z-30 ${isLoaded ? 'opacity-60' : 'opacity-0'} transition-opacity duration-1000`}
+        src="/SPACE.mp4"
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
+        style={{
+          width: '120vw', 
+          height: '120vh',
+          left: '-10vw',
+          top: '-10vh',
+          objectPosition: 'center'
+        }}
       />
       
       {/* Fallback background - shown when video fails to load */}

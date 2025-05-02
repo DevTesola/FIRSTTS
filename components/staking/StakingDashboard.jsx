@@ -84,13 +84,13 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
   
   // Get tier badge color for summary
   const getTierColor = (tier) => {
-    if (!tier) return "text-blue-400";
+    if (!tier) return "text-green-400"; // Default to common
     
     const normalizedTier = tier.toUpperCase();
     if (normalizedTier.includes("LEGENDARY")) return "text-yellow-400";
-    if (normalizedTier.includes("EPIC")) return "text-pink-400";
-    if (normalizedTier.includes("RARE")) return "text-purple-400";
-    return "text-blue-400";
+    if (normalizedTier.includes("EPIC")) return "text-purple-400";
+    if (normalizedTier.includes("RARE")) return "text-blue-400";
+    return "text-green-400"; // Common
   };
   
   // Calculate tier distribution
@@ -176,17 +176,17 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                     </span>
                   )}
                   {tierDistribution["EPIC"] > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 bg-pink-900/50 text-pink-300 rounded-full">
+                    <span className="text-xs px-1.5 py-0.5 bg-purple-900/50 text-purple-300 rounded-full">
                       {tierDistribution["EPIC"]} Epic
                     </span>
                   )}
                   {tierDistribution["RARE"] > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 bg-purple-900/50 text-purple-300 rounded-full">
+                    <span className="text-xs px-1.5 py-0.5 bg-blue-900/50 text-blue-300 rounded-full">
                       {tierDistribution["RARE"]} Rare
                     </span>
                   )}
                   {tierDistribution["COMMON"] > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 bg-blue-900/50 text-blue-300 rounded-full">
+                    <span className="text-xs px-1.5 py-0.5 bg-green-900/50 text-green-300 rounded-full">
                       {tierDistribution["COMMON"]} Common
                     </span>
                   )}
@@ -375,8 +375,8 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
               <tr className="border-b border-gray-800 hover:bg-gray-700/20 transition-colors">
                 <td className="py-3 px-4">
                   <div className="flex items-center">
-                    <span className="w-3 h-3 rounded-full bg-pink-500 mr-2"></span>
-                    <span className="font-medium text-pink-300">Epic</span>
+                    <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+                    <span className="font-medium text-purple-300">Epic</span>
                   </div>
                 </td>
                 <td className="text-right py-3 px-4 text-white font-medium">100</td>
@@ -387,8 +387,8 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
               <tr className="border-b border-gray-800 hover:bg-gray-700/20 transition-colors">
                 <td className="py-3 px-4">
                   <div className="flex items-center">
-                    <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
-                    <span className="font-medium text-purple-300">Rare</span>
+                    <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                    <span className="font-medium text-blue-300">Rare</span>
                   </div>
                 </td>
                 <td className="text-right py-3 px-4 text-white font-medium">50</td>
@@ -399,8 +399,8 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
               <tr className="hover:bg-gray-700/20 transition-colors">
                 <td className="py-3 px-4">
                   <div className="flex items-center">
-                    <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
-                    <span className="font-medium text-blue-300">Common</span>
+                    <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                    <span className="font-medium text-green-300">Common</span>
                   </div>
                 </td>
                 <td className="text-right py-3 px-4 text-white font-medium">25</td>

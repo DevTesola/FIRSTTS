@@ -1,58 +1,92 @@
 import React from 'react';
 
 const Roadmap = () => {
+  // Updated roadmap phases
   const roadmapPhases = [
     {
       quarter: "Q2 2025",
-      title: "Foundation & Presale",
+      title: "Foundation & Token Launch",
       completed: true,
       items: [
-        "Project concept and whitepaper",
-        "Team formation",
-        "Smart contract development",
-        "Security audit",
-        "Community building",
-        "Token presale"
+        "TESOLA token and smart contract launch",
+        "Staking platform implementation (HOLD-TO-EARN)",
+        "Initial DEX & CEX listings",
+        "Community foundation development",
+        "NFT collection integration"
       ]
     },
     {
       quarter: "Q3 2025",
-      title: "Launch & Initial Ecosystem",
+      title: "Game Platform Expansion",
       completed: false,
       items: [
-        "Token Generation Event (TGE)",
-        "DEX listings",
-        "Liquidity pool establishment",
-        "Staking platform launch",
-        "Governance portal beta",
-        "Partnership announcements"
+        "Virtual driving game platform beta release",
+        "Game reward system implementation",
+        "Gaming partnerships acquisition",
+        "Tournament & competition system launch",
+        "Mobile app release"
       ]
     },
     {
       quarter: "Q4 2025",
-      title: "Platform Expansion",
+      title: "Ecosystem Expansion & Globalization",
       completed: false,
       items: [
-        "Mobile wallet integration",
-        "Cross-chain bridge deployment",
-        "Enhanced DeFi features",
-        "Major CEX listings",
-        "Partnership ecosystem growth",
-        "DAO governance implementation"
+        "Global marketing campaign",
+        "Additional exchange listings",
+        "Multi-language platform support",
+        "DAO governance system implementation",
+        "Extended developer ecosystem"
       ]
     },
     {
-      quarter: "Q1 2026",
-      title: "Advanced Features & Growth",
+      quarter: "1H 2026",
+      title: "Real Driving Integration",
       completed: false,
       items: [
-        "NFT marketplace integration",
-        "DApp platform launch",
-        "Developer grant program",
-        "Enterprise solutions beta",
-        "Global marketing campaign",
-        "Ecosystem fund activation"
+        "Tesla API integration system development",
+        "Real driving data based rewards mechanism",
+        "Charging station network partnerships",
+        "Eco-friendly driving incentive program",
+        "Tesla owner exclusive benefits"
       ]
+    },
+    {
+      quarter: "2H 2026",
+      title: "Global Ecosystem Integration",
+      completed: false,
+      items: [
+        "Major mobility platform connections",
+        "Global charging infrastructure partnerships",
+        "Carbon credit system integration",
+        "Expanded mobility rewards network",
+        "Next-generation technology integration"
+      ]
+    }
+  ];
+
+  // 3-Phase TESOLA Strategy
+  const strategies = [
+    {
+      title: "HOLD-TO-EARN",
+      description: "Staking rewards for token holders",
+      allocation: "40%",
+      status: "Active",
+      icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+    },
+    {
+      title: "GAME DRIVE-TO-EARN",
+      description: "Game-based virtual driving rewards",
+      allocation: "40%",
+      status: "Q3 2025",
+      icon: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+    },
+    {
+      title: "REAL DRIVE-TO-EARN",
+      description: "Real Tesla driving rewards",
+      allocation: "20%",
+      status: "2026 Target",
+      icon: "M13 10V3L4 14h7v7l9-11h-7z"
     }
   ];
 
@@ -62,6 +96,37 @@ const Roadmap = () => {
         TESOLA Roadmap
       </h2>
       
+      {/* 3-Phase Strategy Section */}
+      <div className="mb-10">
+        <h3 className="text-xl font-bold text-white mb-5 bg-purple-900/20 rounded-lg p-2 text-center">3-Phase TESOLA Strategy</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {strategies.map((strategy, index) => (
+            <div key={index} className="bg-gray-700 rounded-lg p-5 border-l-4 border-purple-500">
+              <div className="flex items-center mb-3">
+                <div className="bg-gray-800 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={strategy.icon} />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-white">{strategy.title}</h4>
+                  <div className="flex items-center mt-1">
+                    <span className="bg-purple-900/50 text-purple-300 text-xs px-2 py-0.5 rounded mr-2">
+                      {strategy.allocation}
+                    </span>
+                    <span className="bg-gray-800 text-xs text-gray-300 px-2 py-0.5 rounded">
+                      {strategy.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-gray-300 text-sm mb-2">{strategy.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Timeline Section */}
       <div className="relative">
         {/* Vertical timeline line */}
         <div className="absolute left-[15px] md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
@@ -124,26 +189,28 @@ const Roadmap = () => {
         </div>
       </div>
       
+      {/* Long-term Vision */}
       <div className="mt-10 p-4 bg-blue-900/20 border border-blue-600/20 rounded-lg">
         <h3 className="text-lg font-semibold text-blue-300 mb-2">Long-term Vision (2026-2027)</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="bg-gray-700 p-3 rounded-lg">
-            <div className="text-blue-400 font-medium mb-1">Enterprise Adoption</div>
-            <p className="text-gray-300">Develop enterprise solutions for major corporations to integrate TESOLA token into their businesses</p>
+            <div className="text-blue-400 font-medium mb-1">Tesla Integration</div>
+            <p className="text-gray-300">Full integration with Tesla vehicles through API and partnerships for real-world driving rewards</p>
           </div>
           
           <div className="bg-gray-700 p-3 rounded-lg">
-            <div className="text-blue-400 font-medium mb-1">Protocol Expansion</div>
-            <p className="text-gray-300">Create a full suite of interoperable DeFi protocols powered by TESOLA governance</p>
+            <div className="text-blue-400 font-medium mb-1">Mobility Network</div>
+            <p className="text-gray-300">Expanded ecosystem connecting various mobility and EV charging platforms globally</p>
           </div>
           
           <div className="bg-gray-700 p-3 rounded-lg">
-            <div className="text-blue-400 font-medium mb-1">Global Ecosystem</div>
-            <p className="text-gray-300">Establish regional hubs and partnerships worldwide to drive adoption and utility</p>
+            <div className="text-blue-400 font-medium mb-1">Metaverse Expansion</div>
+            <p className="text-gray-300">Creating immersive virtual experiences and showrooms in the metaverse</p>
           </div>
         </div>
       </div>
       
+      {/* Disclaimer */}
       <div className="mt-6 text-center text-gray-400 text-sm">
         <p>This roadmap is subject to changes based on market conditions and community decisions.</p>
         <p>All updates will be announced through our official channels.</p>

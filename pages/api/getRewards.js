@@ -1,9 +1,16 @@
 // pages/api/getRewards.js
 import { createClient } from '@supabase/supabase-js';
 
+// 일반 클라이언트 (제한된 권한)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
+
+// 서비스 역할 클라이언트 (관리자 권한, RLS 우회)
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 export default async function handler(req, res) {
@@ -14,16 +21,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Wallet address is required' });
     }
     
-    // 사용자의 리워드 내역 조회
-    const { data: rewards, error } = await supabase
+    console.log('Fetching rewards for wallet:', wallet);
+    
+    // 사용자의 리워드 내역 조회 - 서비스 역할 키 사용
+    const { data: rewards, error } = await supabaseAdmin
       .from('rewards')
       .select('*')
       .eq('wallet_address', wallet)
       .order('created_at', { ascending: false });
     
     if (error) {
+      console.error('Error fetching rewards:', error);
       throw new Error(`Failed to fetch rewards: ${error.message}`);
     }
+    
+    console.log(`Found ${rewards?.length || 0} rewards for wallet ${wallet}`);
     
     // 총 리워드 합계 계산
     const totalRewards = rewards.reduce((sum, reward) => {
