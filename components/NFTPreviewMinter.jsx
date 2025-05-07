@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import Image from "next/image";
 import ErrorMessage from "./ErrorMessage";
+import EnhancedProgressiveImage from "./EnhancedProgressiveImage";
+import { createPlaceholder, getNftPreviewImage } from "../utils/mediaUtils";
+import { getNFTImageUrl, getNFTName, getNFTTier } from "../utils/nftImageUtils";
 
 /**
  * NFT 미리보기 및 민팅 컴포넌트
@@ -311,7 +313,7 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
                   key={nft.id}
                   className={`rounded-lg overflow-hidden border ${getTierColorClass(nft.tier)} bg-gray-800 flex flex-col hover:shadow-lg hover:transform hover:scale-105 transition-transform`}
                 >
-                  {/* NFT 이미지 또는 비디오 */}
+                  {/* NFT 이미지 또는 비디오 - 최적화된 방식 사용 */}
                   <div className="relative aspect-square" style={{ backgroundColor: nft.placeholderBg }}>
   {nft.videoUrl ? (
     <video 
@@ -326,22 +328,24 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
       }}
       className="w-full h-full object-cover"
     />
-  ) : nft.image && nft.image.startsWith('/') ? (
-    <img 
-      src={nft.image} 
-      alt={nft.name}
-      onError={(e) => {
-        console.error(`Error loading image: ${nft.image}`, e);
-        e.target.style.display = 'none';
-      }}
-      className="w-full h-full object-cover"
-    />
   ) : (
-    <div className="w-full h-full flex items-center justify-center">
-      <span className="text-white text-opacity-80 font-bold">
-        SOLARA
-      </span>
-    </div>
+    <EnhancedProgressiveImage 
+      src={getNFTImageUrl({
+        id: nft.id,
+        name: nft.name,
+        image: nft.image,
+        __source: 'NFTPreviewMinter'
+      })}
+      alt={nft.name}
+      placeholder={createPlaceholder(nft.name || "SOLARA NFT")}
+      className="w-full h-full object-cover"
+      lazyLoad={true}
+      quality={80}
+      onError={() => {
+        // Fallback to ID-based preview image on error
+        return getNftPreviewImage(nft.id || nft.name);
+      }}
+    />
   )}
                     
                     {/* 티어 배지 */}

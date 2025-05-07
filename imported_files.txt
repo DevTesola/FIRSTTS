@@ -1,0 +1,595 @@
+./fix-staking-status.js:import { Connection, PublicKey } from '@solana/web3.js';
+./fix-staking-status.js:import { createClient } from '@supabase/supabase-js';
+./fix-staking-status.js:import dotenv from 'dotenv';
+./fix-staking-status.js:import readline from 'readline';
+./components/MintSection.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/MintSection.jsx:import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+./components/MintSection.jsx:import { Connection, Transaction } from "@solana/web3.js";
+./components/MintSection.jsx:import Image from "next/image";
+./components/MintSection.jsx:import ErrorMessage from "./ErrorMessage";
+./components/MintSection.jsx:import WalletGuide from "./WalletGuide";
+./components/MintSection.jsx:import { useAnalytics } from "./AnalyticsProvider";
+./components/ProgressiveImage.jsx:import { processImageUrl, createPlaceholder } from "../utils/mediaUtils";
+./components/NFTPreviewMinter.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/NFTPreviewMinter.jsx:import ErrorMessage from "./ErrorMessage";
+./components/NFTPreviewMinter.jsx:import EnhancedProgressiveImage from "./EnhancedProgressiveImage";
+./components/NFTPreviewMinter.jsx:import { createPlaceholder, getNftPreviewImage } from "../utils/mediaUtils";
+./components/Navigation.jsx:import Link from "next/link";
+./components/Navigation.jsx:import Image from "next/image";
+./components/Navigation.jsx:import { useRouter } from "next/router";
+./components/Navigation.jsx:import dynamic from "next/dynamic";
+./components/Navigation.jsx:// Dynamically import wallet button with no SSR
+./components/Navigation.jsx:  () => import("@solana/wallet-adapter-react-ui").then(mod => mod.WalletMultiButton),
+./components/community/CommunityPage.jsx:import Image from "next/image";
+./components/community/CommunityPage.jsx:import { useRouter } from "next/router";
+./components/community/CommunityPage.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/community/CommunityPage.jsx:import Link from "next/link";
+./components/community/CommunityPage.jsx:import dynamic from "next/dynamic";
+./components/presale/PresaleSection.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/presale/PresaleSection.jsx:import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+./components/presale/PresaleSection.jsx:import { Connection, Transaction } from "@solana/web3.js";
+./components/presale/PresaleSection.jsx:import Image from "next/image";
+./components/presale/PresaleSection.jsx:import ErrorMessage from "../ErrorMessage";
+./components/presale/PresaleSection.jsx:import { toast } from "react-toastify";
+./components/presale/PresaleInfo.jsx:import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+./components/presale/PurchaseResultModal.jsx:import Image from 'next/image';
+./components/presale/PresalePage.jsx:import dynamic from "next/dynamic";
+./components/presale/PresalePage.jsx:import Image from "next/image";
+./components/presale/PresalePage.jsx:import Link from "next/link";
+./components/presale/PresalePage.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/presale/PresalePage.jsx:import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+./components/presale/PresalePage.jsx:import { Connection, Transaction } from "@solana/web3.js";
+./components/presale/PresalePage.jsx:import PresaleSection from "./PresaleSection";
+./components/presale/PresalePage.jsx:import FooterLinks from "../FooterLinks";
+./components/presale/PresalePage.jsx:import ErrorMessage from "../ErrorMessage";
+./components/presale/PresalePage.jsx:import LoadingOverlay from "../LoadingOverlay";
+./components/presale/PresalePage.jsx:import WalletGuide from "../WalletGuide";
+./components/presale/PresalePage.jsx:import PresaleInfo from "./PresaleInfo";
+./components/presale/PresalePage.jsx:import PresaleTimer from "./PresaleTimer";
+./components/presale/PresalePage.jsx:import PurchaseResultModal from "./PurchaseResultModal";
+./components/presale/PresalePage.jsx:import Tokenomics from "./Tokenomics";
+./components/presale/PresalePage.jsx:import Roadmap from "./Roadmap";
+./components/presale/PresalePage.jsx:import TokenUtility from "./TokenUtility";
+./components/presale/PresalePage.jsx:import FAQ from "./FAQ";
+./components/presale/PresalePage.jsx:// Dynamic import for better performance - 수정된 방식
+./components/presale/PresalePage.jsx:  () => import("../VideoPlayer").then(mod => mod.default), 
+./components/presale/PresalePage.jsx:                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+./components/presale/PresalePage.jsx:                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+./components/presale/PresalePage.jsx:                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+./components/presale/PresalePage.jsx:                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+./components/presale/PresalePage.jsx:                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+./components/EnhancedMobile.jsx:import Link from "next/link";
+./components/EnhancedMobile.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/EnhancedMobile.jsx:import WalletStatus from "./WalletStatus";
+./components/OfflineDetector.jsx:import { useNotification } from "./Notifications";
+./components/BackgroundVideo.jsx:import Image from "next/image";
+./components/Layout.jsx:import dynamic from "next/dynamic"; 
+./components/Layout.jsx:import Navigation from "./Navigation";
+./components/Layout.jsx:import Link from "next/link";
+./components/Layout.jsx:import Image from "next/image";
+./components/Layout.jsx:import { useRouter } from "next/router";
+./components/Layout.jsx:// Dynamic import for better performance
+./components/Layout.jsx:const BackgroundVideo = dynamic(() => import("./BackgroundVideo").catch(err => {
+./components/Layout.jsx:    <div className="relative min-h-screen overflow-hidden text-white" style={{ fontFamily: "'Orbitron', sans-serif !important" }}>
+./components/OptimizedImage.jsx:import { useInView } from "react-intersection-observer";
+./components/StakingComponent.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/StakingComponent.jsx:import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+./components/StakingComponent.jsx:import ErrorMessage from "./ErrorMessage";
+./components/StakingComponent.jsx:import ErrorBoundary from "./ErrorBoundary";
+./components/StakingComponent.jsx:import { processImageUrl, createPlaceholder, getNftPreviewImage } from "../utils/mediaUtils";
+./components/staking/GovernanceTab.jsx:import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+./components/staking/GovernanceTab.jsx:import { PublicKey, Transaction } from '@solana/web3.js';
+./components/staking/GovernanceTab.jsx:import ErrorMessage from '../ErrorMessage';
+./components/staking/GovernanceTab.jsx:import LoadingSkeleton from '../LoadingSkeleton';
+./components/staking/NFTGallery.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/staking/NFTGallery.jsx:import { GlassButton, PrimaryButton, SecondaryButton } from "../Buttons";
+./components/staking/NFTGallery.jsx:import { processImageUrl, createPlaceholder, getNftPreviewImage } from "../../utils/mediaUtils";
+./components/staking/NFTGallery.jsx:import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
+./components/staking/StakingRewards.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/staking/StakingRewards.jsx:import { PrimaryButton } from "../Buttons";
+./components/staking/StakingDashboard.jsx:import { GlassButton, SecondaryButton } from "../Buttons";
+./components/staking/StakingDashboard.jsx:import StakedNFTCard from "./StakedNFTCard";
+./components/staking/StakedNFTCard.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/staking/StakedNFTCard.jsx:import { Connection, Transaction } from "@solana/web3.js";
+./components/staking/StakedNFTCard.jsx:import { PrimaryButton, SecondaryButton } from "../Buttons";
+./components/staking/StakedNFTCard.jsx:import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
+./components/staking/StakedNFTCard.jsx:import { createPlaceholder, getNftPreviewImage } from "../../utils/mediaUtils";
+./components/staking/Leaderboard.jsx:import { useWallet } from '@solana/wallet-adapter-react';
+./components/staking/Leaderboard.jsx:import { GlassButton, SecondaryButton } from "../Buttons";
+./components/staking/Leaderboard.jsx:import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
+./components/staking/Leaderboard.jsx:import { createPlaceholder, getNftPreviewImage } from "../../utils/mediaUtils";
+./components/admin/AdminLayout.jsx:import { useWallet } from '@solana/wallet-adapter-react';
+./components/admin/AdminLayout.jsx:import { useRouter } from 'next/router';
+./components/admin/AdminLayout.jsx:import dynamic from 'next/dynamic';
+./components/admin/AdminLayout.jsx:import Link from 'next/link';
+./components/admin/AdminLayout.jsx:import { isAdminWallet } from '../../utils/adminAuth';
+./components/admin/AdminLayout.jsx:  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
+./components/Notifications.jsx:import ReactDOM from "react-dom";
+./components/Notifications.jsx:import ErrorMessage from "./ErrorMessage";
+./components/NFTInfoVisualization.jsx:import EnhancedProgressiveImage from './EnhancedProgressiveImage';
+./components/NFTInfoVisualization.jsx:import { createPlaceholder, getNftPreviewImage } from "../utils/mediaUtils";
+./components/WalletGuide.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/WalletGuide.jsx:import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+./components/WalletGuide.jsx:import { useAnalytics } from "./AnalyticsProvider";
+./components/VideoLandingPage.jsx:import Link from "next/link";
+./components/VideoLandingPage.jsx:import Image from "next/image";
+./components/VideoLandingPage.jsx:import { useRouter } from 'next/router';
+./components/EnhancedProgressiveImage.jsx:import { useInView } from "react-intersection-observer";
+./components/EnhancedProgressiveImage.jsx:import { 
+./components/TweetShareButton.jsx:import dynamic from "next/dynamic";
+./components/TweetShareButton.jsx:  async () => (await import("@solana/wallet-adapter-react-ui")).WalletMultiButton,
+./components/RetryableTransaction.jsx:import { Connection, Transaction } from "@solana/web3.js";
+./components/RetryableTransaction.jsx:import ErrorMessage from "./ErrorMessage";
+./components/CollectionInfo.jsx:import { HeartIcon } from "@heroicons/react/24/solid";
+./components/VideoPlayer.jsx:import {
+./components/LandingPage.jsx:import Link from "next/link";
+./components/LandingPage.jsx:import Image from "next/image";
+./components/WalletFontFixer.jsx:        // Apply font directly via inline styles with !important
+./components/WalletFontFixer.jsx:          element.style.setProperty('font-family', "'Orbitron', sans-serif", "important");
+./components/WalletFontFixer.jsx:            child.style.setProperty('font-family', "'Orbitron', sans-serif", "important");
+./components/SolaraHeader.jsx:import Link from 'next/link';
+./components/SolaraHeader.jsx:import Image from 'next/image';
+./components/SolaraHeader.jsx:import { useRouter } from 'next/router';
+./components/IPFSImage.jsx:import { processImageUrl, createPlaceholder } from "../utils/mediaUtils";
+./components/WalletWrapper.js:import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+./components/WalletWrapper.js:import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+./components/WalletWrapper.js:import { Connection } from "@solana/web3.js";
+./components/WalletWrapper.js:// First import wallet adapter styles, then override them with our custom styles
+./components/WalletWrapper.js:import "@solana/wallet-adapter-react-ui/styles.css";
+./components/WalletWrapper.js:import Head from "next/head";
+./components/WalletWrapper.js:import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+./components/WalletWrapper.js:import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
+./components/WalletWrapper.js:import { TorusWalletAdapter } from "@solana/wallet-adapter-torus";
+./components/WalletWrapper.js:import { LedgerWalletAdapter } from "@solana/wallet-adapter-ledger";
+./components/WalletWrapper.js:import { SlopeWalletAdapter } from "@solana/wallet-adapter-slope";
+./components/WalletWrapper.js:import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
+./components/WalletWrapper.js:  // We're now importing the styles directly at the top of the file
+./components/WalletWrapper.js:  //  import('@solana/wallet-adapter-react-ui/styles.css')
+./components/WalletWrapper.js:                font-family: 'Orbitron', sans-serif !important;
+./components/WalletWrapper.js:                font-weight: 600 !important;
+./components/WalletWrapper.js:                letter-spacing: -0.02em !important;
+./components/WalletWrapper.js:                --font-dm-sans: 'Orbitron', sans-serif !important;
+./components/WalletWrapper.js:                font-family: 'Orbitron', sans-serif !important;
+./components/NFTCard.jsx:import { 
+./components/NFTCard.jsx:import EnhancedProgressiveImage from "./EnhancedProgressiveImage";
+./components/Buttons.jsx:// This ensures all components can be imported directly
+./components/RewardsDashboard.jsx:import { useWallet } from "@solana/wallet-adapter-react";
+./components/RewardsDashboard.jsx:import ErrorMessage from "./ErrorMessage";
+./components/RewardsDashboard.jsx:import EnhancedProgressiveImage from "./EnhancedProgressiveImage";
+./components/RewardsDashboard.jsx:import { claimRewards } from "../utils/rewards";
+./components/RewardsDashboard.jsx:import { createPlaceholder, getNftPreviewImage } from "../utils/mediaUtils";
+./components/ShareButton.jsx:import { useWallet } from '@solana/wallet-adapter-react';
+./components/ShareButton.jsx:import { createShareUrl, hasReceivedReward, recordReward } from '../utils/rewards';
+./components/MintResultModal.jsx:import { useWallet } from '@solana/wallet-adapter-react';
+./components/MintResultModal.jsx:import { getDirectGatewayUrl, isIPFSUrl } from '../utils/mediaUtils';
+./components/RefundPolicyModal.jsx:import Link from "next/link";
+./components/ProjectLinks.jsx:import Link from 'next/link';
+./components/ProjectLinks.jsx:import { useRouter } from 'next/router';
+./components/FooterLinks.jsx:import Link from 'next/link';
+./components/FooterLinks.jsx:import { CheckBadgeIcon, InformationCircleIcon } from "@heroicons/react/24/solid";
+./components/HomePage.jsx:import dynamic from "next/dynamic";
+./components/HomePage.jsx:import MintSection from "./MintSection";
+./components/HomePage.jsx:import SolaraHeader from "./SolaraHeader";
+./components/HomePage.jsx:import CollectionInfo from "./CollectionInfo";
+./components/HomePage.jsx:import RefundPolicyModal from "./RefundPolicyModal";
+./components/HomePage.jsx:import FooterLinks from "./FooterLinks";
+./components/HomePage.jsx:import MintResultModal from "./MintResultModal";
+./components/HomePage.jsx:import LoadingOverlay from "./LoadingOverlay";
+./components/HomePage.jsx:import ErrorMessage from "./ErrorMessage";
+./components/HomePage.jsx:import NFTPreviewMinter from "./NFTPreviewMinter";
+./components/HomePage.jsx:import WalletGuide from "./WalletGuide";
+./components/HomePage.jsx:// Dynamic import for better performance - 수정된 방식
+./components/HomePage.jsx:  () => import("./VideoPlayer").then(mod => mod.default), 
+./server/utils/sellerKeypair.js:import fs from 'fs';
+./server/utils/sellerKeypair.js:import path from 'path';
+./server/utils/sellerKeypair.js:import { Keypair } from '@solana/web3.js';
+./server/utils/sellerKeypair.js:import { fileURLToPath } from 'url';
+./server/utils/sellerKeypair.js:const __dirname = path.dirname(fileURLToPath(import.meta.url));
+./public/wallet-adapter-override.js:      element.style.setProperty('font-family', "'Orbitron', sans-serif", "important");
+./public/wallet-adapter-override.js:        child.style.setProperty('font-family', "'Orbitron', sans-serif", "important");
+./public/cursor.js:        cursor: none !important;
+./services/index.js: * This allows for easy imports of services throughout the application.
+./services/index.js:import api, { endpoints } from './api';
+./services/index.js:import nftService from './nftService';
+./services/index.js:import stakingService from './stakingService';
+./services/index.js:import walletService from './walletService';
+./services/index.js:// import notificationService, { 
+./services/stakingService.js:import { api, endpoints } from './api';
+./services/nftService.js:import { api, endpoints } from './api';
+./services/walletService.js:import { useWallet } from '@solana/wallet-adapter-react';
+./services/walletService.js:import { PublicKey, Transaction } from '@solana/web3.js';
+./services/walletService.js:import { api, endpoints } from './api';
+./lib/api-middleware.js:import { errorHandler, AppError } from '../middleware/errorHandler.js';
+./lib/api-middleware.js:import { rateLimiter } from '../middleware/rateLimit.js';
+./lib/api-middleware.js:import { optimizedRateLimiter, createRateLimiter } from '../middleware/optimizedRateLimit.js';
+./lib/api-middleware.js:import { 
+./lib/api-middleware.js:import { withCache, withSWR, clearCache } from '../middleware/apiCache.js';
+./lib/api-middleware.js:import { sanitizeRequestBody } from '../middleware/securityUtils.js';
+./update-staking-record.js:import { createClient } from '@supabase/supabase-js';
+./fix-id-20.js:import { createClient } from '@supabase/supabase-js';
+./pages/leaderboard.js:import { useWallet } from '@solana/wallet-adapter-react';
+./pages/leaderboard.js:import dynamic from 'next/dynamic';
+./pages/leaderboard.js:import Head from "next/head";
+./pages/leaderboard.js:import ErrorBoundary from '../components/ErrorBoundary';
+./pages/leaderboard.js:import FallbackLoading from '../components/FallbackLoading';
+./pages/leaderboard.js:import Leaderboard from '../components/staking/Leaderboard';
+./pages/leaderboard.js:  () => import('../components/Layout')
+./pages/solara/refund-policy.js:import Head from 'next/head';
+./pages/solara/refund-policy.js:import Link from 'next/link';
+./pages/solara/[id].jsx:import { useRouter } from "next/router";
+./pages/solara/[id].jsx:import dynamic from "next/dynamic";
+./pages/solara/[id].jsx:import Head from "next/head";
+./pages/solara/[id].jsx:import NFTDetailSkeleton from "../../components/NFTDetailSkeleton";
+./pages/solara/[id].jsx:import ErrorMessage from "../../components/ErrorMessage";
+./pages/solara/[id].jsx:import ProgressiveImage from "../../components/ProgressiveImage";
+./pages/solara/[id].jsx:const Layout = dynamic(() => import("../../components/Layout"), {
+./pages/solara/request-refund.js:import { useWallet } from '@solana/wallet-adapter-react';
+./pages/solara/request-refund.js:import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+./pages/solara/request-refund.js:import Head from 'next/head';
+./pages/solara/request-refund.js:import Link from 'next/link';
+./pages/staking.js:import StakingComponent from "../components/StakingComponent";
+./pages/staking.js:import Head from "next/head";
+./pages/staking.js:import { useWallet } from "@solana/wallet-adapter-react";
+./pages/staking.js:import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+./pages/staking.js:import Layout from "../components/Layout";
+./pages/staking.js:import StakingDashboard from "../components/staking/StakingDashboard";
+./pages/staking.js:import StakingRewards from "../components/staking/StakingRewards";
+./pages/staking.js:import NFTGallery from "../components/staking/NFTGallery";
+./pages/staking.js:import Leaderboard from "../components/staking/Leaderboard";
+./pages/staking.js:import GovernanceTab from "../components/staking/GovernanceTab";
+./pages/staking.js:import LoadingOverlay from "../components/LoadingOverlay";
+./pages/staking.js:import ErrorMessage from "../components/ErrorMessage";
+./pages/staking.js:import { GlassButton, PrimaryButton } from "../components/Buttons";
+./pages/staking.js:import EnhancedProgressiveImage from "../components/EnhancedProgressiveImage";
+./pages/staking.js:import { createPlaceholder } from "../utils/mediaUtils";
+./pages/staking.js:                  {/* This imports the StakingComponent */}
+./pages/middleware.js:import { NextResponse } from 'next/server';
+./pages/index.js:import { useRouter } from "next/router";
+./pages/index.js:import FallbackLoading from "../components/FallbackLoading";
+./pages/community.js:import Head from 'next/head';
+./pages/community.js:import Layout from '../components/Layout';
+./pages/community.js:import CommunityPage from '../components/community/CommunityPage';
+./pages/terms.js:import Head from 'next/head';
+./pages/terms.js:import Layout from '../components/Layout';
+./pages/admin/audit-logs.js:import { useWallet } from '@solana/wallet-adapter-react';
+./pages/admin/audit-logs.js:import Head from 'next/head';
+./pages/admin/audit-logs.js:import { getAdminActionTypes, detectSuspiciousActivity } from '../../utils/adminLogger';
+./pages/admin/audit-logs.js:import { toast, ToastContainer } from 'react-toastify';
+./pages/admin/audit-logs.js:import 'react-toastify/dist/ReactToastify.css';
+./pages/admin/audit-logs.js:import AdminLayout from '../../components/admin/AdminLayout';
+./pages/admin/initialize-pool.js:import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+./pages/admin/initialize-pool.js:import { 
+./pages/admin/initialize-pool.js:import { toast, ToastContainer } from 'react-toastify';
+./pages/admin/initialize-pool.js:import 'react-toastify/dist/ReactToastify.css';
+./pages/admin/initialize-pool.js:import AdminLayout from '../../components/admin/AdminLayout';
+./pages/admin/rewards.js:import { useWallet } from '@solana/wallet-adapter-react';
+./pages/admin/rewards.js:import { toast, ToastContainer } from 'react-toastify';
+./pages/admin/rewards.js:import 'react-toastify/dist/ReactToastify.css';
+./pages/admin/rewards.js:import AdminLayout from '../../components/admin/AdminLayout';
+./pages/admin/debug-staking.js:import Head from 'next/head';
+./pages/admin/debug-staking.js:import { useRouter } from 'next/router';
+./pages/nft.js:import Head from "next/head";
+./pages/nft.js:import HomePage from "../components/HomePage";
+./pages/nft.js:import Layout from "../components/Layout";
+./pages/home.js:import Head from "next/head";
+./pages/home.js:import dynamic from "next/dynamic";
+./pages/home.js:import FallbackLoading from "../components/FallbackLoading";
+./pages/home.js:import ErrorBoundary from "../components/ErrorBoundary";
+./pages/home.js:// Dynamic imports with error handling
+./pages/home.js:const Layout = dynamic(() => import("../components/Layout").catch(err => {
+./pages/home.js:const LandingPage = dynamic(() => import("../components/LandingPage").catch(err => {
+./pages/presale.js:import Head from "next/head";
+./pages/presale.js:import PresalePage from "../components/presale/PresalePage";
+./pages/presale.js:import Layout from "../components/Layout";
+./pages/landing.js:import Head from 'next/head';
+./pages/landing.js:import dynamic from 'next/dynamic';
+./pages/landing.js:const VideoLandingPage = dynamic(() => import('../components/VideoLandingPage'), {
+./pages/api/leaderboard.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/governance/getProposals.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/governance/getProposals.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/governance/getProposals.js:import { 
+./pages/api/governance/getProposals.js:import { 
+./pages/api/governance/getProposals.js:import { 
+./pages/api/governance/prepareVote.js:import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+./pages/api/governance/prepareVote.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/governance/prepareVote.js:import { 
+./pages/api/governance/prepareVote.js:import { 
+./pages/api/governance/prepareVote.js:import { 
+./pages/api/governance/getUserVotingPower.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/governance/getUserVotingPower.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/governance/getUserVotingPower.js:import { 
+./pages/api/governance/getUserVotingPower.js:import { 
+./pages/api/governance/getUserVotingPower.js:import { 
+./pages/api/governance/prepareCreateProposal.js:import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, Keypair } from '@solana/web3.js';
+./pages/api/governance/prepareCreateProposal.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/governance/prepareCreateProposal.js:import { 
+./pages/api/governance/prepareCreateProposal.js:import { 
+./pages/api/governance/prepareCreateProposal.js:import { 
+./pages/api/test-middleware.js:import { applyApiMiddleware } from '../../middleware/index';
+./pages/api/requestRefund.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/prepareUnstaking_v3.js:import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+./pages/api/prepareUnstaking_v3.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/prepareUnstaking_v3.js:import { 
+./pages/api/prepareUnstaking_v3.js:import { getErrorMessage, handleTransaction } from '../../utils/staking-helpers/error-handler';
+./pages/api/prepareUnstaking_v3.js:import { PROGRAM_ID, ESCROW_SEED, STAKE_SEED, USER_STAKING_SEED } from '../../utils/staking-helpers/constants';
+./pages/api/prepareUnstaking_v3.js:import { UNSTAKE_NFT_DISCRIMINATOR } from '../../utils/staking';
+./pages/api/prepareUnstaking_v3.js:import { calculateUnstakingPenalty } from '../../utils/staking';
+./pages/api/social/getUserSocialStatus.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/social/getUserSocialStatus.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/social/getUserSocialStatus.js:import { 
+./pages/api/social/getUserSocialStatus.js:import { 
+./pages/api/social/getUserSocialStatus.js:import { 
+./pages/api/presale/checkWhitelist.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/presale/checkWhitelist.js:import { validateSolanaAddress } from '../../../middleware/apiSecurity';
+./pages/api/presale/purchaseTESOLA.js:import { PublicKey, SystemProgram, Transaction, Connection } from '@solana/web3.js';
+./pages/api/presale/purchaseTESOLA.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/presale/purchaseTESOLA.js:import { validateSolanaAddress } from '../../../middleware/apiSecurity';
+./pages/api/presale/purchaseTESOLA.js:import { v4 as uuidv4 } from 'uuid';
+./pages/api/presale/purchaseTESOLA.js:import { SELLER_KEYPAIR } from '../../../server/utils/sellerKeypair';
+./pages/api/presale/getStats.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/presale/completePresale.js:import { PublicKey, Connection } from '@solana/web3.js';
+./pages/api/presale/completePresale.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/presale/completePresale.js:import { validateSolanaAddress } from '../../../middleware/apiSecurity';
+./pages/api/purchaseNFT.js:import { PublicKey } from '@solana/web3.js';
+./pages/api/purchaseNFT.js:import { purchaseNFT } from '../../utils/purchaseNFT';
+./pages/api/purchaseNFT.js:import { validateSolanaAddress } from '../../middleware/apiSecurity';
+./pages/api/prepareUnstaking.js:    // Use dynamic import instead of require to ensure module is found
+./pages/api/prepareUnstaking.js:    const { default: v3Handler } = await import("./prepareUnstaking_v3");
+./pages/api/getMintedCount.js:import { createClient } from "@supabase/supabase-js";
+./pages/api/getMintedCount.js:import { 
+./pages/api/getMintedCount.js:import { withReadOnlyApiMiddleware } from '../../utils/simpleApiMiddleware';
+./pages/api/reward-calculator.js:import {
+./pages/api/[...path].js:import { withCache, optimizedRateLimit, errorHandler } from '../../middleware';
+./pages/api/[...path].js:import { createReadStream } from 'fs';
+./pages/api/[...path].js:import { stat } from 'fs/promises';
+./pages/api/[...path].js:import path from 'path';
+./pages/api/prepareStaking_v3.js:import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+./pages/api/prepareStaking_v3.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/prepareStaking_v3.js:import { 
+./pages/api/prepareStaking_v3.js:import { PROGRAM_ID, ESCROW_SEED, STAKE_SEED, USER_STAKING_SEED, POOL_SEED, NFT_TIERS } from '../../utils/staking-helpers/constants';
+./pages/api/prepareStaking_v3.js:import { STAKE_NFT_DISCRIMINATOR } from '../../utils/staking';
+./pages/api/prepareStaking_v3.js:import { 
+./pages/api/staking/getUserNFTs.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/staking/getUserNFTs.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/staking/diagnose.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/staking/diagnose.js:import { diagnoseStakingAccount, diagnosePoolState } from '../../../utils/staking-helpers/diagnostic';
+./pages/api/staking/getStakingNFTs.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/staking/getStakingNFTs.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/staking/getStakingStats.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/staking/getStakingStats.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/staking/getStakingStats.js:import idl from '../../idl/nft_staking.json';
+./pages/api/admin/performance-stats.js:import { getPerformanceStatistics, resetPerformanceMetrics } from '../../../utils/staking-helpers/performance-logger';
+./pages/api/admin/performance-stats.js:import { isAdmin } from '../../../utils/adminAuth';
+./pages/api/admin/check-pool.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/admin/initialize-pool.js:import { Connection, PublicKey, Transaction, TransactionInstruction, Keypair, SystemProgram } from '@solana/web3.js';
+./pages/api/admin/initializePool.js:import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+./pages/api/admin/initializePool.js:import { PROGRAM_ID, POOL_SEED } from '../../../utils/staking-helpers/constants';
+./pages/api/admin/initializePool.js:import * as bs58 from 'bs58';
+./pages/api/admin/getPendingClaims.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/admin/getPendingClaims.js:import { isAdminWallet } from '../../../utils/adminAuth'; // Import admin auth utility
+./pages/api/admin/debug-staking.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/admin/debug-staking.js:import { PROGRAM_ID, STAKE_SEED, USER_STAKING_SEED } from '../../../utils/staking-helpers/constants';
+./pages/api/admin/debug-staking.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/admin/fixStakingStatus.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/admin/fixStakingStatus.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/admin/logs.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/admin/logs.js:import { isAdminWallet } from '../../../utils/adminAuth';
+./pages/api/admin/processClaim.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/admin/processClaim.js:import { isAdminWallet } from '../../../utils/adminAuth';
+./pages/api/admin/processClaim.js:import { logAdminAction } from '../../../utils/adminLogger';
+./pages/api/updatePaymentSignature.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/recordTweetReward.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/debug-program.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/debug-program.js:import idl from '../../idl/nft_staking.json';
+./pages/api/cron/check-suspicious-activity.js:import { detectSuspiciousActivity } from '../../../utils/adminLogger';
+./pages/api/cron/check-suspicious-activity.js:import nodemailer from 'nodemailer';
+./pages/api/getRewards.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/addSellerSignature.js:import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+./pages/api/addSellerSignature.js:import { createVerifyCollectionInstruction } from "@metaplex-foundation/mpl-token-metadata";
+./pages/api/addSellerSignature.js:import { SOLANA_RPC_ENDPOINT } from "../../utils/cluster";
+./pages/api/addSellerSignature.js:import { SELLER_KEYPAIR } from "../../server/utils/sellerKeypair";
+./pages/api/completeMinting.js:import { PublicKey } from '@solana/web3.js';
+./pages/api/completeMinting.js:import { completeMinting } from '../../utils/completeMinting';
+./pages/api/getMintPrice.js:import { 
+./pages/api/getStakingInfo.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/getStakingInfo.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/getStakingInfo.js:import { Metaplex } from '@metaplex-foundation/js';
+./pages/api/getStakingInfo.js:import { calculateEarnedRewards } from '../../utils/staking';
+./pages/api/getStakingInfo.js:import idl from '../../idl/nft_staking.json';
+./pages/api/getNFTs.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/getNFTs.js:import { Metaplex } from '@metaplex-foundation/js';
+./pages/api/getNFTs.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/prepareStaking.js:import handler from './prepareStaking_v3';
+./pages/api/prepareStaking_v2.js:import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
+./pages/api/prepareStaking_v2.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/prepareStaking_v2.js:import { calculateEstimatedRewards, standardizeTier } from './reward-calculator';
+./pages/api/prepareStaking_v2.js:import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
+./pages/api/prepareStaking_v2.js:import * as anchor from '@coral-xyz/anchor';
+./pages/api/prepareStaking_v2.js:import idl from '../../idl/nft_staking.json';
+./pages/api/prepareStaking_v2.js:import crypto from 'crypto';
+./pages/api/getStakingStats.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/recordSocialShare.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/claimRewards.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/getTransactions.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/getTransactions.js:import { Metaplex } from '@metaplex-foundation/js';
+./pages/api/completeStaking.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/completeStaking.js:import { Connection, PublicKey } from '@solana/web3.js';
+./pages/api/completeStaking.js:// 보상 계산기 모듈 import
+./pages/api/completeStaking.js:import { calculateEstimatedRewards, standardizeTier } from './reward-calculator';
+./pages/api/completeUnstaking.js:import { createClient } from '@supabase/supabase-js';
+./pages/api/completeUnstaking.js:import { Connection } from '@solana/web3.js';
+./pages/api/completeUnstaking.js:// 향상된 보상 계산기 import
+./pages/api/completeUnstaking.js:import { calculateUnstakingPenalty } from './reward-calculator';
+./pages/community-verify.js:import Head from 'next/head';
+./pages/community-verify.js:import CommunityPage from '../components/community/CommunityPage';
+./pages/_app.js:import dynamic from "next/dynamic";
+./pages/_app.js:import Head from "next/head";
+./pages/_app.js:import "../styles/globals.css";
+./pages/_app.js:import "../styles/wallet.css"; // Wallet custom styles
+./pages/_app.js:import "../styles/mobile-responsive.css"; // Mobile optimization styles
+./pages/_app.js:import "../styles/community.css"; // Community page styles
+./pages/_app.js:import { AnalyticsProvider, PageViewTracker } from "../components/AnalyticsProvider";
+./pages/_app.js:import ErrorBoundary from "../components/ErrorBoundary";
+./pages/_app.js:import { NotificationProvider } from "../components/Notifications";
+./pages/_app.js:import FallbackLoading from "../components/FallbackLoading";
+./pages/_app.js:const OfflineDetector = dynamic(() => import("../components/OfflineDetector").catch(err => {
+./pages/_app.js:  import("../components/WalletWrapper")
+./pages/whitepaper.js:import Head from 'next/head';
+./pages/whitepaper.js:import Layout from '../components/Layout';
+./pages/_document.js:import { Html, Head, Main, NextScript } from 'next/document';
+./pages/_document.js:            font-family: 'Orbitron', sans-serif !important;
+./pages/introduction.js:import Head from 'next/head';
+./pages/introduction.js:import Layout from '../components/Layout';
+./pages/privacy.js:import Head from 'next/head';
+./pages/privacy.js:import Layout from '../components/Layout';
+./pages/privacy.js:                <li>To communicate with you regarding updates, announcements, and important project developments.</li>
+./pages/transactions.js:import { useWallet } from '@solana/wallet-adapter-react';
+./pages/transactions.js:import Layout from '../components/Layout';
+./pages/transactions.js:import dynamic from 'next/dynamic';
+./pages/transactions.js:import LoadingSkeleton from '../components/LoadingSkeleton';
+./pages/transactions.js:import ErrorMessage from '../components/ErrorMessage';
+./pages/transactions.js:import StakingComponent from '../components/StakingComponent';
+./pages/transactions.js:  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
+./pages/contact.js:import Head from 'next/head';
+./pages/contact.js:import Layout from '../components/Layout';
+./pages/_error.js:import Head from 'next/head';
+./pages/_error.js:import Link from 'next/link';
+./pages/error-fallback.js:import Link from 'next/link';
+./pages/my-collection.js:import { useWallet } from '@solana/wallet-adapter-react';
+./pages/my-collection.js:import dynamic from 'next/dynamic';
+./pages/my-collection.js:import { useRouter } from 'next/router';
+./pages/my-collection.js:import Head from "next/head";
+./pages/my-collection.js:import { TabButton, PrimaryButton, SecondaryButton, GlassButton } from '../components/Buttons';
+./pages/my-collection.js:import LoadingSkeleton from '../components/LoadingSkeleton';
+./pages/my-collection.js:import ErrorMessage from '../components/ErrorMessage';
+./pages/my-collection.js:import EnhancedProgressiveImage from '../components/EnhancedProgressiveImage';
+./pages/my-collection.js:import StakingComponent from '../components/StakingComponent';
+./pages/my-collection.js:import StakingDashboard from '../components/staking/StakingDashboard';
+./pages/my-collection.js:import StakingRewards from '../components/staking/StakingRewards';
+./pages/my-collection.js:import { useNotification, ConfirmModal } from '../components/Notifications';
+./pages/my-collection.js:import { processImageUrl, createPlaceholder, getNftPreviewImage } from '../utils/mediaUtils';
+./pages/my-collection.js:import ErrorBoundary from '../components/ErrorBoundary';
+./pages/my-collection.js:import FallbackLoading from '../components/FallbackLoading';
+./pages/my-collection.js:  () => import('../components/Layout')
+./pages/my-collection.js:  () => import('@solana/wallet-adapter-react-ui')
+./scripts/checkCollectionPDAs.js:import { Connection, PublicKey } from "@solana/web3.js";
+./scripts/checkCollectionPDAs.js:import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
+./scripts/verifyCollection.js:import {
+./scripts/verifyCollection.js:import { Metaplex, keypairIdentity } from "@metaplex-foundation/js";
+./scripts/verifyCollection.js:import fs from "fs";
+./scripts/verifyCollection.js:import dotenv from "dotenv";
+./scripts/apply-font.js:import fs from 'fs';
+./scripts/apply-font.js:import path from 'path';
+./scripts/apply-font.js:import { fileURLToPath } from 'url';
+./scripts/apply-font.js:const __filename = fileURLToPath(import.meta.url);
+./scripts/apply-font.js:@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+./scripts/apply-font.js:    font-family: 'Orbitron', sans-serif !important;
+./scripts/apply-font.js:    font-family: 'Orbitron', sans-serif !important;
+./scripts/apply-font.js:    font-family: 'Orbitron', sans-serif !important;
+./scripts/apply-font.js:    font-family: 'Orbitron', sans-serif !important;
+./scripts/apply-font.js:    font-family: 'Orbitron', sans-serif !important;
+./scripts/apply-font.js:    font-family: 'Orbitron', sans-serif !important;
+./scripts/apply-font.js:    font-family: 'Orbitron', sans-serif !important;
+./scripts/buildMintTransaction.js:import { SELLER_KEYPAIR } from "../../utils/sellerKeypair";
+./scripts/buildMintTransaction.js:import { Connection, Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+./scripts/buildMintTransaction.js:import {
+./scripts/buildMintTransaction.js:import {
+./scripts/buildMintTransaction.js:import { createClient } from "@supabase/supabase-js";
+./scripts/buildMintTransaction.js:import { SOLANA_RPC_ENDPOINT } from "../../utils/cluster";
+./scripts/update-metadata.js:import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+./scripts/update-metadata.js:import { 
+./scripts/update-metadata.js:import fs from 'fs';
+./scripts/update-middleware-imports.js:// scripts/update-middleware-imports.js
+./scripts/update-middleware-imports.js:// Updates import paths for middleware in API files
+./scripts/update-middleware-imports.js:import fs from 'fs/promises';
+./scripts/update-middleware-imports.js:import path from 'path';
+./scripts/update-middleware-imports.js:import { glob } from 'glob';
+./scripts/update-middleware-imports.js:// Mapping of old imports to new imports
+./scripts/update-middleware-imports.js:  // For lib/api-middleware imports, these are already updated
+./scripts/update-middleware-imports.js:      console.log(`  Updated imports in: ${filePath}`);
+./scripts/update-middleware-imports.js:    console.log('Finished updating middleware imports');
+./scripts/simple-patch-wallet.js:import fs from 'fs';
+./scripts/simple-patch-wallet.js:import path from 'path';
+./scripts/simple-patch-wallet.js:import { fileURLToPath } from 'url';
+./scripts/simple-patch-wallet.js:const __filename = fileURLToPath(import.meta.url);
+./scripts/simple-patch-wallet.js:@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+./scripts/simple-patch-wallet.js:      // 2. 첫 줄에 Orbitron 폰트 import 추가 (이미 있는지 확인)
+./scripts/simple-patch-wallet.js:      if (!patchedContent.includes("@import url('https://fonts.googleapis.com/css2?family=Orbitron")) {
+./scripts/simple-patch-wallet.js:      // 3. 추가 규칙 - 모든 폰트 패밀리에 !important 추가
+./scripts/simple-patch-wallet.js:        "font-family: $1Orbitron$2 !important"
+./scripts/simple-patch-wallet.js:      // 4. 잘못된 !important 콤마 위치 수정
+./scripts/simple-patch-wallet.js:        /font-family: ['"]Orbitron['"] !important, sans-serif !important/g,
+./scripts/simple-patch-wallet.js:        "font-family: 'Orbitron', sans-serif !important"
+./scripts/patch-wallet-adapter.js:import fs from 'fs';
+./scripts/patch-wallet-adapter.js:import path from 'path';
+./scripts/patch-wallet-adapter.js:import { fileURLToPath } from 'url';
+./scripts/patch-wallet-adapter.js:const __filename = fileURLToPath(import.meta.url);
+./scripts/createCollectionNFT.js:import { config } from 'dotenv';
+./scripts/createCollectionNFT.js:import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
+./scripts/createCollectionNFT.js:import pkg from '@solana/web3.js';
+./scripts/createCollectionNFT.js:import { SELLER_KEYPAIR } from './server/utils/sellerKeypair.js';
+./scripts/WalletButton.js:import { useWallet } from "@solana/wallet-adapter-react";
+./scripts/checkCollectionNFT.js:import { config } from 'dotenv';
+./scripts/checkCollectionNFT.js:import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
+./scripts/checkCollectionNFT.js:import { Connection, PublicKey } from '@solana/web3.js';
+./scripts/checkCollectionNFT.js:import { SELLER_KEYPAIR } from './server/utils/sellerKeypair.js';
+./scripts/debugPackage.js:import { config } from 'dotenv';
+./scripts/debugPackage.js:import pkg from '@metaplex-foundation/mpl-token-metadata';
+./utils/staking.js:import { createClient } from '@supabase/supabase-js';
+./utils/presale/presaleUtils.js:import { createClient } from '@supabase/supabase-js';
+./utils/purchaseNFT.js:import { config } from 'dotenv';
+./utils/purchaseNFT.js:import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
+./utils/purchaseNFT.js:import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+./utils/purchaseNFT.js:import { createClient } from '@supabase/supabase-js';
+./utils/purchaseNFT.js:import { SOLANA_RPC_ENDPOINT, COLLECTION_MINT } from './cluster.js';
+./utils/purchaseNFT.js:import { SELLER_KEYPAIR } from '../server/utils/sellerKeypair.js';
+./utils/cluster.js:import { PublicKey } from '@solana/web3.js';
+./utils/feeEstimator.js:import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+./utils/apiMiddleware.js:import { 
+./utils/adminLogger.js:import { createClient } from '@supabase/supabase-js';
+./utils/hooks.js:import { useWallet } from '@solana/wallet-adapter-react';
+./utils/hooks.js:import { useRouter } from 'next/router';
+./utils/hooks.js:import { STORAGE_KEYS } from './constants';
+./utils/completeMinting.js:import { config } from 'dotenv';
+./utils/completeMinting.js:import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
+./utils/completeMinting.js:import { Connection, PublicKey } from '@solana/web3.js';
+./utils/completeMinting.js:import { createClient } from '@supabase/supabase-js';
+./utils/completeMinting.js:import { SOLANA_RPC_ENDPOINT, COLLECTION_MINT } from './cluster.js';
+./utils/completeMinting.js:import { SELLER_KEYPAIR } from '../server/utils/sellerKeypair.js';
+./utils/staking-helpers/index.js:import { 
+./utils/staking-helpers/index.js:import {
+./utils/staking-helpers/index.js:import {
+./utils/staking-helpers/index.js:import {
+./utils/staking-helpers/governance-helpers.js:import { PublicKey } from '@solana/web3.js';
+./utils/staking-helpers/governance-helpers.js:import { getErrorMessage } from './error-handler.js';
+./utils/staking-helpers/governance-helpers.js:import { BufferParser, parseUserStakingInfo, parseVoteInfo } from './buffer-parser.js';
+./utils/staking-helpers/governance-helpers.js:import { DISCRIMINATORS } from './constants.js';
+./utils/staking-helpers/buffer-parser.js:import { PublicKey } from '@solana/web3.js';
+./utils/staking-helpers/social-verification-helpers.js:import { PublicKey } from '@solana/web3.js';
+./utils/staking-helpers/social-verification-helpers.js:import { getErrorMessage } from './error-handler.js';
+./utils/staking-helpers/diagnostic.js:import { Connection, PublicKey } from '@solana/web3.js';
+./utils/staking-helpers/diagnostic.js:import { PROGRAM_ID, STAKE_SEED, ESCROW_SEED, USER_STAKING_SEED, DISCRIMINATORS } from './constants';
+./utils/dynamicImports.js: * Centralized dynamic import configuration for code splitting
+./utils/dynamicImports.js:import dynamic from 'next/dynamic';
+./utils/dynamicImports.js:import FallbackLoading from '../components/FallbackLoading';
+./utils/dynamicImports.js:import LoadingSkeleton from '../components/LoadingSkeleton';
+./utils/dynamicImports.js:// Common configuration for dynamic imports
+./utils/dynamicImports.js:  import('../components/BackgroundVideo'), {
+./utils/dynamicImports.js:  import('../components/Notifications').then(mod => mod.Notifications), {
+./utils/dynamicImports.js:  import('../components/OfflineDetector'), {
+./utils/dynamicImports.js:  import('../components/NFTCard'), {
+./utils/dynamicImports.js:  import('../components/NFTInfoVisualization'), {
+./utils/dynamicImports.js:  import('../components/MintSection'), {
+./utils/dynamicImports.js:  import('../components/VideoPlayer'), {
+./utils/dynamicImports.js:  import('../components/InfoModal'), {
+./utils/dynamicImports.js:  import('../components/MintResultModal'), {
+./utils/dynamicImports.js:  import('../components/RefundPolicyModal'), {
+./utils/dynamicImports.js:  import('../components/staking/StakingDashboard'), {
+./utils/dynamicImports.js:  import('../components/staking/Leaderboard'), {
+./utils/dynamicImports.js:  import('../components/staking/StakingRewards'), {
+./utils/dynamicImports.js:  import('../components/presale/PresaleSection'), {
+./utils/dynamicImports.js:  import('../components/presale/PresaleTimer'), {
+./utils/dynamicImports.js:  import('../components/presale/Tokenomics'), {
+./utils/dynamicImports.js:  import('../components/presale/Roadmap'), {
+./utils/dynamicImports.js:  import('../components/community/CommunityPage'), {
+./utils/supabaseClient.js:import { createClient } from "@supabase/supabase-js";

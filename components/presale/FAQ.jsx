@@ -27,7 +27,7 @@ const FAQ = () => {
     {
       id: 3,
       question: "How is the TESOLA token allocated?",
-      answer: "The 1 billion TESOLA tokens are allocated as follows: 40% for the DRIVE[HOLD]-TO-EARN ecosystem rewards, 20% for Liquidity & Exchanges, 15% for the Team & Advisors, 15% for Development & Marketing, and 10% for Presale participants."
+      answer: "The 1 billion TESOLA tokens are allocated as follows: 40% for the DRIVE[HOLD]-TO-EARN ecosystem rewards, 20% for Liquidity & Exchanges, 15% for the Team & Advisors, 10% for Development & Marketing, 10% for Presale participants, and 5% for DAO Treasury."
     },
     {
       id: 4,
@@ -77,7 +77,7 @@ const FAQ = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-900/80 to-purple-900/30 rounded-xl p-8 border border-purple-500/40 shadow-[0_0_30px_rgba(139,92,246,0.35)] relative overflow-hidden backdrop-blur-sm">
+    <div className="bg-gradient-to-br from-gray-900/80 to-purple-900/30 rounded-xl p-8 border border-purple-500/40 shadow-[0_0_30px_rgba(139,92,246,0.35)] relative overflow-hidden backdrop-blur-sm font-orbitron">
       {/* Animated background elements */}
       <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl animate-pulse-slow"></div>
       <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-violet-600/10 rounded-full blur-3xl animate-pulse-slow animation-delay-1000"></div>

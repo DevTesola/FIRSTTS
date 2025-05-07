@@ -11,10 +11,12 @@ const supabase = createClient(
 
 // IPFS gateway options
 const IPFS_GATEWAYS = [
-  process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io',
-  'https://cloudflare-ipfs.com',
-  'https://gateway.pinata.cloud',
-  'https://dweb.link'
+  process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs/', 
+  'https://tesola.mypinata.cloud/ipfs/',    // 추가: 개인 핀핑 서비스 (좀 더 안정적)
+  'https://cloudflare-ipfs.com/ipfs/',
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://dweb.link/ipfs/',
+  'https://nftstorage.link/ipfs/'     // 추가: NFT.Storage (안정적)
 ];
 
 /**
@@ -55,7 +57,10 @@ async function loadNftMetadata(uri, mintAddress) {
     // Handle IPFS URIs
     let metadataUrl = uri;
     if (uri.startsWith('ipfs://')) {
-      metadataUrl = `${IPFS_GATEWAYS[0]}/ipfs/${uri.replace('ipfs://', '')}`;
+      // IPFS_GATEWAYS 배열에 이미 /ipfs/가 포함되어 있으므로 직접 hash를 연결
+      const ipfsHash = uri.replace('ipfs://', '');
+      metadataUrl = `${IPFS_GATEWAYS[0]}${ipfsHash}`;
+      console.log(`Converting IPFS URI to gateway URL: ${uri} -> ${metadataUrl}`);
     }
     
     // Fetch with timeout
@@ -77,10 +82,27 @@ async function loadNftMetadata(uri, mintAddress) {
     
     const metadata = await response.json();
     
-    // Process image URL
+    // Process image URL - 중요: IPFS URL은 그대로 유지하여 프론트엔드에서 처리
     let imageUrl = metadata.image || '';
+    
+    // IPFS URL을 그대로 반환하여 프론트엔드에서 처리하도록 변경
+    // ipfs:// 프로토콜 URL이면 그대로 유지
     if (imageUrl.startsWith('ipfs://')) {
-      imageUrl = `${IPFS_GATEWAYS[0]}/ipfs/${imageUrl.replace('ipfs://', '')}`;
+      // 원본 IPFS URL 그대로 사용 (게이트웨이 처리하지 않음)
+      console.log(`Preserving original IPFS URL: ${imageUrl}`);
+    } 
+    // 게이트웨이 URL을 ipfs:// 형식으로 변환 (일관성 및 게이트웨이 라운드 로빈 지원)
+    else if (imageUrl && imageUrl.includes('/ipfs/')) {
+      try {
+        const parts = imageUrl.split('/ipfs/');
+        if (parts.length > 1) {
+          const ipfsUrl = `ipfs://${parts[1]}`;
+          console.log(`게이트웨이 URL을 IPFS 프로토콜로 변환: ${imageUrl} -> ${ipfsUrl}`);
+          imageUrl = ipfsUrl;
+        }
+      } catch (err) {
+        console.error('Gateway to IPFS protocol conversion error:', err);
+      }
     }
     
     // Extract tier information
@@ -96,12 +118,14 @@ async function loadNftMetadata(uri, mintAddress) {
         .upsert({
           mint_address: mintAddress,
           name: metadata.name,
-          image_url: imageUrl,
+          image_url: imageUrl, // 변환된 IPFS URL 사용 (게이트웨이 URL이 ipfs:// 형식으로 변환됨)
           tier: tier,
           attributes: metadata.attributes || [],
           metadata_uri: uri,
           last_updated: new Date().toISOString()
         }, { onConflict: 'mint_address' });
+      
+      console.log(`Cached metadata for ${mintAddress} with image URL: ${imageUrl}`);
     }
     
     return { 
@@ -120,7 +144,10 @@ async function loadNftMetadata(uri, mintAddress) {
       // Try alternative gateways
       for (let i = 1; i < IPFS_GATEWAYS.length; i++) {
         try {
-          const altUrl = `${IPFS_GATEWAYS[i]}/ipfs/${ipfsHash}`;
+          // IPFS_GATEWAYS 배열에 이미 /ipfs/가 포함되어 있으므로 직접 hash를 연결
+          const altUrl = `${IPFS_GATEWAYS[i]}${ipfsHash}`;
+          
+          console.log(`Trying alternative gateway ${i}: ${altUrl}`);
           
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 3000); // shorter timeout for fallbacks
@@ -137,10 +164,26 @@ async function loadNftMetadata(uri, mintAddress) {
           if (response.ok) {
             const metadata = await response.json();
             
-            // Process image URL
+            // Process image URL - 항상 IPFS URL 그대로 유지
             let imageUrl = metadata.image || '';
+            
+            // 항상 IPFS URL 그대로 유지
             if (imageUrl.startsWith('ipfs://')) {
-              imageUrl = `${IPFS_GATEWAYS[i]}/ipfs/${imageUrl.replace('ipfs://', '')}`;
+              // 원본 IPFS URL 그대로 사용 (게이트웨이 변환 없음)
+              console.log(`Preserving original IPFS URL (fallback): ${imageUrl}`);
+            }
+            // 게이트웨이 URL을 ipfs:// 형식으로 변환 (일관성 및 게이트웨이 라운드 로빈 지원)
+            else if (imageUrl && imageUrl.includes('/ipfs/')) {
+              try {
+                const parts = imageUrl.split('/ipfs/');
+                if (parts.length > 1) {
+                  const ipfsUrl = `ipfs://${parts[1]}`;
+                  console.log(`게이트웨이 URL을 IPFS 프로토콜로 변환 (fallback): ${imageUrl} -> ${ipfsUrl}`);
+                  imageUrl = ipfsUrl;
+                }
+              } catch (err) {
+                console.error('Fallback gateway to IPFS protocol conversion error:', err);
+              }
             }
             
             // Extract tier information
@@ -155,7 +198,7 @@ async function loadNftMetadata(uri, mintAddress) {
               .upsert({
                 mint_address: mintAddress,
                 name: metadata.name,
-                image_url: imageUrl,
+                image_url: imageUrl, // 변환된 IPFS URL 사용
                 tier: tier,
                 attributes: metadata.attributes || [],
                 metadata_uri: uri,

@@ -1,28 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# TESOLA 프로젝트
 
-## Getting Started
+## 폰트 문제 해결하기
 
-First, run the development server:
+이 프로젝트에서는 Orbitron 폰트를 전체적으로 적용하기 위해 다음과 같은 방법을 사용합니다:
+
+1. CSS를 통한 방법:
+   - `/public/essential-font-fix.css` 파일에 모든 폰트 관련 스타일이 통합되어 있습니다.
+   - 로컬 폰트 파일을 사용하여 웹폰트 로딩 문제를 방지합니다.
+   - DM Sans 폰트를 Orbitron으로 재정의하여 지갑 어댑터 문제를 해결합니다.
+
+2. JavaScript를 통한 방법:
+   - `/public/essential-font-fix.js` 파일에 모든 폰트 관련 스크립트가 통합되어 있습니다.
+   - DM Sans 폰트 로딩을 차단하고 Orbitron으로 대체합니다.
+   - 지갑 어댑터 요소에 인라인 스타일로 폰트를 적용합니다.
+   - 새로운 요소가 추가될 때를 감지해서 폰트를 적용합니다.
+
+3. 직접 패치:
+   - `scripts/simple-patch-wallet.js` 파일이 npm 스크립트 실행 시 
+     지갑 어댑터 CSS 파일을 직접 패치합니다.
+   - DM Sans 폰트를 Orbitron으로 변경합니다.
+
+## 주의 사항
+
+폰트 관련 파일들은 모두 정리되어 `/public/essential-font-fix.css`와 `/public/essential-font-fix.js`로 
+통합되었습니다.
+
+## 시작하기
+
+개발 서버를 실행합니다:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
 

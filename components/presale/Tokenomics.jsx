@@ -37,7 +37,7 @@ const Tokenomics = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-900/80 to-purple-900/20 rounded-xl p-6 border border-purple-500/30 shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+    <div className="bg-gradient-to-br from-gray-900/80 to-purple-900/20 rounded-xl p-6 border border-purple-500/30 shadow-[0_0_15px_rgba(139,92,246,0.3)] font-orbitron">
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 mb-3">
           TESOLA Tokenomics

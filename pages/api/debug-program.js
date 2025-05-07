@@ -5,7 +5,7 @@ import idl from '../../idl/nft_staking.json';
 const { Program, AnchorProvider } = require('@coral-xyz/anchor');
 
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
-const STAKING_PROGRAM_ADDRESS = 'CnpcsE2eJSfULpikfkbdd31wo6WeoL2jw8YyKSWG3Cfu';
+const STAKING_PROGRAM_ADDRESS = '4SfUyQkbeyz9jeJDsR5XiUf8DATVZJXtGG4JUsYsWzTs';
 
 export default async function handler(req, res) {
   try {

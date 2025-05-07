@@ -11,7 +11,7 @@ import React from "react";
  */
 export default function LoadingOverlay({ message = "Processing..." }) {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-black bg-opacity-70 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 flex flex-col items-center justify-center z-50 modal-overlay animate-fade-in" style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', backdropFilter: 'blur(8px)' }}>
       <div className="relative w-28 h-28">
         {/* Particle effects */}
         <div className="absolute -top-8 -left-8 w-12 h-12 bg-purple-600/30 rounded-full blur-xl animate-pulse-slow"></div>

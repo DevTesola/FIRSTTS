@@ -23,7 +23,7 @@ export default function Navigation() {
   const navItems = [
     { 
       name: "HOME", 
-      href: "/", 
+      href: "/home", 
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
           <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
@@ -136,7 +136,7 @@ export default function Navigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           {/* Logo with enhanced animations */}
-          <Link href="/" className="flex items-center space-x-2 group">
+          <Link href="/landing" className="flex items-center space-x-2 group">
             <div className="relative w-10 h-10 md:w-12 md:h-12 animate-fade-in">
               <div className="absolute -inset-2 bg-purple-500/20 rounded-full blur-md opacity-0 
                               group-hover:opacity-80 transition-all duration-500 animate-pulse-slow"></div>

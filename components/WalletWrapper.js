@@ -4,18 +4,20 @@ import { useMemo, useState, useEffect } from "react";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { Connection } from "@solana/web3.js";
-// Make sure we import the styles for wallet adapter
+// First import wallet adapter styles, then override them with our custom styles
 import "@solana/wallet-adapter-react-ui/styles.css";
+// Custom wallet overrides (must come after the original styles)
+import Head from "next/head";
 
-// 이미 설치된 어댑터
+// Only use adapters that aren't provided by standard adapters
+// Removed Phantom and Solflare as they're now available as standard adapters
+// Include wallet adapters needed for metamask compatibility
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
-import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
-
-// 새로 추가할 어댑터 - 실제 설치된 것만 사용
 import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
 import { TorusWalletAdapter } from "@solana/wallet-adapter-torus";
 import { LedgerWalletAdapter } from "@solana/wallet-adapter-ledger";
 import { SlopeWalletAdapter } from "@solana/wallet-adapter-slope";
+import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
 
@@ -24,16 +26,17 @@ export default function WalletWrapper({ children }) {
     console.error("Warning: NEXT_PUBLIC_SOLANA_RPC_ENDPOINT environment variable not set. Using default devnet endpoint.");
   }
 
-  // 설치된 지갑 감지 함수
+  // Get all installed wallets including metamask ones
   const getInstalledWallets = () => {
     const installed = [];
     
-    // 각 지갑이 설치되어 있는지 확인
+    // Always include these wallets for MetaMask compatibility
     if (typeof window !== 'undefined') {
-      if (window.phantom) installed.push(new PhantomWalletAdapter());
-      if (window.solflare) installed.push(new SolflareWalletAdapter());
+      // Explicitly add Phantom and Solflare for MetaMask compatibility
+      installed.push(new PhantomWalletAdapter());
+      installed.push(new SolflareWalletAdapter());
       
-      // 다른 지갑들도 가능한 경우 추가
+      // Add other wallets if they're installed
       try {
         const backpack = new BackpackWalletAdapter();
         if (backpack.readyState === 'Installed') installed.push(backpack);
@@ -49,17 +52,16 @@ export default function WalletWrapper({ children }) {
       }
     }
     
-    // 적어도 하나의 지갑이 없는 경우 기본 지갑 추가
-    if (installed.length === 0) {
-      installed.push(new PhantomWalletAdapter());
-      installed.push(new SolflareWalletAdapter());
-    }
-    
     return installed;
   };
 
-  // 설치된 지갑 어댑터만 사용
-  const wallets = useMemo(() => getInstalledWallets(), []);
+  // Use installed wallet adapters
+  const wallets = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+    return getInstalledWallets();
+  }, []);
 
   const endpoint = useMemo(() => SOLANA_RPC_ENDPOINT, []);
   
@@ -120,10 +122,10 @@ export default function WalletWrapper({ children }) {
     }, 500);
   };
 
-  // 모달 설정에 onlyShowInstalled 추가
+  // Modal configuration - more restrictive to prevent issues
   const walletModalProviderConfig = {
-    featuredWallets: 5,
-    onlyShowInstalled: true, // 설치된 지갑만 표시
+    featuredWallets: 5, // Show fewer wallets to avoid UI issues
+    onlyShowInstalled: true, // Only show installed wallets for better experience
   };
 
   return (
@@ -135,6 +137,38 @@ export default function WalletWrapper({ children }) {
       >
         <WalletModalProvider {...walletModalProviderConfig}>
           <>
+            {/* Custom font override styles - added inline to ensure they're applied after wallet styles */}
+            <style jsx global>{`
+              /* Force font application to wallet adapter (highest priority) */
+              .wallet-adapter-button,
+              .wallet-adapter-button *,
+              button.wallet-adapter-button,
+              .wallet-adapter-button span,
+              .wallet-adapter-dropdown-list-item,
+              .wallet-adapter-dropdown-list-item *,
+              .wallet-adapter-modal-title,
+              .wallet-adapter-modal-wrapper,
+              .wallet-adapter-modal-button-close,
+              .wallet-adapter-modal-list .wallet-adapter-button,
+              .wallet-adapter-modal-wrapper *,
+              .wallet-adapter-modal *,
+              .wallet-adapter-dropdown-list,
+              .wallet-adapter-dropdown-list *,
+              [class*="wallet-adapter"] {
+                font-family: 'Orbitron', sans-serif !important;
+                font-weight: 600 !important;
+                letter-spacing: -0.02em !important;
+              }
+              
+              /* Direct font override without URL references */
+              :root {
+                --font-dm-sans: 'Orbitron', sans-serif !important;
+              }
+              
+              * {
+                font-family: 'Orbitron', sans-serif !important;
+              }
+            `}</style>
             {/* Wallet Error Toast Notification */}
             {walletError && (
               <div className="fixed top-4 left-0 right-0 z-50 mx-auto w-full max-w-md px-4 animate-fade-down">

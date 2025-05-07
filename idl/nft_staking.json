@@ -1,275 +1,123 @@
 {
-  "accounts": [
-    {
-      "discriminator": [
-        66,
-        62,
-        68,
-        70,
-        108,
-        179,
-        183,
-        235
-      ],
-      "name": "StakeInfo"
-    }
-  ],
-  "address": "CnpcsE2eJSfULpikfkbdd31wo6WeoL2jw8YyKSWG3Cfu",
-  "errors": [
-    {
-      "code": 6000,
-      "msg": "NFT is not staked",
-      "name": "NotStaked"
-    },
-    {
-      "code": 6001,
-      "msg": "Not the NFT owner",
-      "name": "NotOwner"
-    }
-  ],
-  "events": [
-    {
-      "discriminator": [
-        226,
-        134,
-        188,
-        173,
-        19,
-        33,
-        75,
-        175
-      ],
-      "name": "StakeEvent"
-    },
-    {
-      "discriminator": [
-        162,
-        104,
-        137,
-        228,
-        81,
-        3,
-        79,
-        197
-      ],
-      "name": "UnstakeEvent"
-    }
-  ],
+  "address": "4SfUyQkbeyz9jeJDsR5XiUf8DATVZJXtGG4JUsYsWzTs",
+  "metadata": {
+    "name": "nft_staking_fixed",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
   "instructions": [
     {
+      "name": "cast_vote",
+      "discriminator": [
+        20,
+        212,
+        15,
+        189,
+        69,
+        180,
+        69,
+        151
+      ],
       "accounts": [
         {
-          "name": "owner",
-          "signer": true,
+          "name": "voter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "proposal",
           "writable": true
         },
         {
-          "name": "nft_mint"
-        },
-        {
-          "name": "user_nft_account",
-          "pda": {
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            },
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "owner"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "nft_mint"
-              }
-            ]
-          },
-          "writable": true
-        },
-        {
-          "name": "escrow_nft_account",
-          "pda": {
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            },
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "escrow_authority"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "nft_mint"
-              }
-            ]
-          },
-          "writable": true
-        },
-        {
-          "name": "escrow_authority",
+          "name": "vote",
+          "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  101,
-                  115,
-                  99,
-                  114,
+                  118,
                   111,
-                  119
+                  116,
+                  101
                 ]
               },
               {
                 "kind": "account",
-                "path": "nft_mint"
+                "path": "proposal"
+              },
+              {
+                "kind": "account",
+                "path": "voter"
               }
             ]
           }
         },
         {
+          "name": "user_staking_info",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "voter"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "support",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "claim_rewards",
+      "discriminator": [
+        4,
+        144,
+        132,
+        71,
+        116,
+        23,
+        151,
+        80
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "nft_mint"
+        },
+        {
           "name": "stake_info",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -287,28 +135,518 @@
                 "path": "nft_mint"
               }
             ]
-          },
-          "writable": true
+          }
         },
         {
-          "address": "11111111111111111111111111111111",
-          "name": "system_program"
+          "name": "pool_state"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_social_reward",
+      "discriminator": [
+        240,
+        17,
+        165,
+        169,
+        13,
+        201,
+        123,
+        56
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
         },
         {
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-          "name": "token_program"
+          "name": "user_social_activity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  111,
+                  99,
+                  105,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
         },
         {
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
-          "name": "associated_token_program"
+          "name": "activity_proof"
+        },
+        {
+          "name": "social_verifier"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_proposal",
+      "discriminator": [
+        132,
+        116,
+        68,
+        174,
+        216,
+        160,
+        198,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "proposer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "proposal",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "governance_settings"
+        },
+        {
+          "name": "user_staking_info",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "proposer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "staking_period",
+          "name": "proposal_id",
           "type": "u64"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "execute_proposal",
+      "discriminator": [
+        186,
+        60,
+        116,
+        133,
+        108,
+        128,
+        111,
+        28
+      ],
+      "accounts": [
+        {
+          "name": "executor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "proposal",
+          "writable": true
+        },
+        {
+          "name": "governance_settings"
         }
       ],
+      "args": []
+    },
+    {
+      "name": "get_user_staked_nfts",
+      "discriminator": [
+        7,
+        174,
+        216,
+        233,
+        200,
+        88,
+        81,
+        91
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "signer": true
+        },
+        {
+          "name": "user_staking_info",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [],
+      "returns": {
+        "vec": "pubkey"
+      }
+    },
+    {
+      "name": "init_user_social_activity",
+      "discriminator": [
+        59,
+        57,
+        53,
+        228,
+        109,
+        112,
+        15,
+        245
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_social_activity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  111,
+                  99,
+                  105,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "twitter_username",
+          "type": "string"
+        },
+        {
+          "name": "telegram_username",
+          "type": "string"
+        },
+        {
+          "name": "discord_username",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "init_user_staking_info",
+      "discriminator": [
+        228,
+        148,
+        161,
+        162,
+        20,
+        86,
+        73,
+        202
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_staking_info",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool_state",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "reward_rate",
+          "type": "u64"
+        },
+        {
+          "name": "emergency_fee",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "initialize_governance",
+      "discriminator": [
+        171,
+        87,
+        101,
+        237,
+        27,
+        107,
+        201,
+        57
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "governance_settings",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool_state",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "voting_delay",
+          "type": "i64"
+        },
+        {
+          "name": "voting_period",
+          "type": "i64"
+        },
+        {
+          "name": "proposal_threshold",
+          "type": "u64"
+        },
+        {
+          "name": "quorum_votes",
+          "type": "u64"
+        },
+        {
+          "name": "min_approve_percentage",
+          "type": "u8"
+        },
+        {
+          "name": "timelock_delay",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_social_verifier",
+      "discriminator": [
+        87,
+        94,
+        95,
+        140,
+        27,
+        46,
+        147,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "social_verifier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool_state",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "twitter_reward",
+          "type": "u64"
+        },
+        {
+          "name": "telegram_reward",
+          "type": "u64"
+        },
+        {
+          "name": "discord_reward",
+          "type": "u64"
+        },
+        {
+          "name": "cooldown_period",
+          "type": "i64"
+        },
+        {
+          "name": "max_rewards_per_day",
+          "type": "u8"
+        },
+        {
+          "name": "initial_verifiers",
+          "type": {
+            "vec": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "pause_pool",
+      "discriminator": [
+        160,
+        15,
+        12,
+        189,
+        160,
+        0,
+        243,
+        245
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool_state",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "stake_nft",
       "discriminator": [
         38,
         27,
@@ -319,199 +657,21 @@
         151,
         219
       ],
-      "name": "stake_nft"
-    },
-    {
       "accounts": [
         {
           "name": "owner",
-          "relations": [
-            "stake_info"
-          ],
-          "signer": true,
-          "writable": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "nft_mint"
         },
         {
           "name": "user_nft_account",
-          "pda": {
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            },
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "owner"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "nft_mint"
-              }
-            ]
-          },
           "writable": true
         },
         {
           "name": "escrow_nft_account",
-          "pda": {
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            },
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "escrow_authority"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "nft_mint"
-              }
-            ]
-          },
           "writable": true
         },
         {
@@ -538,6 +698,7 @@
         },
         {
           "name": "stake_info",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -555,15 +716,100 @@
                 "path": "nft_mint"
               }
             ]
-          },
+          }
+        },
+        {
+          "name": "pool_state",
           "writable": true
         },
         {
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-          "name": "token_program"
+          "name": "user_staking_info",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
         }
       ],
-      "args": [],
+      "args": [
+        {
+          "name": "staking_period",
+          "type": "u64"
+        },
+        {
+          "name": "nft_tier",
+          "type": "u8"
+        },
+        {
+          "name": "auto_compound",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "unpause_pool",
+      "discriminator": [
+        241,
+        148,
+        129,
+        243,
+        222,
+        125,
+        125,
+        160
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool_state",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "unstake_nft",
       "discriminator": [
         17,
         182,
@@ -574,43 +820,1210 @@
         50,
         163
       ],
-      "name": "unstake_nft"
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "nft_mint"
+        },
+        {
+          "name": "user_nft_account",
+          "writable": true
+        },
+        {
+          "name": "escrow_nft_account",
+          "writable": true
+        },
+        {
+          "name": "escrow_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "nft_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stake_info",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "nft_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_state",
+          "writable": true
+        },
+        {
+          "name": "user_staking_info",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_reward_rate",
+      "discriminator": [
+        105,
+        157,
+        0,
+        185,
+        21,
+        144,
+        163,
+        159
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool_state",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_rate",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_tier_multipliers",
+      "discriminator": [
+        25,
+        132,
+        162,
+        53,
+        130,
+        129,
+        248,
+        23
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool_state",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "common",
+          "type": "u64"
+        },
+        {
+          "name": "rare",
+          "type": "u64"
+        },
+        {
+          "name": "epic",
+          "type": "u64"
+        },
+        {
+          "name": "legendary",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "verify_social_activity",
+      "discriminator": [
+        214,
+        146,
+        199,
+        120,
+        242,
+        174,
+        126,
+        136
+      ],
+      "accounts": [
+        {
+          "name": "verifier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "social_verifier"
+        },
+        {
+          "name": "activity_proof",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "activity_type",
+          "type": "u8"
+        },
+        {
+          "name": "activity_id",
+          "type": "string"
+        },
+        {
+          "name": "_reward_amount",
+          "type": "u64"
+        },
+        {
+          "name": "_signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
     }
   ],
-  "metadata": {
-    "description": "Created with Anchor",
-    "name": "nft_staking",
-    "spec": "0.1.0",
-    "version": "0.1.0"
-  },
+  "accounts": [
+    {
+      "name": "GovernanceSettings",
+      "discriminator": [
+        49,
+        130,
+        165,
+        229,
+        105,
+        231,
+        146,
+        243
+      ]
+    },
+    {
+      "name": "PoolState",
+      "discriminator": [
+        247,
+        237,
+        227,
+        245,
+        215,
+        195,
+        222,
+        70
+      ]
+    },
+    {
+      "name": "Proposal",
+      "discriminator": [
+        26,
+        94,
+        189,
+        187,
+        116,
+        136,
+        53,
+        33
+      ]
+    },
+    {
+      "name": "SocialActivityProof",
+      "discriminator": [
+        134,
+        101,
+        32,
+        117,
+        119,
+        4,
+        7,
+        234
+      ]
+    },
+    {
+      "name": "SocialActivityVerifier",
+      "discriminator": [
+        58,
+        1,
+        202,
+        162,
+        65,
+        46,
+        135,
+        49
+      ]
+    },
+    {
+      "name": "StakeInfo",
+      "discriminator": [
+        66,
+        62,
+        68,
+        70,
+        108,
+        179,
+        183,
+        235
+      ]
+    },
+    {
+      "name": "UserSocialActivity",
+      "discriminator": [
+        96,
+        101,
+        245,
+        172,
+        219,
+        135,
+        159,
+        168
+      ]
+    },
+    {
+      "name": "UserStakingInfo",
+      "discriminator": [
+        171,
+        19,
+        114,
+        117,
+        157,
+        103,
+        21,
+        106
+      ]
+    },
+    {
+      "name": "Vote",
+      "discriminator": [
+        96,
+        91,
+        104,
+        57,
+        145,
+        35,
+        172,
+        155
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "NftStaked",
+      "discriminator": [
+        150,
+        229,
+        155,
+        99,
+        88,
+        181,
+        254,
+        61
+      ]
+    },
+    {
+      "name": "NftUnstaked",
+      "discriminator": [
+        253,
+        242,
+        47,
+        131,
+        231,
+        214,
+        72,
+        117
+      ]
+    },
+    {
+      "name": "PoolStatusChanged",
+      "discriminator": [
+        148,
+        190,
+        81,
+        62,
+        81,
+        239,
+        137,
+        188
+      ]
+    },
+    {
+      "name": "ProposalCancelled",
+      "discriminator": [
+        253,
+        59,
+        104,
+        46,
+        129,
+        78,
+        9,
+        14
+      ]
+    },
+    {
+      "name": "ProposalCreated",
+      "discriminator": [
+        186,
+        8,
+        160,
+        108,
+        81,
+        13,
+        51,
+        206
+      ]
+    },
+    {
+      "name": "ProposalExecuted",
+      "discriminator": [
+        92,
+        213,
+        189,
+        201,
+        101,
+        83,
+        111,
+        83
+      ]
+    },
+    {
+      "name": "RewardRateUpdated",
+      "discriminator": [
+        176,
+        128,
+        176,
+        106,
+        40,
+        165,
+        210,
+        144
+      ]
+    },
+    {
+      "name": "RewardsClaimed",
+      "discriminator": [
+        75,
+        98,
+        88,
+        18,
+        219,
+        112,
+        88,
+        121
+      ]
+    },
+    {
+      "name": "RewardsCompounded",
+      "discriminator": [
+        145,
+        86,
+        94,
+        94,
+        103,
+        143,
+        189,
+        95
+      ]
+    },
+    {
+      "name": "SocialActivityVerified",
+      "discriminator": [
+        123,
+        24,
+        182,
+        252,
+        77,
+        27,
+        215,
+        190
+      ]
+    },
+    {
+      "name": "SocialRewardClaimed",
+      "discriminator": [
+        95,
+        134,
+        227,
+        243,
+        165,
+        14,
+        50,
+        11
+      ]
+    },
+    {
+      "name": "SocialVerifierConfigured",
+      "discriminator": [
+        68,
+        158,
+        97,
+        210,
+        102,
+        56,
+        16,
+        213
+      ]
+    },
+    {
+      "name": "TierMultipliersUpdated",
+      "discriminator": [
+        179,
+        152,
+        72,
+        31,
+        151,
+        68,
+        13,
+        57
+      ]
+    },
+    {
+      "name": "VoteCast",
+      "discriminator": [
+        39,
+        53,
+        195,
+        104,
+        188,
+        17,
+        225,
+        213
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotStaked",
+      "msg": "NFT is not staked"
+    },
+    {
+      "code": 6001,
+      "name": "NotOwner",
+      "msg": "Not the NFT owner"
+    },
+    {
+      "code": 6002,
+      "name": "NotAdmin",
+      "msg": "Not the pool admin"
+    },
+    {
+      "code": 6003,
+      "name": "PoolPaused",
+      "msg": "Pool is currently paused"
+    },
+    {
+      "code": 6004,
+      "name": "StakingPeriodNotCompleted",
+      "msg": "Staking period not completed yet"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidNftTier",
+      "msg": "Invalid NFT tier"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidStakingPeriod",
+      "msg": "Invalid staking period"
+    },
+    {
+      "code": 6007,
+      "name": "MaxNftsExceeded",
+      "msg": "Maximum NFTs per user exceeded"
+    },
+    {
+      "code": 6008,
+      "name": "ProposalNotFound",
+      "msg": "Proposal does not exist"
+    },
+    {
+      "code": 6009,
+      "name": "VotingNotStarted",
+      "msg": "Voting period has not started yet"
+    },
+    {
+      "code": 6010,
+      "name": "VotingEnded",
+      "msg": "Voting period has ended"
+    },
+    {
+      "code": 6011,
+      "name": "VotingNotEnded",
+      "msg": "Voting has not ended yet"
+    },
+    {
+      "code": 6012,
+      "name": "AlreadyVoted",
+      "msg": "Already voted on this proposal"
+    },
+    {
+      "code": 6013,
+      "name": "InsufficientVotingPower",
+      "msg": "Insufficient voting power"
+    },
+    {
+      "code": 6014,
+      "name": "QuorumNotReached",
+      "msg": "Proposal failed to meet quorum"
+    },
+    {
+      "code": 6015,
+      "name": "ProposalCancelled",
+      "msg": "Proposal has been cancelled"
+    },
+    {
+      "code": 6016,
+      "name": "ProposalAlreadyExecuted",
+      "msg": "Proposal has already been executed"
+    },
+    {
+      "code": 6017,
+      "name": "ProposalFailed",
+      "msg": "Proposal failed to pass"
+    },
+    {
+      "code": 6018,
+      "name": "TimelockNotCompleted",
+      "msg": "Timelock period not completed yet"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidVotingParams",
+      "msg": "Invalid voting parameters"
+    },
+    {
+      "code": 6020,
+      "name": "UnauthorizedVerifier",
+      "msg": "Unauthorized verifier"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidActivityType",
+      "msg": "Invalid activity type"
+    },
+    {
+      "code": 6022,
+      "name": "ActivityAlreadyClaimed",
+      "msg": "Activity already claimed"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidSignature",
+      "msg": "Invalid signature"
+    },
+    {
+      "code": 6024,
+      "name": "CooldownNotCompleted",
+      "msg": "Cooldown period not completed"
+    },
+    {
+      "code": 6025,
+      "name": "MaxDailyRewardsExceeded",
+      "msg": "Maximum daily rewards exceeded"
+    },
+    {
+      "code": 6026,
+      "name": "UserNotRegisteredForSocial",
+      "msg": "User not registered for social activities"
+    },
+    {
+      "code": 6027,
+      "name": "InvalidProof",
+      "msg": "Invalid or expired proof"
+    }
+  ],
   "types": [
     {
-      "name": "StakeEvent",
+      "name": "GovernanceSettings",
       "type": {
+        "kind": "struct",
         "fields": [
           {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "staked_at",
+            "name": "voting_delay",
             "type": "i64"
           },
           {
-            "name": "release_date",
+            "name": "voting_period",
+            "type": "i64"
+          },
+          {
+            "name": "proposal_threshold",
+            "type": "u64"
+          },
+          {
+            "name": "quorum_votes",
+            "type": "u64"
+          },
+          {
+            "name": "min_approve_percentage",
+            "type": "u8"
+          },
+          {
+            "name": "timelock_delay",
             "type": "i64"
           }
-        ],
-        "kind": "struct"
+        ]
+      },
+      "size": 49
+    },
+    {
+      "name": "NftStaked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "nft_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "tier",
+            "type": "u8"
+          },
+          {
+            "name": "staking_period",
+            "type": "u64"
+          }
+        ]
+      },
+      "size": 81
+    },
+    {
+      "name": "NftUnstaked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "nft_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      },
+      "size": 72
+    },
+    {
+      "name": "PoolState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_rate",
+            "type": "u64"
+          },
+          {
+            "name": "emergency_fee_percent",
+            "type": "u8"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "total_staked",
+            "type": "u64"
+          },
+          {
+            "name": "common_multiplier",
+            "type": "u64"
+          },
+          {
+            "name": "rare_multiplier",
+            "type": "u64"
+          },
+          {
+            "name": "epic_multiplier",
+            "type": "u64"
+          },
+          {
+            "name": "legendary_multiplier",
+            "type": "u64"
+          },
+          {
+            "name": "long_staking_bonus",
+            "type": "u64"
+          },
+          {
+            "name": "max_nfts_per_user",
+            "type": "u8"
+          }
+        ]
+      },
+      "size": 98
+    },
+    {
+      "name": "PoolStatusChanged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Proposal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "proposer",
+            "type": "pubkey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "name": "start_time",
+            "type": "i64"
+          },
+          {
+            "name": "end_time",
+            "type": "i64"
+          },
+          {
+            "name": "executed",
+            "type": "bool"
+          },
+          {
+            "name": "cancelled",
+            "type": "bool"
+          },
+          {
+            "name": "for_votes",
+            "type": "u64"
+          },
+          {
+            "name": "against_votes",
+            "type": "u64"
+          },
+          {
+            "name": "minimum_quorum",
+            "type": "u64"
+          },
+          {
+            "name": "minimum_approve_percentage",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal_id",
+            "type": "u64"
+          },
+          {
+            "name": "canceller",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal_id",
+            "type": "u64"
+          },
+          {
+            "name": "proposer",
+            "type": "pubkey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "description_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "start_time",
+            "type": "i64"
+          },
+          {
+            "name": "end_time",
+            "type": "i64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalExecuted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal_id",
+            "type": "u64"
+          },
+          {
+            "name": "executor",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RewardRateUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "new_rate",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RewardsClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "nft_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "days_elapsed",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RewardsCompounded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "new_total",
+            "type": "u64"
+          },
+          {
+            "name": "nft_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SocialActivityProof",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "activity_type",
+            "type": "u8"
+          },
+          {
+            "name": "activity_id",
+            "type": "string"
+          },
+          {
+            "name": "verified_at",
+            "type": "i64"
+          },
+          {
+            "name": "reward_amount",
+            "type": "u64"
+          },
+          {
+            "name": "verified_by",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SocialActivityVerified",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "activity_type",
+            "type": "u8"
+          },
+          {
+            "name": "activity_id",
+            "type": "string"
+          },
+          {
+            "name": "reward_amount",
+            "type": "u64"
+          },
+          {
+            "name": "verified_by",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SocialActivityVerifier",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "twitter_reward",
+            "type": "u64"
+          },
+          {
+            "name": "telegram_reward",
+            "type": "u64"
+          },
+          {
+            "name": "discord_reward",
+            "type": "u64"
+          },
+          {
+            "name": "cooldown_period",
+            "type": "i64"
+          },
+          {
+            "name": "max_rewards_per_day",
+            "type": "u8"
+          },
+          {
+            "name": "verifier_authorities",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SocialRewardClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "activity_type",
+            "type": "u8"
+          },
+          {
+            "name": "reward_amount",
+            "type": "u64"
+          },
+          {
+            "name": "new_total_earned",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SocialVerifierConfigured",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "twitter_reward",
+            "type": "u64"
+          },
+          {
+            "name": "telegram_reward",
+            "type": "u64"
+          },
+          {
+            "name": "discord_reward",
+            "type": "u64"
+          },
+          {
+            "name": "cooldown_period",
+            "type": "i64"
+          },
+          {
+            "name": "max_rewards_per_day",
+            "type": "u8"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
       }
     },
     {
       "name": "StakeInfo",
       "type": {
+        "kind": "struct",
         "fields": [
           {
             "name": "owner",
@@ -631,33 +2044,184 @@
           {
             "name": "is_staked",
             "type": "bool"
+          },
+          {
+            "name": "tier",
+            "type": "u8"
+          },
+          {
+            "name": "last_claim_time",
+            "type": "i64"
+          },
+          {
+            "name": "staking_period",
+            "type": "u64"
+          },
+          {
+            "name": "auto_compound",
+            "type": "bool"
+          },
+          {
+            "name": "accumulated_compound",
+            "type": "u64"
           }
-        ],
-        "kind": "struct"
+        ]
+      },
+      "size": 106
+    },
+    {
+      "name": "TierMultipliersUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "common",
+            "type": "u64"
+          },
+          {
+            "name": "rare",
+            "type": "u64"
+          },
+          {
+            "name": "epic",
+            "type": "u64"
+          },
+          {
+            "name": "legendary",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
       }
     },
     {
-      "name": "UnstakeEvent",
+      "name": "UserSocialActivity",
       "type": {
+        "kind": "struct",
         "fields": [
           {
             "name": "owner",
             "type": "pubkey"
           },
           {
-            "name": "mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "unstaked_at",
+            "name": "last_twitter_claim",
             "type": "i64"
           },
           {
-            "name": "was_early",
-            "type": "bool"
+            "name": "last_telegram_claim",
+            "type": "i64"
+          },
+          {
+            "name": "last_discord_claim",
+            "type": "i64"
+          },
+          {
+            "name": "total_claims_today",
+            "type": "u8"
+          },
+          {
+            "name": "daily_reset_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "twitter_username",
+            "type": "string"
+          },
+          {
+            "name": "telegram_username",
+            "type": "string"
+          },
+          {
+            "name": "discord_username",
+            "type": "string"
+          },
+          {
+            "name": "total_rewards_earned",
+            "type": "u64"
           }
-        ],
-        "kind": "struct"
+        ]
+      }
+    },
+    {
+      "name": "UserStakingInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "staked_count",
+            "type": "u8"
+          },
+          {
+            "name": "staked_mints",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      },
+      "size": 297
+    },
+    {
+      "name": "Vote",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "voter",
+            "type": "pubkey"
+          },
+          {
+            "name": "proposal_id",
+            "type": "u64"
+          },
+          {
+            "name": "vote_weight",
+            "type": "u64"
+          },
+          {
+            "name": "support",
+            "type": "bool"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VoteCast",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "voter",
+            "type": "pubkey"
+          },
+          {
+            "name": "proposal_id",
+            "type": "u64"
+          },
+          {
+            "name": "support",
+            "type": "bool"
+          },
+          {
+            "name": "weight",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
       }
     }
   ]

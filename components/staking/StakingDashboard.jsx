@@ -58,6 +58,41 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
   const getSortedStakes = () => {
     if (!stats?.activeStakes) return [];
     
+    // 디버그 - 항상 활성화하여 NFT 이미지 필드 정보 확인
+    if (stats.activeStakes.length > 0) {
+      console.log("DEBUG - Sample stake object:", JSON.stringify(stats.activeStakes[0], null, 2));
+      
+      // 실제 NFT 이미지 URL 확인용 로그 추가
+      const firstStake = stats.activeStakes[0];
+      
+      // IPFS URL을 추출하기 위해 모든 필드 심층 분석
+      console.log("DEBUG - Image fields in stake (VERBOSE):", firstStake);
+      
+      // 주요 이미지 필드만 간략히 출력
+      console.log("DEBUG - Image fields in stake:", {
+        image: firstStake.image,
+        image_url: firstStake.image_url,
+        nft_image: firstStake.nft_image,
+        ipfs_hash: firstStake.ipfs_hash,
+        metadata_image: firstStake.metadata?.image,
+        metadata_full: firstStake.metadata,
+        using_actual_nft_data: firstStake.using_actual_nft_data,
+        __source: 'StakingDashboard-debug'
+      });
+      
+      // 모든 스테이킹 NFT 데이터 확인
+      stats.activeStakes.forEach((stake, index) => {
+        console.log(`NFT #${index} 이미지 필드:`, {
+          id: stake.id || stake.mint_address,
+          image: stake.image,
+          image_url: stake.image_url,
+          nft_image: stake.nft_image,
+          ipfs_hash: stake.ipfs_hash,
+          metadata_image: stake.metadata?.image
+        });
+      });
+    }
+    
     const stakes = [...stats.activeStakes];
     
     switch(sortBy) {
@@ -308,7 +343,17 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             {sortedStakes.map((stake) => (
               <StakedNFTCard 
                 key={stake.id} 
-                stake={stake} 
+                stake={{
+                  ...stake,
+                  // Add source property for component identification
+                  __source: 'StakingDashboard-card',
+                  // Add cache busting
+                  _cacheBust: Date.now(),
+                  // 명시적으로 metadata 전달 확인
+                  metadata: stake.metadata,
+                  // 진짜 IPFS 이미지 사용 설정
+                  using_actual_nft_data: true
+                }} 
                 onRefresh={onRefresh} 
                 isExpanded={expandedView === stake.id}
                 onToggleExpand={() => {

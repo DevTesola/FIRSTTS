@@ -116,7 +116,7 @@ function getSafeErrorMessage(error) {
    * @param {Object} res - Response object
    * @param {Function} next - Next middleware function
    */
-  export function errorHandler(err, req, res, next) {
+  function errorHandler(err, req, res, next) {
     // Log the error
     logError(err, req);
     
@@ -160,7 +160,7 @@ function getSafeErrorMessage(error) {
   /**
    * Utility functions to create errors with appropriate status codes and names
    */
-  export const AppError = {
+  const AppError = {
     validation: (message) => {
       const error = new Error(message || 'Invalid input data');
       error.name = 'ValidationError';
@@ -209,4 +209,9 @@ function getSafeErrorMessage(error) {
       error.statusCode = 500;
       return error;
     }
+  };
+  
+  module.exports = {
+    errorHandler,
+    AppError
   };

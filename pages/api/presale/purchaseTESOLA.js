@@ -137,8 +137,75 @@ export default async function handler(req, res) {
       });
     }
     
-    // Check maximum purchase limit
-    if (presaleSettings.max_sol && totalCost > presaleSettings.max_sol) {
+    // Check if wallet has a special tier based on NFT ownership
+    let walletTier = null;
+    let maxPurchaseSol = presaleSettings.max_sol || 0.5; // Default max if not specified
+    let exchangeRate = 200000; // Default exchange rate: 200,000 TESOLA per SOL
+    
+    try {
+      // Get wallet's tier information 
+      const { data: whitelistData } = await supabase
+        .from('presale_whitelist')
+        .select('tier_id')
+        .eq('wallet_address', wallet)
+        .single();
+      
+      if (whitelistData && whitelistData.tier_id) {
+        // Get tier details
+        const { data: tierData } = await supabase
+          .from('presale_tiers')
+          .select('*')
+          .eq('tier_id', whitelistData.tier_id)
+          .single();
+        
+        if (tierData) {
+          walletTier = tierData;
+          maxPurchaseSol = tierData.max_sol;
+          exchangeRate = tierData.exchange_rate;
+          
+          console.log(`Wallet has ${tierData.tier_name} tier with max ${maxPurchaseSol} SOL and exchange rate ${exchangeRate}`);
+        }
+      }
+    } catch (tierError) {
+      console.error("Error getting tier info:", tierError);
+      // Continue with default limits if we can't get tier info
+    }
+    
+    // Check user's purchase history to enforce tier limits
+    const { data: userPurchases, error: historyError } = await supabase
+      .from('minted_nfts')
+      .select('token_amount, presale_price')
+      .eq('wallet', wallet)
+      .eq('is_presale', true)
+      .or('status.eq.completed,status.eq.pending');
+    
+    if (!historyError && userPurchases && userPurchases.length > 0) {
+      // Calculate how much they've already spent in SOL
+      const totalSolSpent = userPurchases.reduce((total, purchase) => {
+        return total + (
+          purchase.token_amount * (purchase.presale_price || tokenPrice)
+        );
+      }, 0);
+      
+      // Check if this purchase would exceed their tier limit
+      if (totalSolSpent + totalCost > maxPurchaseSol) {
+        const remainingSol = Math.max(0, maxPurchaseSol - totalSolSpent);
+        const remainingTokens = Math.floor(remainingSol / tokenPrice);
+        
+        if (remainingSol <= 0) {
+          return res.status(403).json({
+            error: `You have reached your maximum purchase limit of ${maxPurchaseSol} SOL for your tier.`
+          });
+        }
+        
+        return res.status(403).json({
+          error: `This purchase would exceed your tier limit. You can purchase up to ${remainingTokens.toLocaleString()} more tokens (${remainingSol.toFixed(4)} SOL).`
+        });
+      }
+    }
+    
+    // Check global maximum purchase limit if no tier-specific limit applies
+    if (!walletTier && presaleSettings.max_sol && totalCost > presaleSettings.max_sol) {
       return res.status(403).json({ 
         error: `Maximum purchase amount is ${presaleSettings.max_sol} SOL (${Math.floor(presaleSettings.max_sol / tokenPrice).toLocaleString()} tokens)` 
       });

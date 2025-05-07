@@ -213,7 +213,7 @@ function generateMockNFTs(wallet) {
       id: id.toString().padStart(4, '0'),
       mint: `mock${id}${wallet.substr(0, 8)}`, // Mock mint address
       name: `SOLARA #${id}`,
-      image: `/nft-previews/${(id % 5) + 1}.jpg`, // Use from 5 sample images
+      image: "loading:indicator", // Use loading indicator instead of local image
       attributes: [
         {
           trait_type: "Tier",

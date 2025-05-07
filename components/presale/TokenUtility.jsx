@@ -145,7 +145,7 @@ const TokenUtility = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-900/80 to-purple-900/30 rounded-xl p-8 border border-purple-500/30 shadow-[0_0_25px_rgba(139,92,246,0.25)] backdrop-blur-sm relative overflow-hidden">
+    <div className="bg-gradient-to-br from-gray-900/80 to-purple-900/30 rounded-xl p-8 border border-purple-500/30 shadow-[0_0_25px_rgba(139,92,246,0.25)] backdrop-blur-sm relative overflow-hidden font-orbitron">
       {/* Animated background elements */}
       <div className="absolute -top-20 -right-20 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl animate-pulse-slow"></div>
       <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl animate-pulse-slow animation-delay-1000"></div>

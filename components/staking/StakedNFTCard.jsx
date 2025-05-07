@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, Transaction } from "@solana/web3.js";
 import { PrimaryButton, SecondaryButton } from "../Buttons";
+import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
+import { createPlaceholder, processImageUrl } from "../../utils/mediaUtils";
+import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from "../../utils/nftImageUtils";
 
 /**
  * StakedNFTCard Component - 개선된 UI/UX
@@ -16,6 +19,52 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
   const [showUnstakeConfirm, setShowUnstakeConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [animation, setAnimation] = useState(false);
+  
+  // 디버깅용: 활성화하여 데이터 문제 파악
+  useEffect(() => {
+    // 실제 NFT 이름 미리 계산
+    const localNftName = getNFTName(stake, 'SOLARA');
+    
+    // 모든 이미지 관련 필드 로깅
+    console.log(`DEBUG - StakedNFTCard NFT 데이터:`, {
+      id: stake.id,
+      mint_address: stake.mint_address,
+      name: stake.nft_name || 'Unknown',
+      tier: stake.nft_tier || 'Unknown',
+      
+      // 이미지 필드 로깅
+      image: stake.image,
+      image_url: stake.image_url,
+      nft_image: stake.nft_image,
+      ipfs_hash: stake.ipfs_hash,
+      original_local_image: stake.original_local_image,
+      metadata_image: stake.metadata?.image,
+      
+      // 이미지 URL 타입 분석
+      image_type: stake.image?.startsWith('/') ? 'local' : 
+                  stake.image?.startsWith('ipfs://') ? 'ipfs' : 
+                  stake.image?.includes('://') ? 'url' : 'unknown',
+      
+      // 추가 메타데이터
+      using_actual_nft_data: stake.using_actual_nft_data
+    });
+    
+    // 통합 유틸리티 함수를 사용한 이미지 URL 선택 로깅
+    const nftData = {
+      ...stake, 
+      id: stake.id || stake.mint_address,
+      mint: stake.mint_address,
+      name: localNftName,
+      __source: 'StakedNFTCard-debug'
+    };
+    
+    const processedImageUrl = getNFTImageUrl(nftData);
+    
+    console.log(`DEBUG - getNFTImageUrl 처리 결과:`, {
+      input: nftData,
+      output: processedImageUrl
+    });
+  }, [stake]);
   
   // Format dates
   const formatDate = (dateString) => {
@@ -196,8 +245,8 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
     return "bg-green-900 text-green-300"; // Common default
   };
   
-  // Extract NFT name or use placeholder
-  const nftName = stake.nft_name || `SOLARA NFT #${stake.id}`;
+  // Use NFT utilities to extract name and info
+  const nftName = getNFTName(stake, 'SOLARA');
   
   // Determine if NFT is unlocked (staking period complete)
   const isUnlocked = stake.is_unlocked || calculateDaysLeft(stake.release_date) === 0;
@@ -259,38 +308,70 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
         </div>
       )}
       
-      {/* NFT Header with name and tier */}
-      <div className="flex justify-between items-start mb-3 relative">
-        <div>
-          <h4 className="font-bold text-white">{nftName}</h4>
-          <div className="flex items-center space-x-2 mt-1">
-            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getTierBadge(stake.nft_tier)}`}>
-              {stake.nft_tier || "Common"}
-            </span>
-            {isUnlocked && (
-              <span className="px-2 py-0.5 text-xs rounded-full bg-green-900 text-green-300 font-medium animate-pulse">
-                Unlocked
-              </span>
-            )}
-          </div>
+      {/* NFT Header with image, name and tier */}
+      <div className="flex items-start mb-3 relative">
+        {/* NFT Image - EnhancedProgressiveImage 컴포넌트로 개선 */}
+        <div className="w-16 h-16 rounded-lg overflow-hidden mr-3 border border-white/10 flex-shrink-0">
+          {/* NFT 이미지 표시 - 개선된 이미지 로딩으로 실제 NFT 이미지 표시 */}
+          {/* 유틸리티 함수를 사용한 이미지 로딩 - /my-collection 페이지와 동일한 패턴 */}
+          <EnhancedProgressiveImage 
+            src={getNFTImageUrl({
+              ...stake, 
+              id: stake.id || stake.mint_address,
+              mint: stake.mint_address,
+              name: nftName,
+              image: stake.image,
+              image_url: stake.image_url,
+              nft_image: stake.nft_image,
+              ipfs_hash: stake.ipfs_hash,
+              metadata: stake.metadata,
+              __source: 'StakedNFTCard-thumbnail',
+              _cacheBust: Date.now() // 캐시 버스팅을 위한 타임스탬프
+            })}
+            alt={getNFTName(stake, 'SOLARA')}
+            className="w-full h-full"
+            preferRemote={true}
+            highQuality={true}
+            priority={true}
+            useCache={false} // 캐싱 비활성화로 항상 최신 이미지 로딩
+            placeholder={createPlaceholder(nftName || "SOLARA NFT")}
+          />
         </div>
         
-        {/* Toggle expanded view button */}
-        <button
-          onClick={() => setExpandedView(!expandedView)}
-          className="text-white/70 hover:text-white transition-colors"
-          aria-label={expandedView ? "Show less" : "Show more"}
-        >
-          {expandedView ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start w-full">
+            <div className="min-w-0">
+              <h4 className="font-bold text-white truncate">{nftName}</h4>
+              <div className="flex items-center space-x-2 mt-1 flex-wrap gap-1">
+                <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getTierBadge(stake.nft_tier)}`}>
+                  {stake.nft_tier || "Common"}
+                </span>
+                {isUnlocked && (
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-green-900 text-green-300 font-medium animate-pulse">
+                    Unlocked
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Toggle expanded view button */}
+            <button
+              onClick={() => setExpandedView(!expandedView)}
+              className="text-white/70 hover:text-white transition-colors ml-1 flex-shrink-0"
+              aria-label={expandedView ? "Show less" : "Show more"}
+            >
+              {expandedView ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
         
         {/* Success message */}
         {successMessage && (
@@ -350,6 +431,37 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
       {/* Expandable details */}
       {expandedView && (
         <div className="mt-4 pt-3 border-t border-white/10 space-y-3 animate-fadeIn">
+          {/* Enlarged NFT Image - EnhancedProgressiveImage로 개선 */}
+          <div className="aspect-square w-full max-w-[180px] mx-auto rounded-lg overflow-hidden border border-white/10 mb-4 relative">
+            {/* 확대 이미지도 EnhancedProgressiveImage 사용 */}
+            <EnhancedProgressiveImage
+              src={getNFTImageUrl({
+                ...stake, 
+                id: stake.id || stake.mint_address,
+                mint: stake.mint_address,
+                name: nftName,
+                __source: 'StakedNFTCard-enlarged',
+                _cacheBust: Date.now() // 캐시 버스팅을 위한 타임스탬프
+              })}
+              alt={getNFTName(stake, 'SOLARA')}
+              className="w-full h-full"
+              highQuality={true}
+              preferRemote={true}
+              priority={true}
+              useCache={false} // 캐싱 비활성화
+              placeholder={createPlaceholder(nftName || "SOLARA NFT")}
+            />
+            
+            {/* 디버깅 정보 표시 */}
+            <div className="absolute bottom-0 right-0 bg-black/80 p-1 text-[6px] text-white max-w-full overflow-hidden z-10">
+              {JSON.stringify({
+                img: stake.image?.substring(0, 12) + '...',
+                type: stake.image?.startsWith('/') ? 'local' : 
+                      stake.image?.startsWith('ipfs://') ? 'ipfs' : 'other'
+              })}
+            </div>
+          </div>
+          
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <div className="text-white/70">Staked On</div>

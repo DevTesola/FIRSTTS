@@ -12,12 +12,15 @@ import StakingComponent from '../components/StakingComponent';
 import StakingDashboard from '../components/staking/StakingDashboard';
 import StakingRewards from '../components/staking/StakingRewards';
 import { useNotification, ConfirmModal } from '../components/Notifications';
+import { processImageUrl, createPlaceholder, getNftPreviewImage } from '../utils/mediaUtils';
+import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from '../utils/nftImageUtils';
+import { getStakingStats as fetchStakingStatsService } from '../services/stakingService';
 
 // Import ErrorBoundary and FallbackLoading
 import ErrorBoundary from '../components/ErrorBoundary';
 import FallbackLoading from '../components/FallbackLoading';
 
-// Layout 컴포넌트 동적 로딩 with error handling
+// Dynamic loading of Layout component with error handling
 const Layout = dynamic(
   () => import('../components/Layout')
     .catch(err => {
@@ -38,7 +41,7 @@ const Layout = dynamic(
   }
 );
 
-// 지갑 버튼 동적 로딩 with error handling
+// Dynamic loading of wallet button with error handling
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui')
     .then(mod => mod.WalletMultiButton)
@@ -71,33 +74,33 @@ export default function MyCollection() {
   const [errorDetails, setErrorDetails] = useState(null);
   const router = useRouter();
   
-  // 페이지네이션 상태
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalNFTs, setTotalNFTs] = useState(0);
-  const itemsPerPage = 9; // 한 페이지에 표시할 NFT 수
+  const itemsPerPage = 9; // Number of NFTs per page
   
-  // 스테이킹 모달 상태
+  // Staking modal state
   const [selectedNFT, setSelectedNFT] = useState(null);
   const [showStakingModal, setShowStakingModal] = useState(false);
   const [stakingSuccess, setStakingSuccess] = useState(false);
   
-  // 공유 모달 상태
+  // Share modal state
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLoading, setShareLoading] = useState({ twitter: false, telegram: false });
   const [shareSuccess, setShareSuccess] = useState(false);
   
-  // 리워드 기록 상태 추가
+  // Reward history state
   const [rewardHistory, setRewardHistory] = useState([]);
   
-  // 트위터와 텔레그램 공유 상태 (개별적으로 관리)
+  // Twitter and Telegram sharing states (managed separately)
   const [isTwitterShared, setIsTwitterShared] = useState(false);
   const [isTelegramShared, setIsTelegramShared] = useState(false);
   
   // 알림 시스템 사용
   const { showSuccess, showError, showInfo, showWarning } = useNotification();
   
-  // 확인 모달 상태
+  // Confirm modal state
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: '',
@@ -311,27 +314,66 @@ export default function MyCollection() {
     }
   }, [publicKey, connected]);
   
-  // 스테이킹된 NFT 가져오기
+  // Fetch staked NFTs using the centralized service
   const fetchStakedNFTs = useCallback(async () => {
     if (!connected || !publicKey) return;
     
     setLoadingStaked(true);
+    setError(null); // Clear any previous errors
     
     try {
-      const response = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch staking statistics");
+      console.log("Fetching staking stats from centralized service...");
+      
+      // Use the centralized service function with error handling
+      const stakingData = await fetchStakingStatsService(
+        publicKey.toString(), 
+        { 
+          forceFresh: true,
+          onError: (err) => {
+            console.error("Error in staking service:", err);
+            setError("Failed to load your staking data. Please try again later.");
+          }
+        }
+      );
+      
+      console.log(`Staking data loaded - found ${stakingData.activeStakes.length} active stakes`);
+      
+      // Log sample data for debugging if available
+      if (stakingData.activeStakes.length > 0) {
+        const firstStake = stakingData.activeStakes[0];
+        console.log("Sample stake from service:", {
+          id: firstStake.id,
+          name: firstStake.nft_name,
+          image_url: firstStake.image_url,
+          earned: firstStake.earned_so_far,
+          total: firstStake.total_rewards
+        });
       }
       
-      const data = await response.json();
-      setStakingStats(data);
-      setStakedNFTs(data.activeStakes || []);
+      // Set the normalized data from the service directly
+      setStakingStats(stakingData);
+      setStakedNFTs(stakingData.activeStakes);
+      
     } catch (err) {
       console.error("Error fetching staked NFTs:", err);
+      
+      // Set user-friendly error instead of showing technical details
+      setError("Unable to load staking data. Please try again later.");
+      
+      // Set empty defaults to prevent component errors
+      setStakingStats({
+        activeStakes: [],
+        stats: {
+          totalStaked: 0,
+          projectedRewards: 0,
+          earnedToDate: 0
+        }
+      });
+      setStakedNFTs([]);
     } finally {
       setLoadingStaked(false);
     }
-  }, [publicKey, connected]);
+  }, [publicKey, connected, setError]);
   
   // 페이지 변경 시 데이터 로드
   useEffect(() => {
@@ -347,7 +389,7 @@ export default function MyCollection() {
     }
   }, [publicKey, connected, fetchRewardHistory]);
   
-  // 스테이킹 탭 활성화 시 스테이킹된 NFT 가져오기
+  // Fetch staked NFTs when staking tab is active
   useEffect(() => {
     if (activeTab === "staking" && connected && publicKey) {
       fetchStakedNFTs();
@@ -926,24 +968,22 @@ export default function MyCollection() {
                   onClick={() => handleNFTClick(nft)}
                 >
                   <div className="relative aspect-square">
-                    <EnhancedProgressiveImage 
-                      src={nft.image} 
-                      alt={nft.name}
-                      className="w-full h-full object-cover"
+                    {/* Use the optimized EnhancedProgressiveImage component with standardized utils */}
+                    <EnhancedProgressiveImage
+                      src={getNFTImageUrl({...nft, __source: 'my-collection-nft-gallery'})}
+                      alt={getNFTName(nft, "SOLARA")}
+                      placeholder={createPlaceholder(getNFTName(nft, "SOLARA"))}
+                      className="w-full h-full"
                       lazyLoad={true}
-                      quality={85}
+                      priority={true}
+                      highQuality={true}
                     />
                     
                     {/* NFT info overlay */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
                       <p className="text-white font-semibold truncate">{nft.name}</p>
                       <div className="flex justify-between items-center">
-                        <p className={`text-sm ${
-                          (nft.tier?.toLowerCase() || '').includes('legendary') ? 'text-yellow-300' :
-                          (nft.tier?.toLowerCase() || '').includes('epic') ? 'text-purple-300' :
-                          (nft.tier?.toLowerCase() || '').includes('rare') ? 'text-blue-300' :
-                          'text-green-300'
-                        }`}>{nft.tier}</p>
+                        <p className={getTierStyles(nft).text}>{getNFTTier(nft)}</p>
                         {nft.mint && <p className="text-gray-400 text-xs font-mono">{nft.mint.slice(0, 4)}...{nft.mint.slice(-4)}</p>}
                       </div>
                     </div>
@@ -1064,7 +1104,7 @@ export default function MyCollection() {
             </div>
           )}
           
-          {/* NFT 수량 표시 */}
+          {/* NFT count display */}
           {totalNFTs > 0 && (
             <div className="text-center mt-6 text-gray-400">
               Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalNFTs)}-
@@ -1080,7 +1120,7 @@ export default function MyCollection() {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            {/* 스테이킹된 NFTs 목록 추가 */}
+            {/* Staked NFTs list */}
             <div className="bg-gray-800/50 border border-purple-500/20 rounded-xl p-6 mb-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
@@ -1120,23 +1160,26 @@ export default function MyCollection() {
                     >
                       <div className="flex items-center">
                         <div className="w-14 h-14 mr-3 relative rounded overflow-hidden bg-gray-800">
-                          {stake.image_url && (
-                            <img 
-                              src={stake.image_url} 
-                              alt={stake.nft_name || "Staked NFT"}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/placeholder-nft.jpg";
-                              }}
-                            />
-                          )}
+                          <EnhancedProgressiveImage
+                            src={getNFTImageUrl(stake)}
+                            alt={getNFTName(stake, "SOLARA")}
+                            placeholder={createPlaceholder(getNFTName(stake, "SOLARA"))}
+                            className="w-full h-full"
+                            lazyLoad={true}
+                            priority={true}
+                            highQuality={true}
+                          />
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="font-medium text-white">{stake.nft_name || "SOLARA NFT"}</h4>
+                              <h4 className="font-medium text-white">{getNFTName(stake, "SOLARA")}</h4>
                               <p className="text-xs text-gray-400">{new Date(stake.staked_at).toLocaleDateString()}</p>
+                              <div className="mt-1">
+                                <span className={`text-xs px-1.5 py-0.5 ${getTierStyles(stake).bg} ${getTierStyles(stake).text} rounded-full`}>
+                                  {getNFTTier(stake)}
+                                </span>
+                              </div>
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-medium text-yellow-400">{stake.earned_so_far || 0} TESOLA</p>
@@ -1165,18 +1208,22 @@ export default function MyCollection() {
               )}
             </div>
             
-            {/* 스테이킹 대시보드 */}
-            <StakingDashboard 
-              stats={stakingStats} 
-              isLoading={loadingStaked} 
-              onRefresh={fetchStakedNFTs}
-            />
+            {/* 스테이킹 대시보드 with error boundary */}
+            <ErrorBoundary>
+              <StakingDashboard 
+                stats={stakingStats} 
+                isLoading={loadingStaked} 
+                onRefresh={fetchStakedNFTs}
+              />
+            </ErrorBoundary>
           </div>
           <div>
-            <StakingRewards 
-              stats={stakingStats} 
-              isLoading={loadingStaked}
-            />
+            <ErrorBoundary>
+              <StakingRewards 
+                stats={stakingStats} 
+                isLoading={loadingStaked}
+              />
+            </ErrorBoundary>
           </div>
         </div>
       );
@@ -1291,6 +1338,7 @@ export default function MyCollection() {
                       {(() => {
                         if (!stakingStats) return null;
                         
+                        // 여기서는 이미 스테이킹된 NFT를 ownedNFTs에서 제외했으므로 단순히 더함
                         const stakedCount = stakedNFTs.length;
                         const totalCount = ownedNFTs.length + stakedCount;
                         const stakedPercentage = totalCount > 0 ? Math.floor((stakedCount / totalCount) * 100) : 0;
@@ -1508,7 +1556,7 @@ export default function MyCollection() {
               </p>
             </div>
           
-          {/* 오프라인 알림 */}
+          {/* Offline notification */}
           {isOffline && (
             <ErrorMessage
               message="You are currently offline"
@@ -1517,7 +1565,7 @@ export default function MyCollection() {
             />
           )}
           
-          {/* 스테이킹 성공 메시지 */}
+          {/* Staking success message */}
           {stakingSuccess && (
             <div className="mb-6">
               <ErrorMessage 
@@ -1528,7 +1576,7 @@ export default function MyCollection() {
             </div>
           )}
           
-          {/* 공유 성공 메시지 */}
+          {/* Share success message */}
           {shareSuccess && (
             <div className="mb-6">
               <ErrorMessage 
@@ -1539,7 +1587,7 @@ export default function MyCollection() {
             </div>
           )}
           
-          {/* 확인 모달 */}
+          {/* Confirmation modal */}
           <ConfirmModal
             isOpen={confirmModal.isOpen}
             onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
@@ -1550,7 +1598,7 @@ export default function MyCollection() {
             cancelText={confirmModal.cancelText}
           />
           
-          {/* 스테이킹 모달 */}
+          {/* Staking modal */}
           {showStakingModal && (
             <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <div className="bg-gray-900 rounded-xl max-w-md w-full p-6 relative">
@@ -1575,7 +1623,7 @@ export default function MyCollection() {
             </div>
           )}
           
-          {/* 공유 모달 */}
+          {/* Share modal */}
           {showShareModal && (
             <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <div className="bg-gray-900 rounded-xl max-w-md w-full p-6 relative">
@@ -1594,21 +1642,24 @@ export default function MyCollection() {
                 
                 <h2 className="text-2xl font-bold mb-4">Share Your SOLARA NFT</h2>
                 
-                {/* 안내 문구 추가 */}
+                {/* Guidance message */}
                 <div className="bg-blue-900/20 border border-blue-500/30 rounded-md p-3 mb-4 text-sm">
                   <p className="text-blue-300 font-medium">💡 Tip</p>
                   <p className="text-gray-300">You can share on both Twitter and Telegram to earn rewards from each platform.</p>
                 </div>
                 
-                {/* NFT 정보 */}
+                {/* NFT information */}
                 <div className="flex items-center mb-6 p-3 bg-gray-800 rounded-lg">
-                  {selectedNFT.image && (
-                    <img 
-                      src={selectedNFT.image} 
-                      alt={selectedNFT.name} 
-                      className="w-16 h-16 rounded object-cover mr-3"
+                  <div className="w-16 h-16 rounded overflow-hidden mr-3">
+                    <EnhancedProgressiveImage
+                      src={selectedNFT.image}
+                      alt={selectedNFT.name || "NFT"}
+                      placeholder={createPlaceholder(selectedNFT.name || "NFT")}
+                      className="w-full h-full"
+                      lazyLoad={false}
+                      quality={80}
                     />
-                  )}
+                  </div>
                   <div>
                     <h3 className="font-medium">{selectedNFT.name}</h3>
                     <p className="text-sm text-gray-300">{selectedNFT.tier}</p>
@@ -1620,7 +1671,7 @@ export default function MyCollection() {
                 </p>
                 
                 <div className="space-y-4">
-                  {/* 트위터 공유 버튼 */}
+                  {/* Twitter share button */}
                   <PrimaryButton
                     onClick={handleTwitterShare}
                     disabled={shareLoading.twitter || isTwitterShared}
@@ -1640,7 +1691,7 @@ export default function MyCollection() {
                         : "Share on Twitter (+5 TESOLA)"}
                   </PrimaryButton>
                   
-                  {/* 텔레그램 공유 버튼 */}
+                  {/* Telegram share button */}
                   <SecondaryButton
                     onClick={handleTelegramShare}
                     disabled={shareLoading.telegram || isTelegramShared}

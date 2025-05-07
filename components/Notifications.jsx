@@ -1,214 +1,286 @@
-// components/Notifications.jsx
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
+"use client";
 
-// 알림 컨텍스트 생성
-export const NotificationContext = createContext();
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
+import ErrorMessage from "./ErrorMessage";
 
-// 알림 타입
-export const NOTIFICATION_TYPES = {
-  SUCCESS: 'success',
-  ERROR: 'error',
-  WARNING: 'warning',
-  INFO: 'info',
+// Create context
+const NotificationContext = createContext({
+  showSuccess: () => {},
+  showError: () => {},
+  showInfo: () => {},
+  showWarning: () => {},
+  showConfirmation: () => Promise.resolve(false)
+});
+
+// Notification ID counter
+let notificationId = 0;
+
+// Generate the next notification ID
+const getNextId = () => {
+  return `notification-${notificationId++}`;
 };
 
-// 알림 제공자 컴포넌트
-export const NotificationProvider = ({ children }) => {
+/**
+ * Notification provider component
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components
+ */
+export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    type: "info"
+  });
   
-  // 알림 추가
-  const addNotification = useCallback((message, type = NOTIFICATION_TYPES.INFO, duration = 5000) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setNotifications(prev => [...prev, { id, message, type, duration }]);
+  // Add notification to the stack
+  const addNotification = useCallback((message, options = {}) => {
+    const id = getNextId();
+    const notification = {
+      id,
+      message,
+      type: options.type || "info",
+      autoClose: options.autoClose !== undefined ? options.autoClose : true,
+      autoCloseTime: options.autoCloseTime || 5000,
+      errorDetails: options.errorDetails,
+      ...options
+    };
+    
+    setNotifications(prev => [...prev, notification]);
+    
     return id;
   }, []);
   
-  // 알림 제거
+  // Remove notification from stack
   const removeNotification = useCallback((id) => {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
   }, []);
   
-  // 성공 알림
-  const showSuccess = useCallback((message, duration) => 
-    addNotification(message, NOTIFICATION_TYPES.SUCCESS, duration), [addNotification]);
+  // Convenience methods for different notification types
+  const showSuccess = useCallback((message, autoCloseTime = 5000) => {
+    return addNotification(message, { type: "success", autoClose: true, autoCloseTime });
+  }, [addNotification]);
   
-  // 에러 알림
-  const showError = useCallback((message, duration) => 
-    addNotification(message, NOTIFICATION_TYPES.ERROR, duration), [addNotification]);
+  const showError = useCallback((message, errorDetails = null, autoClose = false) => {
+    return addNotification(message, { type: "error", autoClose, errorDetails });
+  }, [addNotification]);
   
-  // 경고 알림
-  const showWarning = useCallback((message, duration) => 
-    addNotification(message, NOTIFICATION_TYPES.WARNING, duration), [addNotification]);
+  const showInfo = useCallback((message, autoCloseTime = 5000) => {
+    return addNotification(message, { type: "info", autoClose: true, autoCloseTime });
+  }, [addNotification]);
   
-  // 정보 알림
-  const showInfo = useCallback((message, duration) => 
-    addNotification(message, NOTIFICATION_TYPES.INFO, duration), [addNotification]);
-
-  // 알림 자동 제거를 위한 타이머 설정
-  useEffect(() => {
-    const timers = notifications.map(notification => {
-      if (notification.duration > 0) {
-        return setTimeout(() => {
-          removeNotification(notification.id);
-        }, notification.duration);
-      }
-      return null;
-    });
-    
-    return () => {
-      timers.forEach(timer => {
-        if (timer) clearTimeout(timer);
+  const showWarning = useCallback((message, autoCloseTime = 8000) => {
+    return addNotification(message, { type: "warning", autoClose: true, autoCloseTime });
+  }, [addNotification]);
+  
+  // Show confirmation modal (returns a promise)
+  const showConfirmation = useCallback((title, message, options = {}) => {
+    return new Promise((resolve) => {
+      setConfirmModal({
+        isOpen: true,
+        title,
+        message,
+        onConfirm: () => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          resolve(true);
+        },
+        onCancel: () => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          resolve(false);
+        },
+        confirmText: options.confirmText || "Confirm",
+        cancelText: options.cancelText || "Cancel",
+        type: options.type || "info"
       });
-    };
-  }, [notifications, removeNotification]);
+    });
+  }, []);
   
-  // 값 제공
+  // Context value
   const contextValue = {
-    notifications,
-    addNotification,
-    removeNotification,
     showSuccess,
     showError,
-    showWarning,
     showInfo,
+    showWarning,
+    showConfirmation
   };
+  
+  // Cleanup effect for portal root
+  useEffect(() => {
+    return () => {
+      // Cleanup function (optional)
+    };
+  }, []);
   
   return (
     <NotificationContext.Provider value={contextValue}>
       {children}
-      <NotificationContainer />
+      
+      {/* Portal container for notifications */}
+      {typeof window !== 'undefined' &&
+        ReactDOM.createPortal(
+          <div className="fixed top-0 right-0 left-0 z-50 p-4 pointer-events-none overflow-hidden flex flex-col items-center">
+            <div className="max-w-md w-full space-y-2">
+              {notifications.map(notification => (
+                <div key={notification.id} className="pointer-events-auto">
+                  <ErrorMessage
+                    message={notification.message}
+                    type={notification.type}
+                    autoClose={notification.autoClose}
+                    autoCloseTime={notification.autoCloseTime}
+                    errorDetails={notification.errorDetails}
+                    onDismiss={() => removeNotification(notification.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )
+      }
+      
+      {/* Confirmation modal portal */}
+      {confirmModal.isOpen && typeof window !== 'undefined' &&
+        ReactDOM.createPortal(
+          <ConfirmModal
+            isOpen={confirmModal.isOpen}
+            title={confirmModal.title}
+            message={confirmModal.message}
+            onConfirm={confirmModal.onConfirm}
+            onClose={confirmModal.onCancel}
+            confirmText={confirmModal.confirmText}
+            cancelText={confirmModal.cancelText}
+            type={confirmModal.type}
+          />,
+          document.body
+        )
+      }
     </NotificationContext.Provider>
   );
-};
+}
 
-// 알림 컨테이너 컴포넌트
-const NotificationContainer = () => {
-  const { notifications, removeNotification } = useContext(NotificationContext);
+/**
+ * Hook to use the notification context
+ * @returns {Object} Notification methods
+ */
+export function useNotification() {
+  const context = useContext(NotificationContext);
   
-  if (notifications.length === 0) {
-    return null;
+  if (!context) {
+    throw new Error("useNotification must be used within a NotificationProvider");
+  }
+  
+  return context;
+}
+
+/**
+ * Confirmation modal component
+ * @param {Object} props - Component props
+ */
+export function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onClose,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  type = "info"
+}) {
+  if (!isOpen) return null;
+  
+  // Prevent clicking on the backdrop from closing the modal
+  const stopPropagation = (e) => {
+    e.stopPropagation();
+  };
+  
+  // Style based on type
+  let bgColor, iconColor, icon, buttonBg;
+  
+  switch (type) {
+    case "success":
+      bgColor = "bg-green-900/30";
+      iconColor = "text-green-500";
+      buttonBg = "bg-green-700 hover:bg-green-600";
+      icon = (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      );
+      break;
+    case "warning":
+      bgColor = "bg-yellow-900/30";
+      iconColor = "text-yellow-500";
+      buttonBg = "bg-yellow-700 hover:bg-yellow-600";
+      icon = (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      );
+      break;
+    case "error":
+      bgColor = "bg-red-900/30";
+      iconColor = "text-red-500";
+      buttonBg = "bg-red-700 hover:bg-red-600";
+      icon = (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+      break;
+    default: // info
+      bgColor = "bg-blue-900/30";
+      iconColor = "text-blue-500";
+      buttonBg = "bg-purple-700 hover:bg-purple-600";
+      icon = (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
   }
   
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-md">
-      {notifications.map(notification => (
-        <NotificationItem 
-          key={notification.id} 
-          notification={notification} 
-          onClose={() => removeNotification(notification.id)} 
-        />
-      ))}
-    </div>
-  );
-};
-
-// 개별 알림 아이템 컴포넌트
-const NotificationItem = ({ notification, onClose }) => {
-  const { id, message, type } = notification;
-  
-  // 타입에 따른 스타일 설정
-  const getTypeStyles = () => {
-    switch (type) {
-      case NOTIFICATION_TYPES.SUCCESS:
-        return 'bg-green-600/90 border-green-400 text-white shadow-[0_0_15px_rgba(22,163,74,0.3)]';
-      case NOTIFICATION_TYPES.ERROR:
-        return 'bg-red-600/90 border-red-400 text-white shadow-[0_0_15px_rgba(220,38,38,0.3)]';
-      case NOTIFICATION_TYPES.WARNING:
-        return 'bg-yellow-500/90 border-yellow-400 text-white shadow-[0_0_15px_rgba(202,138,4,0.3)]';
-      case NOTIFICATION_TYPES.INFO:
-      default:
-        return 'bg-blue-600/90 border-blue-400 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]';
-    }
-  };
-  
-  // 타입에 따른 아이콘 설정
-  const getTypeIcon = () => {
-    switch (type) {
-      case NOTIFICATION_TYPES.SUCCESS:
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        );
-      case NOTIFICATION_TYPES.ERROR:
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        );
-      case NOTIFICATION_TYPES.WARNING:
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        );
-      case NOTIFICATION_TYPES.INFO:
-      default:
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
-    }
-  };
-  
-  return (
     <div 
-      className={`flex items-center justify-between p-4 rounded-lg shadow-xl min-w-[280px] backdrop-blur-sm transform transition-all duration-300 ease-in-out ${getTypeStyles()} animate-slide-in-right border-l-4 z-[9999]`}
-      style={{ animationDuration: '0.3s' }}
+      className="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4 animate-fade-in" 
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}
     >
-      <div className="flex items-center">
-        <div className="flex-shrink-0 mr-3">
-          {getTypeIcon()}
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium">{message}</p>
-        </div>
-      </div>
-      <button
-        onClick={onClose}
-        className="ml-3 text-white/80 focus:outline-none hover:text-white transition-colors"
-        aria-label="Close notification"
+      <div 
+        className={`${bgColor} border border-${iconColor.replace('text-', '')}/20 p-6 rounded-xl shadow-lg max-w-md w-full animate-fade-down backdrop-blur-md`}
+        onClick={stopPropagation}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-  );
-};
-
-// 커스텀 확인 모달 컴포넌트
-export const ConfirmModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
-  message, 
-  confirmText = 'Confirm', 
-  cancelText = 'Cancel' 
-}) => {
-  if (!isOpen) return null;
-  
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-gray-900 rounded-xl max-w-md w-full p-6 border border-purple-500/30 shadow-xl animate-fade-in">
-        <h2 className="text-xl font-bold mb-2 text-white">{title}</h2>
-        <p className="text-gray-300 mb-6">{message}</p>
+        <div className="flex items-start mb-4">
+          <div className={`${iconColor} flex-shrink-0 mr-3`}>
+            <div className="relative animate-bounce-pulse">
+              {icon}
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
+        </div>
         
-        <div className="flex space-x-4">
+        <div className="mb-6 text-gray-300">
+          {typeof message === 'string' ? (
+            <p>{message}</p>
+          ) : (
+            message
+          )}
+        </div>
+        
+        <div className="flex justify-end space-x-4">
           <button
+            className="px-4 py-2 rounded-md text-sm bg-gray-700 hover:bg-gray-600 text-white transition-all duration-300"
             onClick={onClose}
-            className="flex-1 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
           >
             {cancelText}
           </button>
           <button
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className="flex-1 py-2 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-md transition-colors"
+            className={`px-4 py-2 rounded-md text-sm text-white ${buttonBg} transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-purple-600/20`}
+            onClick={onConfirm}
           >
             {confirmText}
           </button>
@@ -216,15 +288,6 @@ export const ConfirmModal = ({
       </div>
     </div>
   );
-};
+}
 
-// 훅 사용을 위한 유틸리티
-export const useNotification = () => {
-  const context = useContext(NotificationContext);
-  
-  if (!context) {
-    throw new Error('useNotification must be used within a NotificationProvider');
-  }
-  
-  return context;
-};
+// ConfirmModal is already exported above

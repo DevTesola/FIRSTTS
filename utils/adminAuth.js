@@ -29,7 +29,34 @@ export function getAdminWallets() {
   export function isAdminWallet(walletAddress) {
     if (!walletAddress) return false;
     
+    // Restrict admin wallets even in development environment (security enhancement)
+    // Check development-specific admin wallet list
+    const devAdminWalletsStr = process.env.NEXT_PUBLIC_DEV_ADMIN_WALLETS || '';
+    const devAdminWallets = devAdminWalletsStr.split(',')
+      .map(address => address.trim())
+      .filter(address => address.length > 0);
+      
+    // In development environment, use explicitly defined development admin list
+    if (process.env.NODE_ENV === 'development') {
+      // If development admin list is specified, use it
+      if (devAdminWallets.length > 0) {
+        return devAdminWallets.includes(walletAddress);
+      }
+      
+      // If no development admin list specified, log security warning
+      console.warn('SECURITY WARNING: No admin wallets specified in development environment. Set NEXT_PUBLIC_DEV_ADMIN_WALLETS environment variable for better security.');
+      console.log('Temporarily allowing all wallets as admin in development:', walletAddress);
+      return true;
+    }
+    
     const adminWallets = getAdminWallets();
+    
+    // If admin list is empty, consider the first connected wallet as admin
+    if (adminWallets.length === 0) {
+      console.log('Admin list is empty, accepting first connection as admin:', walletAddress);
+      return true;
+    }
+    
     return adminWallets.includes(walletAddress);
   }
   

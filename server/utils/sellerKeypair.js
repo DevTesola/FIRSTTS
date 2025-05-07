@@ -42,12 +42,17 @@ try {
     throw new Error('Invalid wallet format');
   }
 
-  // Validate key (logs in development environment only if explicitly enabled)
+  // Validate key but NEVER log the secret key itself
   const secretKey = Uint8Array.from(mintWallet);
+  
+  // Create keypair to validate format
+  const keypair = Keypair.fromSecretKey(secretKey);
+  
+  // Even in development mode with logging enabled, only log the public key
   if (shouldLog) {
     console.log('Secret key length:', secretKey.length);
-    const keypair = Keypair.fromSecretKey(secretKey);
     console.log('Generated public key:', keypair.publicKey.toBase58());
+    console.log('WARNING: Never log or expose the actual secret key in any environment');
   }
 } catch (err) {
   console.error('Failed to load wallet file:', err.message);

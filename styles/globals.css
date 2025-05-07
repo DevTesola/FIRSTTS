@@ -1,17 +1,174 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+/* Ensure font is applied globally */
+html, body, div, span, h1, h2, h3, h4, h5, h6, p, button, a, input, textarea, select {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+/* Special button handling for tabs */
+.presale-tabs button {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 500 !important;
+}
+
+/* YouTube video container styles for square ratio (1:1) */
+.video-wrapper-square {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.video-container-square {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* Creates a 1:1 aspect ratio */
+  background: #000;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.video-container-square iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .video-wrapper-square {
+    max-width: 90vw;
+  }
+}
+
+/* Force font application to wallet adapter components */
+.wallet-adapter-button,
+.wallet-adapter-dropdown-list,
+.wallet-adapter-dropdown-list-item,
+.wallet-adapter-modal-wrapper,
+.wallet-adapter-modal-title,
+.wallet-adapter-modal-content,
+.wallet-adapter-modal-button,
+.wallet-adapter-modal-button-close,
+[class*="wallet-adapter"] {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+.wallet-adapter-button *,
+.wallet-adapter-dropdown-list *,
+.wallet-adapter-dropdown-list-item *,
+.wallet-adapter-modal-wrapper *,
+.wallet-adapter-modal-title *,
+.wallet-adapter-modal-content *,
+.wallet-adapter-modal-button *,
+.wallet-adapter-modal-button-close *,
+[class*="wallet-adapter"] * {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+/* Google Fonts Integration - No local files needed */
+/* 
+  We no longer store local font files since they were corrupted.
+  Instead, we load Orbitron from Google Fonts in _document.js with:
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" 
+    rel="stylesheet"
+    media="print" 
+    onLoad="this.media='all'" 
+  />
+*/
+
 /* Base body styles */
 @layer base {
+  html {
+    @apply font-orbitron;
+    font-family: 'Orbitron', sans-serif !important;
+  }
+  
   body {
-    @apply bg-black text-white font-orbitron;
+    @apply bg-black text-white;
+    font-family: 'Orbitron', sans-serif !important;
+  }
+
+  *, *::before, *::after {
+    font-family: 'Orbitron', sans-serif !important;
+  }
+
+  /* Custom Cursor Styles */
+  .cursor-dot,
+  .cursor-outline {
+    @apply fixed top-0 left-0 transform -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none z-[9999];
+    will-change: transform;
+    transition: opacity 0.2s ease;
+  }
+
+  .cursor-dot {
+    @apply w-3 h-3 bg-purple-500;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 
+                0 0 20px rgba(168, 85, 247, 0.6), 
+                0 0 30px rgba(168, 85, 247, 0.4);
+    mix-blend-mode: screen;
+  }
+
+  .cursor-outline {
+    @apply w-8 h-8 border-2 border-blue-400;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 
+                0 0 25px rgba(59, 130, 246, 0.3);
+    mix-blend-mode: exclusion;
+  }
+
+  /* Use normal cursors by default */
+  a, button, input, textarea, select, [role="button"] {
+    @apply cursor-pointer;
+  }
+
+  a:hover ~ .cursor-dot,
+  button:hover ~ .cursor-dot,
+  [role="button"]:hover ~ .cursor-dot {
+    @apply bg-blue-400;
+    transform: scale(1.5) translate(-33%, -33%);
+  }
+
+  a:hover ~ .cursor-outline,
+  button:hover ~ .cursor-outline,
+  [role="button"]:hover ~ .cursor-outline {
+    @apply border-purple-500;
+    transform: scale(1.2) translate(-40%, -40%);
   }
 }
 
 @layer utilities {
+  /* Modal overlay styles - make darker */
+  .modal-overlay,
+  .fixed.inset-0.z-50,
+  .fixed.inset-0.flex.items-center.justify-center.z-50 {
+    background-color: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(4px) !important;
+  }
+  
+  /* Error Modal styles - make borders thicker */
+  .error-modal,
+  .notification-modal,
+  [class*="border-red-500"],
+  [class*="border-yellow-500"],
+  [class*="border-green-500"],
+  [class*="border-blue-500"],
+  [class*="border-purple-500"] {
+    border-width: 2px !important;
+  }
+  
   /* Gradient animation */
   @keyframes gradientBackground {
     0%   { background-position: 0% 50%; }
@@ -214,7 +371,7 @@
            bg-purple-600 hover:bg-purple-700
            text-white font-semibold rounded-lg shadow-md
            transition duration-200 ease-in-out
-           cursor-pointer z-50;
+           z-50;
   }
 
   /* Wallet button container - new style */
@@ -223,49 +380,349 @@
            border border-purple-500 border-opacity-30 shadow-lg;
   }
   
-  /* Neon glow button effects */
+  /* Enhanced Neon glow button effects */
   .neon-glow-purple {
     @apply transition-all duration-300;
+    position: relative;
+    z-index: 1;
   }
   .neon-glow-purple:hover {
-    @apply shadow-[0_0_5px_rgba(168,85,247,0.7),0_0_10px_rgba(168,85,247,0.5),0_0_15px_rgba(168,85,247,0.3)];
+    @apply shadow-[0_0_15px_rgba(168,85,247,0.9),0_0_30px_rgba(168,85,247,0.7),0_0_40px_rgba(168,85,247,0.5)];
+    transform: translateY(-2px);
+  }
+  .neon-glow-purple:hover::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: inherit;
+    z-index: -1;
+    animation: pulseGlow 1.5s infinite;
+    background: radial-gradient(circle, rgba(168,85,247,0.6) 0%, rgba(168,85,247,0) 70%);
   }
   
   .neon-glow-pink {
     @apply transition-all duration-300;
+    position: relative;
+    z-index: 1;
   }
   .neon-glow-pink:hover {
-    @apply shadow-[0_0_5px_rgba(236,72,153,0.7),0_0_10px_rgba(236,72,153,0.5),0_0_15px_rgba(236,72,153,0.3)];
+    @apply shadow-[0_0_8px_rgba(236,72,153,0.8),0_0_15px_rgba(236,72,153,0.6),0_0_20px_rgba(236,72,153,0.4)];
+    transform: translateY(-1px);
+  }
+  .neon-glow-pink:hover::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: inherit;
+    z-index: -1;
+    animation: pulseGlow 2s infinite;
+    background: radial-gradient(circle, rgba(236,72,153,0.4) 0%, rgba(236,72,153,0) 70%);
   }
   
   .neon-glow-blue {
     @apply transition-all duration-300;
+    position: relative;
+    z-index: 1;
   }
   .neon-glow-blue:hover {
-    @apply shadow-[0_0_5px_rgba(59,130,246,0.7),0_0_10px_rgba(59,130,246,0.5),0_0_15px_rgba(59,130,246,0.3)];
+    @apply shadow-[0_0_8px_rgba(59,130,246,0.8),0_0_15px_rgba(59,130,246,0.6),0_0_20px_rgba(59,130,246,0.4)];
+    transform: translateY(-1px);
+  }
+  .neon-glow-blue:hover::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: inherit;
+    z-index: -1;
+    animation: pulseGlow 2s infinite;
+    background: radial-gradient(circle, rgba(59,130,246,0.4) 0%, rgba(59,130,246,0) 70%);
   }
   
   .neon-glow-cyan {
     @apply transition-all duration-300;
+    position: relative;
+    z-index: 1;
   }
   .neon-glow-cyan:hover {
-    @apply shadow-[0_0_5px_rgba(34,211,238,0.7),0_0_10px_rgba(34,211,238,0.5),0_0_15px_rgba(34,211,238,0.3)];
+    @apply shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_15px_rgba(34,211,238,0.6),0_0_20px_rgba(34,211,238,0.4)];
+    transform: translateY(-1px);
+  }
+  .neon-glow-cyan:hover::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: inherit;
+    z-index: -1;
+    animation: pulseGlow 2s infinite;
+    background: radial-gradient(circle, rgba(34,211,238,0.4) 0%, rgba(34,211,238,0) 70%);
   }
   
   .neon-glow-green {
     @apply transition-all duration-300;
+    position: relative;
+    z-index: 1;
   }
   .neon-glow-green:hover {
-    @apply shadow-[0_0_5px_rgba(16,185,129,0.7),0_0_10px_rgba(16,185,129,0.5),0_0_15px_rgba(16,185,129,0.3)];
+    @apply shadow-[0_0_8px_rgba(16,185,129,0.8),0_0_15px_rgba(16,185,129,0.6),0_0_20px_rgba(16,185,129,0.4)];
+    transform: translateY(-1px);
+  }
+  .neon-glow-green:hover::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: inherit;
+    z-index: -1;
+    animation: pulseGlow 2s infinite;
+    background: radial-gradient(circle, rgba(16,185,129,0.4) 0%, rgba(16,185,129,0) 70%);
+  }
+  
+  /* Glow pulse animation */
+  @keyframes pulseGlow {
+    0% { opacity: 0.6; }
+    50% { opacity: 0.2; }
+    100% { opacity: 0.6; }
+  }
+  
+  /* Floating animations */
+  @keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    25% { transform: translateY(-10px) rotate(3deg); }
+    50% { transform: translateY(-15px) rotate(0deg); }
+    75% { transform: translateY(-5px) rotate(-3deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+  .animate-float {
+    animation: float 10s ease-in-out infinite;
+  }
+  
+  /* Bounce animations - softer variant */
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
+  }
+  
+  /* Shake animation for memes */
+  @keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    10% { transform: rotate(3deg); }
+    20% { transform: rotate(-3deg); }
+    30% { transform: rotate(3deg); }
+    40% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+    60% { transform: rotate(-3deg); }
+    70% { transform: rotate(3deg); }
+    80% { transform: rotate(-3deg); }
+    90% { transform: rotate(3deg); }
+  }
+  .animate-shake {
+    animation: shake 0.8s ease-in-out;
+  }
+  .hover-shake:hover {
+    animation: shake 0.8s ease-in-out;
+  }
+  
+  /* Wiggle animation for memes */
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(7deg) scale(1.1); }
+    50% { transform: rotate(-7deg) scale(1.1); }
+    75% { transform: rotate(7deg) scale(1.1); }
+  }
+  .animate-wiggle {
+    animation: wiggle 1s ease-in-out;
+  }
+  .hover-wiggle:hover {
+    animation: wiggle 1s ease-in-out;
+  }
+  
+  /* Rainbow text animation */
+  @keyframes rainbow-text {
+    0% { color: #ff0000; }
+    15% { color: #ff8000; }
+    30% { color: #ffff00; }
+    45% { color: #00ff00; }
+    60% { color: #00ffff; }
+    75% { color: #0000ff; }
+    90% { color: #8000ff; }
+    100% { color: #ff0000; }
+  }
+  .animate-rainbow {
+    animation: rainbow-text 5s linear infinite;
+  }
+  
+  /* 3D rotate on hover */
+  .hover-rotate-3d {
+    transition: transform 0.5s ease;
+  }
+  .hover-rotate-3d:hover {
+    transform: perspective(1000px) rotateY(15deg);
+  }
+  
+  /* Zoom bounce effect */
+  @keyframes zoom-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+  .animate-zoom-bounce {
+    animation: zoom-bounce 2s ease-in-out infinite;
+  }
+  
+  /* Fire text effect */
+  @keyframes fire-text {
+    0%, 100% { text-shadow: 0 -2px 4px #fff, 0 -2px 10px #ff3, 0 -10px 20px #f90, 0 -20px 40px #c33; }
+    50% { text-shadow: 0 -2px 4px #fff, 0 -2px 8px #ff3, 0 -8px 15px #f90, 0 -15px 30px #c33; }
+  }
+  .animate-fire-text {
+    animation: fire-text 2s ease-in-out infinite;
+    color: #fff;
+  }
+  
+  /* Tape rotation animation */
+  @keyframes tape-rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .animate-tape-rotation {
+    animation: tape-rotation 2s linear infinite;
+  }
+  
+  /* VHS Glitch effect */
+  @keyframes vhs-glitch {
+    0%, 100% { opacity: 1; transform: translateX(0); }
+    10% { opacity: 0.9; transform: translateX(2px); }
+    20% { opacity: 1; transform: translateX(-1px); }
+    30% { opacity: 0.8; transform: translateX(0); }
+    40% { opacity: 1; transform: translateX(0); }
+    50% { opacity: 0.9; transform: translateX(1px); }
+    60% { opacity: 1; transform: translateX(0); }
+    70% { opacity: 0.7; transform: translateX(-2px); }
+    80% { opacity: 1; transform: translateX(0); }
+  }
+  .animate-vhs-glitch {
+    animation: vhs-glitch 0.5s ease-in-out;
+  }
+  
+  /* Text glow animation */
+  @keyframes text-glow {
+    0%, 100% { text-shadow: 0 0 10px rgba(255, 77, 77, 0.5); }
+    50% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.8), 0 0 30px rgba(255, 215, 0, 0.6); }
+  }
+  .animate-text-glow {
+    animation: text-glow 2s infinite;
+  }
+  
+  /* Reverse spin animation */
+  @keyframes reverse-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+  }
+  .animate-reverse-spin {
+    animation: reverse-spin 10s linear infinite;
+  }
+  
+  /* Slow spin animation */
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+  
+  /* Scale hover */
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
+  
+  /* Font for handwriting style */
+  .font-handwriting {
+    font-family: 'Comic Sans MS', 'Orbitron', cursive, sans-serif;
+  }
+  
+  /* Font for comic numbers */
+  .font-comic {
+    font-family: 'Impact', 'Arial Black', 'Orbitron', sans-serif;
+  }
+  
+  /* Equalizer animation */
+  @keyframes equalizer-bar {
+    0%, 100% { height: 15%; }
+    25% { height: 90%; }
+    50% { height: 50%; }
+    75% { height: 75%; }
+  }
+  .equalizer-bar-1 {
+    animation: equalizer-bar 1.1s ease-in-out infinite;
+  }
+  .equalizer-bar-2 {
+    animation: equalizer-bar 0.8s ease-in-out infinite;
+    animation-delay: 0.1s;
+  }
+  .equalizer-bar-3 {
+    animation: equalizer-bar 1.3s ease-in-out infinite;
+    animation-delay: 0.2s;
+  }
+  .equalizer-bar-4 {
+    animation: equalizer-bar 0.6s ease-in-out infinite;
+    animation-delay: 0.3s;
   }
 
-  /* Minting button */
+  /* Enhanced Minting button */
   .mint-button {
     @apply text-xl md:text-2xl px-8 py-4 font-extrabold
            bg-blue-600 hover:bg-blue-700
-           hover:shadow-[0_0_30px_10px_rgba(0,128,255,0.7)]
+           hover:shadow-[0_0_30px_15px_rgba(0,128,255,0.8)]
            text-white rounded-xl shadow-2xl
-           transition duration-300 ease-in-out;
+           transition duration-300 ease-in-out
+           relative z-10;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  
+  .mint-button:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+  
+  .mint-button::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: linear-gradient(45deg, rgba(0,128,255,0.4), rgba(128,0,255,0.4));
+    z-index: -1;
+    border-radius: 16px;
+    filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .mint-button:hover::after {
+    opacity: 1;
+    animation: rotateBorderGlow 3s linear infinite;
+  }
+  
+  @keyframes rotateBorderGlow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 
   /* Wallet dropdown */
@@ -278,6 +735,6 @@
   }
 
   .wallet-adapter-dropdown-list-item {
-    @apply px-6 py-3 text-white hover:bg-gray-700 rounded-lg cursor-pointer;
+    @apply px-6 py-3 text-white hover:bg-gray-700 rounded-lg;
   }
 }

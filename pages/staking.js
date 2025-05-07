@@ -8,9 +8,16 @@ import StakingDashboard from "../components/staking/StakingDashboard";
 import StakingRewards from "../components/staking/StakingRewards";
 import NFTGallery from "../components/staking/NFTGallery";
 import Leaderboard from "../components/staking/Leaderboard";
+import GovernanceTab from "../components/staking/GovernanceTab";
 import LoadingOverlay from "../components/LoadingOverlay";
 import ErrorMessage from "../components/ErrorMessage";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { GlassButton, PrimaryButton } from "../components/Buttons";
+import EnhancedProgressiveImage from "../components/EnhancedProgressiveImage";
+import { createPlaceholder } from "../utils/mediaUtils";
+import { getNFTImageUrl } from "../utils/nftImageUtils";
+import { fetchAPI, getErrorMessage } from "../utils/apiClient";
+import { getStakingStats as fetchEnhancedStakingStats } from "../services/stakingService";
 
 export default function StakingPage() {
   const { publicKey, connected } = useWallet();
@@ -22,21 +29,101 @@ export default function StakingPage() {
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(false);
   const [selectedNFT, setSelectedNFT] = useState(null);
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
+  const [governanceData, setGovernanceData] = useState(null);
+  const [isLoadingGovernance, setIsLoadingGovernance] = useState(false);
   
   // Load staking stats when wallet connects
   useEffect(() => {
     if (connected && publicKey) {
       fetchStakingStats();
       fetchUserNFTs();
+      fetchGovernanceData();
     } else {
       // Reset states when wallet disconnects
       setStakingStats(null);
       setUserNFTs([]);
       setSelectedNFT(null);
+      setGovernanceData(null);
     }
   }, [connected, publicKey, lastRefreshTime]);
   
-  // Fetch user's staking stats
+  // Fetch governance data
+  const fetchGovernanceData = async () => {
+    if (!publicKey) return;
+    
+    setIsLoadingGovernance(true);
+    setError(null);
+    
+    try {
+      console.log("Fetching governance data...");
+      const response = await fetch(`/api/governance/getUserVotingPower?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch governance data");
+      }
+      
+      const data = await response.json();
+      console.log("Governance data loaded:", data);
+      setGovernanceData(data);
+    } catch (err) {
+      console.error("Error fetching governance data:", err);
+      
+      // If real API fails, use mock data for development
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Using mock governance data");
+        
+        // Create mock governance data for testing UI
+        const mockData = {
+          wallet: publicKey.toString(),
+          votingPower: Math.floor(Math.random() * 50) + 10,
+          canCreateProposal: true,
+          activeProposals: 3,
+          proposalCreateThreshold: 10,
+          recentProposals: [
+            {
+              id: "proposal1",
+              title: "Update Community Treasury Allocation",
+              description: "This proposal aims to adjust the distribution of treasury funds, allocating 30% to community-driven development projects.",
+              forVotes: 1240,
+              againstVotes: 320,
+              quorum: 1000,
+              status: 'active',
+              endTime: new Date(Date.now() + 86400000 * 3) // 3일 후 종료
+            },
+            {
+              id: "proposal2", 
+              title: "Staking Rewards Expansion Proposal",
+              description: "Increase staking reward tiers for Rare and Epic NFTs by 15% and introduce special weekly bonuses for continuous stakers.",
+              forVotes: 980,
+              againstVotes: 760,
+              quorum: 1500,
+              status: 'active',
+              endTime: new Date(Date.now() + 86400000 * 5) // 5일 후 종료
+            },
+            {
+              id: "proposal3",
+              title: "TESOLA Partnership Framework",
+              description: "Establish guidelines for project partnerships and integrations with other Solana ecosystem projects.",
+              forVotes: 2150,
+              againstVotes: 350, 
+              quorum: 2000,
+              status: 'active',
+              endTime: new Date(Date.now() + 86400000 * 2) // 2일 후 종료
+            }
+          ],
+          timestamp: new Date().toISOString()
+        };
+        
+        setGovernanceData(mockData);
+      } else {
+        // In production, set error
+        setError("Failed to load governance data. Please try again later.");
+      }
+    } finally {
+      setIsLoadingGovernance(false);
+    }
+  };
+  
+  // Fetch user's staking stats using enhanced service function
   const fetchStakingStats = async () => {
     if (!publicKey) return;
     
@@ -44,24 +131,46 @@ export default function StakingPage() {
     setError(null); // Clear any previous errors
     
     try {
-      console.log("Fetching staking stats...");
-      const response = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch staking statistics");
+      console.log("Fetching staking stats from service...");
+      
+      // 중앙화된 서비스 함수 사용
+      const data = await fetchEnhancedStakingStats(
+        publicKey.toString(), 
+        { 
+          forceFresh: true,
+          onError: (err) => {
+            console.error("Error in staking service:", err);
+            setError(getErrorMessage(err, "Failed to load your staking data. Please try again later."));
+          }
+        }
+      );
+      
+      // 검증
+      if (data && data.activeStakes) {
+        console.log(`Staking page: Found ${data.activeStakes.length} active stakes`);
+        
+        // 첫 번째 항목 디버깅
+        if (data.activeStakes.length > 0) {
+          const firstStake = data.activeStakes[0];
+          console.log("Sample stake data:", {
+            id: firstStake.id,
+            mint: firstStake.mint_address,
+            name: firstStake.nft_name,
+            image_url: firstStake.image_url // 이미지 필드 확인
+          });
+        }
       }
       
-      const data = await response.json();
-      console.log("Staking stats loaded:", data);
       setStakingStats(data);
     } catch (err) {
       console.error("Error fetching staking stats:", err);
-      setError("Failed to load your staking data. Please try again later.");
+      setError(getErrorMessage(err, "Failed to load your staking data. Please try again later."));
     } finally {
       setIsLoading(false);
     }
   };
   
-  // 수정된 fetchUserNFTs 함수 - My Collection과 동일한 API 사용 및 스테이킹된 NFT 필터링
+  // 수정된 fetchUserNFTs 함수 - My Collection과 동일한 API 및 로직 사용
   const fetchUserNFTs = async () => {
     if (!publicKey) return;
     
@@ -70,7 +179,7 @@ export default function StakingPage() {
     
     try {
       console.log("Fetching NFTs for staking...");
-      // My Collection 페이지와 동일한 API 사용
+      // My Collection 페이지와 완전히 동일한 API 사용
       const response = await fetch(`/api/getNFTs?wallet=${publicKey.toString()}&limit=100&nocache=${Date.now()}`);
       
       if (!response.ok) {
@@ -80,7 +189,7 @@ export default function StakingPage() {
       }
       
       const data = await response.json();
-      console.log('API Data received for staking:', data);
+      console.log(`Received ${data.nfts?.length || 0} NFTs from API`);
       
       // 스테이킹된 NFT 필터링 - 최신 상태 가져오기
       const stakedResponse = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
@@ -101,35 +210,30 @@ export default function StakingPage() {
       // 스테이킹되지 않은 NFT만 필터링
       const availableNFTs = data.nfts.filter(nft => !stakedMints.has(nft.mint));
       
+      // 이미지 URL 디버깅 (처음 몇 개 NFT만)
+      if (availableNFTs.length > 0) {
+        const sampleNft = availableNFTs[0];
+        console.log("Sample NFT image data:", {
+          nft_name: sampleNft.name,
+          image_url: sampleNft.image,
+          processed_url: getNFTImageUrl({...sampleNft, __source: 'debug-staking-page'})
+        });
+      }
+      
       console.log(`Filtered NFTs: ${availableNFTs.length} available out of ${data.nfts.length} total`);
       setUserNFTs(availableNFTs || []);
     } catch (err) {
       console.error("Error fetching user NFTs:", err);
+      setError("NFT 데이터를 불러오는데 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.");
       
-      // 실패 시 기존 방식으로 시도
-      try {
-        console.log("Falling back to original getUserNFTs API");
-        const fallbackResponse = await fetch(`/api/staking/getUserNFTs?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
-        
-        if (!fallbackResponse.ok) {
-          throw new Error("Fallback API failed too");
-        }
-        
-        const fallbackData = await fallbackResponse.json();
-        setUserNFTs(fallbackData.nfts || []);
-      } catch (fallbackErr) {
-        console.error("Fallback API failed:", fallbackErr);
-        setError("NFT 데이터를 불러오는데 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.");
-        
-        // 개발 환경에서는 모의 데이터 생성
-        if (process.env.NODE_ENV === 'development') {
-          try {
-            console.log("Generating mock NFT data as last resort");
-            const mockNFTs = generateMockNFTs(publicKey.toString());
-            setUserNFTs(mockNFTs);
-          } catch (mockError) {
-            console.error("Error generating mock data:", mockError);
-          }
+      // 개발 환경에서는 모의 데이터 생성 (간소화)
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          console.log("Generating mock NFT data as last resort");
+          const mockNFTs = generateMockNFTs(publicKey.toString());
+          setUserNFTs(mockNFTs);
+        } catch (mockError) {
+          console.error("Error generating mock data:", mockError);
         }
       }
     } finally {
@@ -237,18 +341,28 @@ export default function StakingPage() {
         );
       case "nfts":
         return (
-          <NFTGallery 
-            nfts={userNFTs} 
-            isLoading={isLoadingNFTs} 
-            onSelectNFT={handleSelectNFT}
-            onRefresh={refreshAllData}
-          />
+          <ErrorBoundary>
+            <NFTGallery 
+              nfts={userNFTs} 
+              isLoading={isLoadingNFTs} 
+              onSelectNFT={handleSelectNFT}
+              onRefresh={refreshAllData}
+            />
+          </ErrorBoundary>
         );
       case "leaderboard":
         return (
           <Leaderboard 
             stats={stakingStats}
             isLoading={isLoading}
+            onRefresh={refreshAllData}
+          />
+        );
+      case "governance":
+        return (
+          <GovernanceTab 
+            governanceData={governanceData}
+            isLoading={isLoadingGovernance}
             onRefresh={refreshAllData}
           />
         );
@@ -266,12 +380,32 @@ export default function StakingPage() {
                     Stake NFT
                   </h3>
                   <div className="bg-gray-900 rounded-lg p-4 mb-6 flex items-center">
+                    {/* Use source property to indicate staking context */}
                     {selectedNFT.image && (
-                      <img 
-                        src={selectedNFT.image} 
-                        alt={selectedNFT.name} 
-                        className="w-24 h-24 rounded-lg object-cover mr-4"
-                      />
+                      <div className="w-24 h-24 rounded-lg overflow-hidden mr-4">
+                        <EnhancedProgressiveImage 
+                          src={getNFTImageUrl({
+                            ...selectedNFT,
+                            __source: 'staking-page-selected-nft'
+                          })}
+                          alt={selectedNFT.name} 
+                          className="w-full h-full"
+                          lazyLoad={false}
+                          priority={true}
+                          // Don't add __source here as it's already in getNFTImageUrl
+                          placeholder={createPlaceholder(selectedNFT.name || "SOLARA NFT")}
+                        />
+                        {/* 디버깅용 정보 표시 */}
+                        <div className="absolute bottom-0 right-0 bg-black/80 p-1 text-[6px] text-white">
+                          {JSON.stringify({
+                            image: selectedNFT?.image?.substring(0, 15) + '...',
+                            image_url: selectedNFT?.image_url?.substring(0, 15) + '...',
+                            starts_with: selectedNFT?.image?.startsWith('/') ? 'local' : 
+                                        selectedNFT?.image?.startsWith('ipfs://') ? 'ipfs' : 'other',
+                            src: 'stake-sel'
+                          })}
+                        </div>
+                      </div>
                     )}
                     <div>
                       <h4 className="font-bold text-white">{selectedNFT.name}</h4>
@@ -401,7 +535,7 @@ export default function StakingPage() {
         {/* Navigation Tabs */}
         <div className="flex justify-center mb-6">
           <div className="bg-gray-800/60 rounded-lg p-1">
-            <div className="flex space-x-1">
+            <div className="flex flex-wrap space-x-1">
               <button
                 onClick={() => setActiveTab("dashboard")}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -431,6 +565,16 @@ export default function StakingPage() {
                 }`}
               >
                 Leaderboard
+              </button>
+              <button
+                onClick={() => setActiveTab("governance")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "governance" 
+                    ? "bg-purple-600 text-white" 
+                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                Governance
               </button>
               {selectedNFT && (
                 <button

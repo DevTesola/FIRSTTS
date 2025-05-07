@@ -1,0 +1,96 @@
+/* System font fallbacks for Orbitron */
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Arial'), local('Helvetica'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local('Arial'), local('Helvetica'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Arial Bold'), local('Helvetica Bold'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Arial Bold'), local('Helvetica Bold'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: local('Arial Black'), local('Helvetica Black'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: local('Arial Black'), local('Helvetica Black'), local('sans-serif');
+}
+
+/* Block and override DM Sans */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Arial'), local('Helvetica'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local('Arial'), local('Helvetica'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Arial Bold'), local('Helvetica Bold'), local('sans-serif');
+}
+
+/* Global font application */
+* {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+body {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+/* Wallet adapter specific overrides */
+.wallet-adapter-button,
+.wallet-adapter-button *,
+button.wallet-adapter-button,
+.wallet-adapter-button span,
+.wallet-adapter-dropdown-list-item,
+.wallet-adapter-dropdown-list-item *,
+.wallet-adapter-modal-title,
+.wallet-adapter-modal-wrapper,
+.wallet-adapter-modal-button-close,
+.wallet-adapter-modal-list .wallet-adapter-button {
+  font-family: 'Orbitron', sans-serif !important;
+}

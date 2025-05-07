@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { getDirectGatewayUrl, isIPFSUrl } from '../utils/mediaUtils';
 
 export default function MintResultModal({ result, onClose }) {
   const { publicKey } = useWallet();
@@ -50,13 +51,20 @@ export default function MintResultModal({ result, onClose }) {
     }
   }
   
-  // Process image URL with Pinata gateway
-  let imageUrl = metadata.image || "";
-  if (imageUrl.startsWith('ipfs://')) {
-    const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-    const ipfsHash = imageUrl.replace('ipfs://', '');
-    imageUrl = `${ipfsGateway}/ipfs/${ipfsHash}`;
+  // Simple direct gateway URL approach
+  const originalImageUrl = metadata.image || "";
+  
+  // Use direct gateway URL - simplest possible approach
+  let imageUrl = originalImageUrl;
+  
+  // If it's an IPFS URL, convert to HTTP gateway
+  if (isIPFSUrl(originalImageUrl)) {
+    imageUrl = getDirectGatewayUrl(originalImageUrl);
   }
+  
+  // Ensure the URL is valid by logging
+  console.log("Original NFT Image URL:", originalImageUrl);
+  console.log("Direct Gateway URL:", imageUrl);
   
   // Extract mint address from metadata if available
   const mintAddress = metadata.mintAddress || metadata.mint || "";
@@ -130,7 +138,7 @@ export default function MintResultModal({ result, onClose }) {
           mint_address: mintAddress || null
         });
         
-        // API 호출
+        // API call
         const response = await fetch('/api/recordTweetReward', {
           method: 'POST',
           headers: {
@@ -145,7 +153,7 @@ export default function MintResultModal({ result, onClose }) {
           })
         });
         
-        // 응답 확인
+        // Check response
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Error processing tweet reward');
@@ -196,13 +204,17 @@ export default function MintResultModal({ result, onClose }) {
               )}
               
               {/* Image */}
-              <img
-                src={imageUrl}
-                alt={metadata.name || "Solara NFT"}
-                className={`w-full rounded-lg border-2 border-purple-500 shadow-lg ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-              />
+              <div className="w-full rounded-lg border-2 border-purple-500 shadow-lg overflow-hidden">
+                <img
+                  src={imageUrl}
+                  alt={metadata.name || "Solara NFT"}
+                  className={`w-full h-full object-cover ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                  loading="eager" 
+                  crossOrigin="anonymous"
+                />
+              </div>
               
               {/* Reward badge */}
               {!rewardReceived && (
@@ -277,7 +289,7 @@ export default function MintResultModal({ result, onClose }) {
           <div className="mb-6">
             <p className="text-gray-300 text-sm mb-4">{metadata.description || "A unique SOLARA NFT from the GEN:0 collection."}</p>
             
-            {/* 리워드 정보 카드 - 보상 정책 안내 추가 */}
+            {/* Reward information card - Added reward policy details */}
             <div className="bg-purple-900/40 p-4 rounded-lg mb-4 border border-purple-500/50">
               <h3 className="text-lg font-bold text-yellow-400 mb-2 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">

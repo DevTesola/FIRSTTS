@@ -11,7 +11,7 @@ export default function LandingPage() {
   }, []);
   
   return (
-    <div className="w-full max-w-6xl mx-auto">
+    <div className="w-full max-w-6xl mx-auto font-orbitron">
       {/* Hero Section */}
       <div className="text-center mb-16">
         <div className="flex justify-center mb-4">
@@ -29,6 +29,8 @@ export default function LandingPage() {
         <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
           Explore our unique NFT collection and participate in our token presale — two distinct ways to join our thriving ecosystem.
         </p>
+        
+        {/* Stats directly */}
         
         {/* Stats */}
         <div className="flex flex-wrap justify-center gap-6 mb-12">
@@ -51,11 +53,12 @@ export default function LandingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
         {/* NFT Collection Card */}
         <div className="bg-gradient-to-br from-purple-900/40 to-blue-900/40 rounded-xl overflow-hidden border border-purple-500/30 shadow-xl hover:shadow-purple-500/20 transition-shadow">
-          <div className="relative h-60">
+          <div className="relative h-60 bg-gray-800">
             <Image 
-              src="/nft-banner.jpg" 
+              src="/slr.png" 
               alt="SOLARA NFT Collection" 
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
@@ -112,11 +115,13 @@ export default function LandingPage() {
             LIVE NOW
           </div>
           
-          <div className="relative h-60">
+          <div className="relative h-60 bg-gray-800">
             <Image 
-              src="/token-banner.jpg" 
+              src="/elon.png" 
               alt="TESOLA Token Presale" 
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
@@ -231,18 +236,54 @@ export default function LandingPage() {
             Explore NFTs
           </Link>
           <Link 
-            href="/presale" 
+            href="/character-introduction" 
+            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Main Character Introduction
+          </Link>
+          <Link 
+            href="/love-story" 
             className="px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors"
           >
-            Join Token Presale
+            Love Story
           </Link>
+          <Link 
+            href="/developer-space" 
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium rounded-lg transition-colors"
+          >
+            Developer's Space
+          </Link>
+          <Link 
+            href="/introduction" 
+            className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 text-white font-medium rounded-lg transition-colors"
+          >
+            The REAL Story
+          </Link>
+        </div>
+        
+        {/* Social Links with Emoji Style */}
+        <div className="flex justify-center space-x-6 mt-6">
+          <a 
+            href="https://twitter.com/teslainsolana" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="group"
+            aria-label="Twitter"
+          >
+            <div className="w-12 h-12 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110 shadow-lg hover:shadow-blue-500/50">
+              <span className="text-xl">🐦</span>
+            </div>
+          </a>
           <a 
             href="https://discord.gg/tesola" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+            className="group"
+            aria-label="Discord"
           >
-            Join Discord
+            <div className="w-12 h-12 bg-indigo-500 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110 shadow-lg hover:shadow-indigo-500/50">
+              <span className="text-xl">💬</span>
+            </div>
           </a>
         </div>
       </div>

@@ -7,7 +7,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import FallbackLoading from '../components/FallbackLoading';
 import Leaderboard from '../components/staking/Leaderboard';
 
-// Layout 컴포넌트 동적 로딩 with error handling
+// Dynamically load Layout component with error handling
 const Layout = dynamic(
   () => import('../components/Layout')
     .catch(err => {
@@ -32,30 +32,78 @@ export default function LeaderboardPage() {
   const { publicKey, connected } = useWallet();
   const [stakingStats, setStakingStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [memoryOptimized, setMemoryOptimized] = useState(false);
   
-  // Fetch staking statistics for the leaderboard
+  // Add memory optimization on first load
   useEffect(() => {
+    // Reduce memory usage by cleaning up unnecessary browser data
+    if (!memoryOptimized && typeof window !== 'undefined') {
+      // Clear any console logs to free memory
+      console.clear();
+      
+      // Disable debug in production
+      if (process.env.NODE_ENV === 'production') {
+        console.debug = () => {};
+      }
+      
+      // Mark memory as optimized
+      setMemoryOptimized(true);
+    }
+  }, [memoryOptimized]);
+  
+  // Fetch staking statistics for the leaderboard with improved initialization timing
+  useEffect(() => {
+    // Immediately show leaderboard even without wallet connection
+    fetchStakingStats();
+    
+    // Refresh when wallet connection changes
     if (connected && publicKey) {
       fetchStakingStats();
     }
   }, [publicKey, connected]);
   
-  // Function to fetch staking statistics
+  // Function to fetch staking statistics with better error handling
   const fetchStakingStats = async () => {
-    if (!connected || !publicKey) return;
-    
     setLoadingStats(true);
     
     try {
-      const response = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}`);
+      // If wallet is connected, include wallet address in request
+      const endpoint = connected && publicKey 
+        ? `/api/getStakingStats?wallet=${publicKey.toString()}`
+        : '/api/getStakingStats';
+      
+      // Add timeout protection
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const response = await fetch(endpoint, {
+        signal: controller.signal,
+        // Add header to avoid caching issues
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error("Failed to fetch staking statistics");
+        throw new Error(`Failed to fetch staking statistics: ${response.status}`);
       }
       
       const data = await response.json();
       setStakingStats(data);
     } catch (err) {
       console.error("Error fetching staking stats:", err);
+      
+      // Provide minimal mock data on error to prevent UI from breaking
+      setStakingStats({
+        totalStaked: 0,
+        userStaked: 0,
+        rewardsRate: 0.05,
+        totalStakers: 0,
+        userRank: connected ? 0 : null
+      });
     } finally {
       setLoadingStats(false);
     }

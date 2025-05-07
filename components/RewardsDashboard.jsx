@@ -3,7 +3,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import ErrorMessage from "./ErrorMessage";
+import EnhancedProgressiveImage from "./EnhancedProgressiveImage";
 import { claimRewards } from "../utils/rewards";
+import { createPlaceholder } from "../utils/mediaUtils";
+import { fetchAPI, getErrorMessage } from "../utils/apiClient";
+import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from "../utils/nftImageUtils";
 
 /**
  * 개선된 TESOLA 리워드 대시보드 컴포넌트
@@ -34,16 +38,13 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
     setError(null);
     
     try {
-      const res = await fetch(`/api/getRewards?wallet=${publicKey.toString()}`);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch rewards: ${res.status}`);
-      }
-      
-      const data = await res.json();
+      // 표준화된 API 클라이언트 사용
+      const data = await fetchAPI('/api/getRewards', { wallet: publicKey.toString() });
       setRewardData(data);
     } catch (err) {
       console.error('Error fetching rewards:', err);
-      setError(err.message);
+      // 표준화된 에러 메시지 처리
+      setError(getErrorMessage(err, 'Failed to fetch rewards data'));
     } finally {
       setLoading(false);
     }
@@ -55,21 +56,180 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
       if (!connected || !publicKey) return;
       
       try {
-        const res = await fetch(`/api/getStakingStats?wallet=${publicKey.toString()}`);
-        if (!res.ok) {
-          console.error('Failed to fetch staking stats');
-          return;
-        }
+        // 캐시 방지 및 표준화된 API 클라이언트 사용
+        const data = await fetchAPI('/api/getStakingStats', 
+          { wallet: publicKey.toString() }, 
+          { noCache: true }
+        );
         
-        const { activeStakes, stats } = await res.json();
-        setActiveStakes(activeStakes || []);
+        // 응답 구조 로깅 - 디버깅용
+        console.log("Raw API response structure:", JSON.stringify(data, null, 2).substring(0, 500) + "...");
+        
+        // 응답 형식에 맞게 데이터 추출
+        // 새 API 응답 형식은 {success: true, data: {activeStakes, stats}} 이거나
+        // 이전 형식인 {activeStakes, stats} 일 수 있음
+        const responseData = data.success && data.data ? data.data : data;
+        
+        // 로그 제거 - 콘솔 출력 줄이기
+        const { activeStakes, stats } = responseData;
+        
+        // Enhanced validation to prevent component crashes and ensure image fields with better IPFS handling
+        const normalizedStakes = (activeStakes || []).filter(stake => 
+          // Ensure basic required fields are present
+          stake && typeof stake === 'object' && 
+          (stake.id || stake.mint_address) // Must have at least an ID
+        ).map(stake => {
+          // First, ensure image fields are properly propagated if any exists
+          const imageFields = {};
+          
+          // Determine image type and set proper priority
+          const ipfsImages = []; // IPFS protocol URLs (highest priority)
+          const gatewayImages = []; // IPFS gateway URLs (medium priority)
+          const localImages = []; // Local images (lowest priority)
+          const otherImages = []; // Other HTTP URLs
+          
+          // Process image field - used in RewardsDashboard 
+          if (stake.image) {
+            if (stake.image.startsWith('ipfs://')) {
+              ipfsImages.push(stake.image);
+            } else if (stake.image.includes('/ipfs/')) {
+              gatewayImages.push(stake.image);
+            } else if (stake.image.startsWith('/')) {
+              localImages.push(stake.image);
+            } else {
+              otherImages.push(stake.image);
+            }
+          }
+          
+          // Process image_url field
+          if (stake.image_url) {
+            if (stake.image_url.startsWith('ipfs://')) {
+              ipfsImages.push(stake.image_url);
+            } else if (stake.image_url.includes('/ipfs/')) {
+              gatewayImages.push(stake.image_url);
+            } else if (stake.image_url.startsWith('/')) {
+              localImages.push(stake.image_url);
+            } else {
+              otherImages.push(stake.image_url);
+            }
+          }
+          
+          // Process nft_image field
+          if (stake.nft_image) {
+            if (stake.nft_image.startsWith('ipfs://')) {
+              ipfsImages.push(stake.nft_image);
+            } else if (stake.nft_image.includes('/ipfs/')) {
+              gatewayImages.push(stake.nft_image);
+            } else if (stake.nft_image.startsWith('/')) {
+              localImages.push(stake.nft_image);
+            } else {
+              otherImages.push(stake.nft_image);
+            }
+          }
+          
+          // Process metadata.image field
+          if (stake.metadata?.image) {
+            if (stake.metadata.image.startsWith('ipfs://')) {
+              ipfsImages.push(stake.metadata.image);
+            } else if (stake.metadata.image.includes('/ipfs/')) {
+              gatewayImages.push(stake.metadata.image);
+            } else if (stake.metadata.image.startsWith('/')) {
+              localImages.push(stake.metadata.image);
+            } else {
+              otherImages.push(stake.metadata.image);
+            }
+          }
+          
+          // Process ipfs_hash field to create IPFS URL
+          if (stake.ipfs_hash) {
+            ipfsImages.push(`ipfs://${stake.ipfs_hash}`);
+          }
+          
+          // If no image found, generate IPFS URL from mint address
+          if (ipfsImages.length === 0 && gatewayImages.length === 0 && 
+              otherImages.length === 0 && stake.mint_address) {
+            const ipfsHash = `QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3/${stake.mint_address}`;
+            ipfsImages.push(`ipfs://${ipfsHash}`);
+          }
+          
+          // Select best images in order of priority
+          if (ipfsImages.length > 0) {
+            imageFields.image_url = ipfsImages[0]; // Best IPFS URL
+            
+            // Also include ipfs_hash if we have it
+            if (stake.ipfs_hash) {
+              imageFields.ipfs_hash = stake.ipfs_hash;
+            } else if (ipfsImages[0].startsWith('ipfs://')) {
+              // Extract hash from ipfs:// URL
+              imageFields.ipfs_hash = ipfsImages[0].replace('ipfs://', '').split('/')[0];
+            }
+          } else if (gatewayImages.length > 0) {
+            imageFields.image_url = gatewayImages[0]; // Gateway URL
+          } else if (otherImages.length > 0) {
+            imageFields.image_url = otherImages[0]; // Other HTTP URL
+          }
+          
+          // Still preserve local image as fallback, but with lower priority
+          if (localImages.length > 0) {
+            imageFields.local_image = localImages[0];
+          }
+          
+          // 디버그 로그는 주석 처리 (필요시 다시 활성화)
+          /*
+          console.log(`RewardsDashboard - enhanced stake data for ${stake.id || stake.mint_address}:`, {
+            ipfsImages: ipfsImages.length > 0 ? ipfsImages[0] : null,
+            gatewayImages: gatewayImages.length > 0 ? gatewayImages[0] : null,
+            localImages: localImages.length > 0 ? localImages[0] : null,
+            otherImages: otherImages.length > 0 ? otherImages[0] : null,
+            selectedImage: imageFields.image_url || imageFields.local_image || null,
+            mint_address: stake.mint_address,
+            original_image_fields: {
+              image: stake.image,
+              image_url: stake.image_url,
+              nft_image: stake.nft_image,
+              ipfs_hash: stake.ipfs_hash,
+              metadata_image: stake.metadata?.image
+            }
+          });
+          */
+          
+          // Ensure all required fields have default values + normalize image fields
+          return {
+            id: stake.id || stake.mint_address || `unknown-${Math.random().toString(36).substr(2, 9)}`,
+            mint_address: stake.mint_address || stake.id || 'unknown-mint',
+            nft_name: stake.nft_name || stake.name || "SOLARA NFT",
+            nft_tier: stake.nft_tier || stake.tier || "Common",
+            staked_at: stake.staked_at || new Date().toISOString(),
+            release_date: stake.release_date || new Date(Date.now() + 30*86400000).toISOString(), // Default 30 days
+            progress_percentage: stake.progress_percentage || 0,
+            earned_so_far: stake.earned_so_far || 0,
+            total_rewards: stake.total_rewards || 100,
+            
+            // Add prioritized image fields
+            ...imageFields,
+            
+            // Keep original image properties but rename them to avoid confusion
+            // with our normalized fields for components that might still use old field names
+            original_image: stake.image,
+            
+            // Preserve all other original properties
+            ...stake
+          };
+        });
+        
+        // Set normalized data
+        setActiveStakes(normalizedStakes);
         setStakingStats(stats || {
           totalStaked: 0,
           projectedRewards: 0,
           earnedToDate: 0
         });
+        
+        // 데이터 설정 후 상태 로깅 - 디버깅용
+        console.log('RewardsDashboard - activeStakes 상태 설정 완료:', activeStakes?.length || 0);
       } catch (err) {
         console.error('Error fetching staking data:', err);
+        setError(getErrorMessage(err, 'Failed to fetch staking data'));
       }
     };
     
@@ -94,6 +254,7 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
     
     setClaimLoading(true);
     try {
+      // 표준화된 API 클라이언트를 통한 리워드 청구
       await claimRewards(publicKey.toString());
       
       // 리워드 데이터 업데이트
@@ -116,7 +277,8 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
       setTimeout(() => setJustClaimed(false), 5000);
     } catch (error) {
       console.error('Error claiming rewards:', error);
-      setError(error.message);
+      // 표준화된 에러 메시지 처리
+      setError(getErrorMessage(error, 'Failed to claim rewards'));
     } finally {
       setClaimLoading(false);
     }
@@ -356,29 +518,52 @@ export default function RewardsDashboard({ minimal = false, onClaim, className =
                       
                       return (
                         <div key={stake.id} className="p-4 hover:bg-gray-750 transition-colors">
-                          <div className="flex justify-between items-center mb-2">
-                            <div className="font-medium">{stake.nft_name || `SOLARA #${stake.mint_address.slice(0, 4)}`}</div>
-                            <div className="text-sm text-blue-400">{`${daysRemaining} days remaining`}</div>
-                          </div>
-                          
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-400">Staking Period:</span>
-                            <span>{stake.staking_period} days</span>
-                          </div>
-                          
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-400">NFT Tier:</span>
-                            <span className={
-                              stake.nft_tier === 'Legendary' ? 'text-yellow-400' :
-                              stake.nft_tier === 'Rare' ? 'text-purple-400' :
-                              stake.nft_tier === 'Uncommon' ? 'text-blue-400' :
-                              'text-green-400'
-                            }>{stake.nft_tier}</span>
-                          </div>
-                          
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-400">Total Rewards:</span>
-                            <span className="text-yellow-400">{stake.total_rewards} TESOLA</span>
+                          <div className="flex items-start mb-2">
+                            {/* NFT Image - Always display with placeholder fallback */}
+                            <div className="w-16 h-16 rounded-lg overflow-hidden mr-3 border border-gray-700 flex-shrink-0">
+                              {/* NFT 이미지 표시 - 개선된 EnhancedProgressiveImage 사용 & 중앙화된 유틸리티 함수 사용 */}
+                              <EnhancedProgressiveImage 
+                                src={getNFTImageUrl({
+                                  ...stake,
+                                  id: stake.id || stake.mint_address,
+                                  mint: stake.mint_address,
+                                  name: getNFTName(stake),
+                                  image: stake.image,
+                                  image_url: stake.image_url,
+                                  ipfs_hash: stake.ipfs_hash,
+                                  __source: 'RewardsDashboard-staked-nft'
+                                })}
+                                alt={getNFTName(stake)}
+                                className="w-full h-full"
+                                preferRemote={true}
+                                highQuality={true}
+                                placeholder={createPlaceholder(getNFTName(stake))}
+                              />
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center mb-2">
+                                <div className="font-medium">{getNFTName(stake)}</div>
+                                <div className="text-sm text-blue-400">{`${daysRemaining} days remaining`}</div>
+                              </div>
+                              
+                              <div className="flex justify-between text-sm mb-2">
+                                <span className="text-gray-400">Staking Period:</span>
+                                <span>{stake.staking_period} days</span>
+                              </div>
+                              
+                              <div className="flex justify-between text-sm mb-2">
+                                <span className="text-gray-400">NFT Tier:</span>
+                                <span className={getTierStyles(stake).text}>
+                                  {getNFTTier(stake)}
+                                </span>
+                              </div>
+                              
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Total Rewards:</span>
+                                <span className="text-yellow-400">{stake.total_rewards} TESOLA</span>
+                              </div>
+                            </div>
                           </div>
                           
                           {/* Progress bar */}

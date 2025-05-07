@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { GlassButton, SecondaryButton } from "../Buttons";
+import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
+import { createPlaceholder, getNftPreviewImage } from "../../utils/mediaUtils";
+import { getNFTImageUrl } from "../../utils/nftImageUtils";
 
 /**
  * Leaderboard Component
@@ -60,35 +63,114 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
     return () => clearInterval(interval);
   }, [nextUpdateTime]);
 
-  // Function to fetch leaderboard data
-  const fetchLeaderboardData = async () => {
+  // Function to fetch leaderboard data with enhanced error handling, retry logic, and memory optimizations
+  const fetchLeaderboardData = async (retryCount = 0) => {
     setDataLoading(true);
     setError(null);
     
+    // Memory cleanup before loading new data
+    if (leaderboardData.length > 200) {
+      setLeaderboardData([]);
+    }
+    
     try {
-      // API call to get leaderboard data
-      const response = await fetch(`/api/leaderboard?sort=${sortBy}&page=${currentPage}&limit=${itemsPerPage}`);
+      // API call to get leaderboard data with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      // Batch size to prevent memory issues
+      const batchSize = 50;
+      
+      const response = await fetch(
+        `/api/leaderboard?sort=${sortBy}&page=${currentPage}&limit=${batchSize}${publicKey ? `&wallet=${publicKey.toString()}` : ''}`,
+        { 
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-store',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
       }
       
-      const data = await response.json();
-      setLeaderboardData(data.leaderboard || []);
+      // Parse JSON with error handling
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Error parsing JSON response:", jsonError);
+        throw new Error("Invalid response format from server");
+      }
+      
+      // Validate response structure
+      if (!data || !Array.isArray(data.leaderboard)) {
+        console.error("Invalid response structure:", data);
+        throw new Error("Invalid leaderboard data format");
+      }
+      
+      // Set leaderboard data with memory consideration
+      setLeaderboardData(prevData => {
+        // Only keep a reasonable amount of data in memory
+        if (prevData.length > 200) {
+          return data.leaderboard;
+        }
+        return data.leaderboard;
+      });
       
       // If there's a connected wallet, set the user's rank
-      if (publicKey) {
-        const userWalletAddress = publicKey.toString();
-        setUserRank(data.userRank || null);
+      if (publicKey && data.userRank) {
+        setUserRank(data.userRank);
       }
       
       // Trigger animation for stats
       setAnimateStats(true);
-      setTimeout(() => setAnimateStats(false), 1500);
+      const animationTimer = setTimeout(() => setAnimateStats(false), 1500);
+      
+      // Cleanup animation timer on error
+      return () => clearTimeout(animationTimer);
       
     } catch (error) {
       console.error("Error fetching leaderboard data:", error);
-      setError("Failed to load leaderboard data. Please try again later.");
+      
+      // If error is due to AbortController, show timeout message
+      if (error.name === 'AbortError') {
+        setError("Request timed out. Please check your connection and try again.");
+      } else {
+        setError(`Failed to load leaderboard data: ${error.message}`);
+      }
+      
+      // Implement retry logic for network errors (max 2 retries)
+      if (retryCount < 2 && (error.name === 'TypeError' || error.message.includes('network'))) {
+        console.log(`Retrying leaderboard fetch (attempt ${retryCount + 1})...`);
+        setTimeout(() => fetchLeaderboardData(retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
+      
+      // If all retries failed or other error, fallback to mock data in development
+      if (process.env.NODE_ENV === 'development') {
+        const mockData = generateMockLeaderboardData();
+        setLeaderboardData(mockData);
+        if (publicKey) {
+          const userRankNum = Math.floor(Math.random() * 50) + 50;
+          const userEntry = {
+            ...mockData[userRankNum - 1],
+            isUser: true,
+            walletAddress: `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}`
+          };
+          setUserRank({
+            rank: userRankNum,
+            tokenAmount: userEntry.tokenAmount,
+            holdingDays: userEntry.holdingDays,
+            score: userEntry.score,
+            hasEvolvedNFT: userEntry.hasEvolvedNFT
+          });
+        }
+      }
     } finally {
       setDataLoading(false);
     }
@@ -435,6 +517,26 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                             EVOLVED NFT UNLOCKED
                           </div>
                           
+                          {/* NFT Image Preview */}
+                          <div className="w-full aspect-square mb-4 rounded-lg overflow-hidden border border-gray-700">
+                            <EnhancedProgressiveImage
+                              src={getNFTImageUrl({
+                                image_url: entry.image_url,
+                                nft_image: entry.nft_image,
+                                ipfs_hash: entry.ipfs_hash,
+                                id: entry.rank,
+                                __source: 'Leaderboard-top',
+                                _cacheBust: Date.now()
+                              })}
+                              alt={`Top ${position} NFT`}
+                              placeholder={createPlaceholder(`Top ${position}`)}
+                              className="w-full h-full object-cover"
+                              lazyLoad={false}
+                              priority={true}
+                              highQuality={true}
+                            />
+                          </div>
+                          
                           <div className="grid grid-cols-2 gap-2 mt-4">
                             <div className="bg-black/30 p-2 rounded-lg">
                               <div className="text-xs text-gray-400 mb-1">Tokens</div>
@@ -463,6 +565,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                 <thead>
                   <tr className="border-b border-gray-700">
                     <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium">NFT</th>
                     <th className="text-left py-3 px-4 text-gray-400 font-medium">Wallet</th>
                     <th className="text-right py-3 px-4 text-gray-400 font-medium">TESOLA Tokens</th>
                     <th className="text-right py-3 px-4 text-gray-400 font-medium">Holding Period</th>
@@ -498,6 +601,29 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                               You
                             </span>
                           )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="w-10 h-10 rounded overflow-hidden border border-gray-700">
+                          <EnhancedProgressiveImage
+                            src={getNFTImageUrl({
+                              image_url: entry.image_url, 
+                              nft_image: entry.nft_image,
+                              ipfs_hash: entry.ipfs_hash,
+                              metadata: entry.metadata,
+                              id: entry.rank,
+                              __source: 'Leaderboard-table',
+                              _cacheBust: Date.now(),
+                              using_actual_nft_data: true
+                            })}
+                            alt={`Rank #${entry.rank} NFT`}
+                            placeholder={createPlaceholder(`#${entry.rank}`)}
+                            className="w-full h-full object-cover"
+                            lazyLoad={true}
+                            priority={true}
+                            highQuality={true}
+                            useCache={false}
+                          />
                         </div>
                       </td>
                       <td className="py-3 px-4 font-medium text-white">
@@ -653,21 +779,75 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
           <h4 className="text-white font-medium mb-2">Reward Tiers</h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-black/30 p-3 rounded">
-              <div className="text-center">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-yellow-500/30 mb-2">
+                  <EnhancedProgressiveImage
+                    src={getNFTImageUrl({
+                      image_url: leaderboardData[0]?.image_url,
+                      nft_image: leaderboardData[0]?.nft_image,
+                      ipfs_hash: leaderboardData[0]?.ipfs_hash,
+                      id: 1,
+                      __source: 'Leaderboard-legendary',
+                      _cacheBust: Date.now()
+                    })}
+                    alt="Legendary NFT"
+                    placeholder={createPlaceholder("Legendary")}
+                    className="w-full h-full object-cover"
+                    lazyLoad={true}
+                    priority={true}
+                    highQuality={true}
+                  />
+                </div>
                 <div className="text-yellow-400 font-medium mb-1">Top 10</div>
                 <div className="text-sm text-gray-300">Legendary Evolution</div>
                 <div className="text-xs text-gray-500 mt-1">+50% staking boost</div>
               </div>
             </div>
             <div className="bg-black/30 p-3 rounded">
-              <div className="text-center">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-blue-500/30 mb-2">
+                  <EnhancedProgressiveImage
+                    src={getNFTImageUrl({
+                      image_url: leaderboardData[11]?.image_url,
+                      nft_image: leaderboardData[11]?.nft_image,
+                      ipfs_hash: leaderboardData[11]?.ipfs_hash,
+                      id: 20,
+                      __source: 'Leaderboard-epic',
+                      _cacheBust: Date.now()
+                    })}
+                    alt="Epic NFT"
+                    placeholder={createPlaceholder("Epic")}
+                    className="w-full h-full object-cover"
+                    lazyLoad={true}
+                    priority={true}
+                    highQuality={true}
+                  />
+                </div>
                 <div className="text-blue-400 font-medium mb-1">Top 11-50</div>
                 <div className="text-sm text-gray-300">Epic Evolution</div>
                 <div className="text-xs text-gray-500 mt-1">+35% staking boost</div>
               </div>
             </div>
             <div className="bg-black/30 p-3 rounded">
-              <div className="text-center">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-green-500/30 mb-2">
+                  <EnhancedProgressiveImage
+                    src={getNFTImageUrl({
+                      image_url: leaderboardData[51]?.image_url,
+                      nft_image: leaderboardData[51]?.nft_image,
+                      ipfs_hash: leaderboardData[51]?.ipfs_hash,
+                      id: 75,
+                      __source: 'Leaderboard-rare',
+                      _cacheBust: Date.now()
+                    })}
+                    alt="Rare NFT"
+                    placeholder={createPlaceholder("Rare")}
+                    className="w-full h-full object-cover"
+                    lazyLoad={true}
+                    priority={true}
+                    highQuality={true}
+                  />
+                </div>
                 <div className="text-green-400 font-medium mb-1">Top 51-100</div>
                 <div className="text-sm text-gray-300">Rare Evolution</div>
                 <div className="text-xs text-gray-500 mt-1">+25% staking boost</div>

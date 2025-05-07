@@ -43,6 +43,7 @@ next-env.d.ts
 
 # 민감 정보: 절대 커밋 금지
 mintWallet.json
+my-wallet.json
 
 # 📦 안전 설정
 .env.local

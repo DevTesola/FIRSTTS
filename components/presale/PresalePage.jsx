@@ -67,6 +67,8 @@ export default function PresalePage({ initialSupply = 0 }) {
   const [hasSufficientFunds, setHasSufficientFunds] = useState(true);
   const [isWhitelisted, setIsWhitelisted] = useState(false);
   const [whitelistChecked, setWhitelistChecked] = useState(false);
+  const [userTier, setUserTier] = useState(null);
+  const [maxTokens, setMaxTokens] = useState(0);
   const [purchaseAmount, setPurchaseAmount] = useState(DEFAULT_PURCHASE_AMOUNT);
   const [totalCost, setTotalCost] = useState(0);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
@@ -99,7 +101,7 @@ export default function PresalePage({ initialSupply = 0 }) {
     }
   }, [connected, publicKey]);
   
-  // Check if wallet is whitelisted
+  // Check if wallet is whitelisted and get tier information
   const checkWhitelistStatus = async () => {
     try {
       const res = await fetch("/api/presale/checkWhitelist", {
@@ -111,10 +113,29 @@ export default function PresalePage({ initialSupply = 0 }) {
       const data = await res.json();
       setIsWhitelisted(data.isWhitelisted);
       setWhitelistChecked(true);
+      
+      // Store tier information
+      if (data.tier) {
+        setUserTier(data.tier);
+        console.log("User tier:", data.tier);
+        
+        // Store maximum token purchase amount
+        if (data.maxTokens) {
+          setMaxTokens(data.maxTokens);
+          console.log("Max token purchase:", data.maxTokens);
+          
+          // If max tokens is lower than current selection, adjust
+          if (data.maxTokens < purchaseAmount) {
+            setPurchaseAmount(data.maxTokens);
+          }
+        }
+      }
     } catch (err) {
       console.error("Error checking whitelist status:", err);
       setIsWhitelisted(false);
       setWhitelistChecked(true);
+      setUserTier(null);
+      setMaxTokens(0);
     }
   };
 
@@ -257,31 +278,44 @@ export default function PresalePage({ initialSupply = 0 }) {
     </div>
   );
   
-  const NavTabs = () => (
-    <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-2 border border-purple-500/20 shadow-lg">
-      <div className="flex space-x-1">
-        {[
-          { id: 'presale', label: 'Presale' },
-          { id: 'tokenomics', label: 'Tokenomics' },
-          { id: 'roadmap', label: 'Roadmap' },
-          { id: 'utility', label: 'Utility' },
-          { id: 'faq', label: 'FAQ' }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === tab.id 
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
-                : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+  // NavTabs 컴포넌트를 화살표 함수로 직접 정의하여 스코프 문제 해결
+  const NavTabs = () => {
+    // Define tabs state
+    const tabs = [
+      { id: 'presale', label: 'Presale' },
+      { id: 'tokenomics', label: 'Tokenomics' },
+      { id: 'roadmap', label: 'Roadmap' },
+      { id: 'utility', label: 'Utility' },
+      { id: 'faq', label: 'FAQ' }
+    ];
+    
+    // Basic button click handler that sets activeTab
+    const clickTab = (id) => {
+      console.log(`Tab clicked: ${id}`);
+      setActiveTab(id);
+    };
+    
+    return (
+      <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-2 border border-purple-500/20 shadow-lg">
+        <div className="flex flex-wrap md:flex-nowrap gap-1">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => clickTab(tab.id)}
+              className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                activeTab === tab.id 
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                  : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // 표시 전에 VideoPlayer 유효성 확인
   const isVideoPlayerValid = typeof VideoPlayer === 'function' || 
@@ -428,7 +462,7 @@ export default function PresalePage({ initialSupply = 0 }) {
   };
 
   return (
-    <div className="relative z-20 mx-auto w-full max-w-4xl px-4">
+    <div className="relative z-20 mx-auto w-full max-w-4xl px-4 font-orbitron">
       {/* Loading overlay */}
       {loading && <LoadingOverlay message="Processing transaction..." />}
       
@@ -472,7 +506,54 @@ export default function PresalePage({ initialSupply = 0 }) {
       <div className="rounded-xl overflow-hidden shadow-2xl mb-8 border border-purple-500/20">
         <ClientOnly>
           {isClient && isVideoPlayerValid && (
-            <VideoPlayer src="/TESOLA.mp4" />
+            <div className="video-wrapper-square relative mx-auto max-w-2xl mb-4">
+              {/* 중앙 정렬된 1:1 비디오 컨테이너 */}
+              <div className="video-container-square relative overflow-hidden rounded-xl shadow-2xl border border-purple-500/30">
+                <iframe 
+                  src="https://www.youtube.com/embed/AdkBE0cOxds?autoplay=1&mute=1&controls=1&showinfo=0&rel=0&loop=1&playlist=AdkBE0cOxds&modestbranding=1"
+                  className="w-full h-full aspect-square"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="TESOLA Promo Video"
+                ></iframe>
+              </div>
+              
+              {/* 구독 혜택 강조 & 영문 버튼 */}
+              <div className="flex flex-col items-center mt-4">
+                <div className="flex flex-wrap justify-center gap-3">
+                  <a 
+                    href="https://www.youtube.com/@TE-SOLA" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-xl neon-glow-purple"
+                    style={{transition: "all 0.3s ease"}}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                    </svg>
+                    Subscribe
+                  </a>
+                  
+                  <a 
+                    href="https://www.youtube.com/shorts/AdkBE0cOxds" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-xl neon-glow-purple"
+                    style={{transition: "all 0.3s ease"}}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Watch on YouTube
+                  </a>
+                </div>
+                
+                {/* 구독 혜택 텍스트 - 간결하고 세련되게 */}
+                <p className="text-sm text-gray-300 mt-2 text-center max-w-md">
+                  <span className="text-yellow-400">✨</span> Subscribe for exclusive events and early access to TESOLA updates
+                </p>
+              </div>
+            </div>
           )}
           {isClient && !isVideoPlayerValid && (
             <div className="w-full h-64 bg-gray-800 flex items-center justify-center text-gray-500">
@@ -519,12 +600,38 @@ export default function PresalePage({ initialSupply = 0 }) {
                       )}
                     </div>
                     
-                    {/* Whitelist status */}
+                    {/* Whitelist status & Tier information */}
                     {whitelistChecked && (
-                      <div className="mt-1 text-xs flex items-center">
-                        <span className={isWhitelisted ? 'text-green-400' : 'text-yellow-400'}>
-                          {isWhitelisted ? '✓ Whitelisted' : 'Public Presale'}
-                        </span>
+                      <div className="mt-2 space-y-1">
+                        {userTier ? (
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                              <span className={
+                                userTier.tier_id === 'LEGENDARY' ? 'text-yellow-500' :
+                                userTier.tier_id === 'EPIC' ? 'text-purple-400' :
+                                userTier.tier_id === 'RARE' ? 'text-blue-400' :
+                                userTier.tier_id === 'COMMON' ? 'text-green-400' :
+                                'text-gray-400'
+                              }>
+                                {isWhitelisted ? '✓' : '○'} {userTier.tier_name} Tier
+                              </span>
+                            </div>
+                            <div className="text-xs bg-gray-700 px-2 py-0.5 rounded">
+                              {userTier.exchange_rate.toLocaleString()} TESOLA/SOL
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-yellow-400">
+                            {isWhitelisted ? '✓ Whitelisted' : 'Public Presale'}
+                          </div>
+                        )}
+                        
+                        {maxTokens > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-blue-300">Max Purchase:</span>
+                            <span className="font-bold text-white">{maxTokens.toLocaleString()} TESOLA</span>
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -554,7 +661,9 @@ export default function PresalePage({ initialSupply = 0 }) {
                           onChange={(e) => {
                             const value = parseInt(e.target.value.replace(/\D/g, ''));
                             if (!isNaN(value) && value >= 1000) {
-                              setPurchaseAmount(Math.min(value, 10000000)); // Cap at 10 million tokens
+                              // Enforce tier-based max token limit if available
+                              const maxAllowed = maxTokens > 0 ? maxTokens : 10000000;
+                              setPurchaseAmount(Math.min(value, maxAllowed));
                             } else {
                               setPurchaseAmount(1000); // Minimum 1000 tokens
                             }
@@ -575,20 +684,39 @@ export default function PresalePage({ initialSupply = 0 }) {
                           { label: "20K", value: 20000 },
                           { label: "50K", value: 50000 },
                           { label: "100K", value: 100000 }
-                        ].map(option => (
+                        ].map(option => {
+                          // Disable button if option value exceeds tier limit
+                          const isDisabled = maxTokens > 0 && option.value > maxTokens;
+                          
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => !isDisabled && setPurchaseAmount(option.value)}
+                              className={`px-2 py-1 text-xs rounded-md ${
+                                purchaseAmount === option.value 
+                                  ? 'bg-purple-600 text-white' 
+                                  : isDisabled
+                                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                              disabled={isDisabled}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                        
+                        {/* MAX button */}
+                        {maxTokens > 0 && (
                           <button
-                            key={option.value}
                             type="button"
-                            onClick={() => setPurchaseAmount(option.value)}
-                            className={`px-2 py-1 text-xs rounded-md ${
-                              purchaseAmount === option.value 
-                                ? 'bg-purple-600 text-white' 
-                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
+                            onClick={() => setPurchaseAmount(maxTokens)}
+                            className={`px-2 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700`}
                           >
-                            {option.label}
+                            MAX
                           </button>
-                        ))}
+                        )}
                       </div>
                     </div>
                     
@@ -656,7 +784,10 @@ export default function PresalePage({ initialSupply = 0 }) {
                     
                     {/* Additional guidance */}
                     <p className="text-xs text-gray-400 text-center mt-2">
-                      Minimum purchase: 1,000 tokens. Maximum: 10,000,000 tokens.
+                      {maxTokens > 0 
+                        ? `Minimum purchase: 1,000 tokens. Maximum for your tier: ${maxTokens.toLocaleString()} tokens.`
+                        : "Minimum purchase: 1,000 tokens. Maximum: 10,000,000 tokens."
+                      }
                     </p>
                   </div>
                 )}
@@ -678,7 +809,85 @@ export default function PresalePage({ initialSupply = 0 }) {
         <div className="p-6">
           {/* Navigation tabs at the top of presale info box */}
           <div className="mb-6">
-            <NavTabs />
+            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-2 border border-purple-500/20 shadow-lg presale-tabs">
+              <div className="flex flex-wrap md:flex-nowrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: presale');
+                    setActiveTab('presale');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'presale' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Presale
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: tokenomics');
+                    setActiveTab('tokenomics');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'tokenomics' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Tokenomics
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: roadmap');
+                    setActiveTab('roadmap');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'roadmap' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Roadmap
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: utility');
+                    setActiveTab('utility');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'utility' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Utility
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: faq');
+                    setActiveTab('faq');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'faq' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  FAQ
+                </button>
+              </div>
+            </div>
           </div>
           
           {activeTab === 'presale' ? (
@@ -717,99 +926,12 @@ export default function PresalePage({ initialSupply = 0 }) {
           )}
         </div>
       </div>
-      
-      {/* Social Links */}
-      <div className="flex justify-center space-x-4 mb-8">
-        <a 
-          href="https://twitter.com/teslainsolana" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="bg-gray-800 hover:bg-gray-700 p-3 rounded-full transition-colors"
-          aria-label="Twitter"
-        >
-          <svg className="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
-          </svg>
-        </a>
-        <a 
-          href="https://t.me/tesola_community" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="bg-gray-800 hover:bg-gray-700 p-3 rounded-full transition-colors"
-          aria-label="Telegram"
-        >
-          <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm-3.5 8c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm7 0c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5z"></path>
-          </svg>
-        </a>
-        <a 
-          href="https://discord.gg/tesola" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="bg-gray-800 hover:bg-gray-700 p-3 rounded-full transition-colors"
-          aria-label="Discord"
-        >
-          <svg className="w-6 h-6 text-indigo-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"></path>
-          </svg>
-        </a>
-        <a 
-          href="https://github.com/tesola-project" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="bg-gray-800 hover:bg-gray-700 p-3 rounded-full transition-colors"
-          aria-label="GitHub"
-        >
-          <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"></path>
-          </svg>
-        </a>
-      </div>
+    
       
       {/* Additional Documents & Links */}
-      <div className="flex flex-wrap justify-center gap-3 mb-8">
-        <a 
-          href="/whitepaper.pdf" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Whitepaper
-        </a>
-        <a 
-          href="/audit-report.pdf" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          Audit Report
-        </a>
-        <a 
-          href="/team.html" 
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          Team
-        </a>
-      </div>
+
       
-      {/* Footer */}
-      <div className="border-t border-gray-800 pt-6 pb-10 text-center">
-        <p className="text-gray-400 text-sm mb-2">© 2025 TESOLA. All rights reserved.</p>
-        <div className="flex justify-center space-x-4 text-sm text-gray-500">
-          <button onClick={() => setShowTerms(true)} className="hover:text-gray-300">Terms & Conditions</button>
-          <Link href="/privacy" className="hover:text-gray-300">Privacy Policy</Link>
-          <Link href="/contact" className="hover:text-gray-300">Contact</Link>
-        </div>
-      </div>
+      {/* Documents section removed as they are now in Layout.jsx */}
     </div>
   );
 }

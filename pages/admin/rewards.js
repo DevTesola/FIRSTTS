@@ -1,43 +1,25 @@
 // pages/admin/rewards.js
 import { useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
-import { isAdminWallet } from '../../utils/adminAuth'; // Import admin auth utility
-
-// Dynamically load wallet button
-const WalletMultiButton = dynamic(
-  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
-  { ssr: false }
-);
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import AdminLayout from '../../components/admin/AdminLayout';
 
 export default function AdminRewards() {
   const { publicKey, connected } = useWallet();
-  const router = useRouter();
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processLoading, setProcessLoading] = useState({});
   
-  // Check admin privileges using the utility function instead of hardcoded array
-  const isAdmin = connected && publicKey && isAdminWallet(publicKey.toString());
-  
-  useEffect(() => {
-    // Redirect if not admin
-    if (connected && publicKey && !isAdmin) {
-      alert('You do not have permission to access this page.');
-      router.push('/');
-    }
-  }, [connected, publicKey, isAdmin, router]);
-  
   useEffect(() => {
     const fetchClaims = async () => {
-      if (!connected || !isAdmin) return;
+      if (!connected || !publicKey) return;
       
       setLoading(true);
       try {
         const res = await fetch('/api/admin/getPendingClaims', {
           headers: {
-            'X-Wallet-Address': publicKey.toString() // Add wallet address to header
+            'X-Wallet-Address': publicKey.toString()
           }
         });
         
@@ -47,18 +29,18 @@ export default function AdminRewards() {
         setClaims(data.claims || []);
       } catch (err) {
         console.error('Error fetching claims:', err);
-        alert('Failed to load pending claims');
+        toast.error('Failed to load pending claims');
       } finally {
         setLoading(false);
       }
     };
     
     fetchClaims();
-  }, [connected, isAdmin, publicKey]);
+  }, [connected, publicKey]);
   
   // Process claim handler
   const handleProcessClaim = async (claimId, action) => {
-    if (!connected || !isAdmin) return;
+    if (!connected || !publicKey) return;
     
     setProcessLoading(prev => ({ ...prev, [claimId]: true }));
     try {
@@ -66,7 +48,7 @@ export default function AdminRewards() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Wallet-Address': publicKey.toString() // Add wallet address to header
+          'X-Wallet-Address': publicKey.toString()
         },
         body: JSON.stringify({
           claimId,
@@ -80,57 +62,32 @@ export default function AdminRewards() {
       }
       
       // Success message
-      alert(`Claim ${action}d successfully!`);
+      toast.success(`Claim ${action}d successfully!`);
       
       // Remove claim from list
       setClaims(claims.filter(claim => claim.id !== claimId));
     } catch (err) {
       console.error(`Error ${action}ing claim:`, err);
-      alert(`Failed to ${action} claim: ${err.message}`);
+      toast.error(`Failed to ${action} claim: ${err.message}`);
     } finally {
       setProcessLoading(prev => ({ ...prev, [claimId]: false }));
     }
   };
   
-  if (!connected) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Admin Reward Management</h1>
-        <div className="text-center py-12">
-          <p className="text-xl mb-4">Please connect your admin wallet</p>
-          <div className="mt-4 flex justify-center">
-            <WalletMultiButton />
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  if (connected && !isAdmin) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Access Denied</h1>
-        <p className="text-xl text-center text-red-500">You do not have permission to access this page.</p>
-      </div>
-    );
-  }
-  
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Reward Management</h1>
-      
+    <AdminLayout title="Admin Reward Management">
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
         </div>
       ) : (
-        <>
+        <div className="bg-gray-800 rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Pending Reward Claims</h2>
           
           {claims.length === 0 ? (
             <p className="text-center py-6 text-gray-400">No pending claims</p>
           ) : (
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className="rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-700">
                 <thead className="bg-gray-700">
                   <tr>
@@ -176,8 +133,10 @@ export default function AdminRewards() {
               </table>
             </div>
           )}
-        </>
+        </div>
       )}
-    </div>
+      
+      <ToastContainer position="bottom-right" theme="dark" />
+    </AdminLayout>
   );
 }

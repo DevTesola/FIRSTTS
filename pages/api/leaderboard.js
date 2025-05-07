@@ -14,67 +14,158 @@ const supabaseAdmin = createClient(
 );
 
 export default async function handler(req, res) {
-  // Only allow GET requests
+  // Add CORS headers for better compatibility
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle OPTIONS requests (preflight)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  // Only allow GET requests for the actual API
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', success: false });
   }
 
   try {
-    // Get query parameters
+    // Get query parameters with enhanced validation
     const { sort = 'score', page = 1, limit = 25 } = req.query;
-    const pageNumber = parseInt(page, 10) || 1;
-    const pageSize = parseInt(limit, 10) || 25;
+    const pageNumber = Math.max(1, parseInt(page, 10) || 1); // Minimum page 1
+    const pageSize = Math.min(100, Math.max(5, parseInt(limit, 10) || 25)); // Between 5-100
     const offset = (pageNumber - 1) * pageSize;
     
     // Get user wallet address if provided
     const { wallet } = req.query;
     
-    // Log request parameters
-    console.log('Leaderboard API request:', { sort, page: pageNumber, limit: pageSize, wallet });
+    // Log request parameters with a tag for easier log filtering
+    console.log('[LEADERBOARD] API request:', { sort, page: pageNumber, limit: pageSize, wallet });
     
     // In a production environment, fetch data from database
-    // For this demo, generate mock data
-    const mockData = generateMockLeaderboardData();
+    // For this demo, generate mock data - with error handling
+    let mockData;
+    try {
+      mockData = generateMockLeaderboardData();
+    } catch (mockError) {
+      console.error('[LEADERBOARD] Error generating mock data:', mockError);
+      mockData = []; // Fallback to empty array on error
+    }
     
-    // Sort data based on sort parameter
-    const sortedData = sortLeaderboardData(mockData, sort);
+    // Sort data - with basic validation
+    const validSortOptions = ['score', 'tokens', 'duration'];
+    const validatedSort = validSortOptions.includes(sort) ? sort : 'score';
+    const sortedData = sortLeaderboardData(mockData, validatedSort);
+    
+    // Extract paginated slice of data
+    const paginatedData = sortedData.slice(offset, offset + pageSize);
     
     // Calculate user's rank if wallet provided
     let userRank = null;
     if (wallet) {
-      // In production, fetch user data from database
-      // For demo, randomly place user in ranks 50-100
-      const userRankNum = Math.floor(Math.random() * 50) + 50;
-      userRank = {
-        rank: userRankNum,
-        walletAddress: wallet,
-        tokenAmount: Math.floor(100000 * Math.pow(0.95, userRankNum)),
-        holdingDays: Math.floor(Math.random() * 365) + 30,
-        score: 0 // Will calculate below
-      };
-      
-      // Calculate score
-      userRank.score = Math.floor(userRank.tokenAmount * (1 + (userRank.holdingDays / 30) * 0.1));
-      userRank.hasEvolvedNFT = userRank.rank <= 100;
+      try {
+        // In production, fetch user data from database
+        // For demo, consistently generate a user's rank based on wallet address hash
+        const getUserRank = (address) => {
+          // Generate a consistent hash for the wallet address
+          const hash = address.split('').reduce((acc, char) => {
+            return acc + char.charCodeAt(0);
+          }, 0);
+          
+          // Use hash to determine a rank between 1-150 (making it sometimes in top 100)
+          return Math.max(1, Math.min(150, (hash % 150) + 1));
+        };
+        
+        const userRankNum = getUserRank(wallet);
+        
+        // Sample IPFS hashes for user NFTs
+        const sampleUserIpfsHashes = [
+          'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
+          'QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG',
+          'QmSsYRx3LpDAb1GZQm7zZ1AuHZjfbPkD6J7s9r41xu1mf8'
+        ];
+        
+        // Generate a deterministic IPFS hash based on wallet
+        const walletHash = wallet.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const userIpfsHash = sampleUserIpfsHashes[walletHash % sampleUserIpfsHashes.length];
+        
+        userRank = {
+          rank: userRankNum,
+          walletAddress: wallet,
+          tokenAmount: Math.floor(100000 * Math.pow(0.96, userRankNum)),
+          holdingDays: Math.floor((Math.abs(wallet.charCodeAt(0) * 37) % 365) + 30),
+          score: 0, // Will calculate below
+          // Add image fields
+          image_url: `ipfs://${userIpfsHash}/image.png`,
+          nft_image: undefined, // Alternative source
+          ipfs_hash: userIpfsHash
+        };
+        
+        // Calculate score with same formula used in generateMockLeaderboardData
+        userRank.score = Math.floor(userRank.tokenAmount * (1 + (userRank.holdingDays / 30) * 0.1));
+        userRank.hasEvolvedNFT = userRank.rank <= 100;
+      } catch (userRankError) {
+        console.error('[LEADERBOARD] Error calculating user rank:', userRankError);
+        // Provide default user rank on error
+        userRank = {
+          rank: 101,
+          walletAddress: wallet,
+          tokenAmount: 10000,
+          holdingDays: 30,
+          score: 11000,
+          hasEvolvedNFT: false,
+          // Add default image fields
+          image_url: `ipfs://QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX/image.png`,
+          nft_image: undefined,
+          ipfs_hash: 'QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX'
+        };
+      }
     }
     
-    // Return data
+    // Add performance and caching headers
+    res.setHeader('Cache-Control', 'public, max-age=60'); // Cache for 1 minute
+    
+    // Return data with success flag for consistent API responses
     res.status(200).json({
-      leaderboard: sortedData,
+      success: true,
+      leaderboard: paginatedData, // Only return the paginated slice
       total: sortedData.length,
       page: pageNumber,
       pages: Math.ceil(sortedData.length / pageSize),
-      userRank
+      userRank,
+      // Add pagination links for convenience
+      links: {
+        first: pageNumber > 1 ? `/api/leaderboard?sort=${validatedSort}&page=1&limit=${pageSize}` : null,
+        prev: pageNumber > 1 ? `/api/leaderboard?sort=${validatedSort}&page=${pageNumber-1}&limit=${pageSize}` : null,
+        next: pageNumber < Math.ceil(sortedData.length / pageSize) ? `/api/leaderboard?sort=${validatedSort}&page=${pageNumber+1}&limit=${pageSize}` : null,
+        last: pageNumber < Math.ceil(sortedData.length / pageSize) ? `/api/leaderboard?sort=${validatedSort}&page=${Math.ceil(sortedData.length / pageSize)}&limit=${pageSize}` : null,
+      }
     });
     
   } catch (error) {
-    console.error('Error in leaderboard API:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard data' });
+    console.error('[LEADERBOARD] Unhandled error in API:', error);
+    // Return error with consistent error response format
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch leaderboard data',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 }
 
 // Function to generate mock leaderboard data
 function generateMockLeaderboardData() {
+  // Sample IPFS hashes for demonstration - usually these would be real NFT metadata
+  const sampleIpfsHashes = [
+    'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
+    'QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG',
+    'QmSsYRx3LpDAb1GZQm7zZ1AuHZjfbPkD6J7s9r41xu1mf8',
+    'QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX',
+    'QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ',
+    'Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu',
+    'QmYA2fn8cMbVWo4v95RwcwJVyQsNtnEwHerfWR8UNtEwoE'
+  ];
+
   // Create 100 mock entries
   const mockData = Array.from({ length: 100 }, (_, i) => {
     const rank = i + 1;
@@ -88,13 +179,43 @@ function generateMockLeaderboardData() {
     // For top 10, simulate evolved NFTs
     const hasEvolvedNFT = rank <= 10;
     
+    // Generate a deterministic IPFS hash based on rank
+    const ipfsHash = sampleIpfsHashes[rank % sampleIpfsHashes.length];
+    
+    // Create image URLs with different formats to simulate real data variety
+    let imageUrl;
+    const imageType = rank % 4; // Randomly choose different image source types
+    
+    switch(imageType) {
+      case 0:
+        // IPFS URL format
+        imageUrl = `ipfs://${ipfsHash}/image.png`;
+        break;
+      case 1:
+        // Gateway URL format
+        imageUrl = `https://cloudflare-ipfs.com/ipfs/${ipfsHash}/image.png`;
+        break;
+      case 2:
+        // Direct URL format
+        imageUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsHash}/image.png`;
+        break;
+      case 3:
+        // Leave undefined to test fallback - about 25% of entries
+        imageUrl = undefined;
+        break;
+    }
+    
     return {
       rank,
       walletAddress: `${randomWalletString(4)}...${randomWalletString(4)}`,
       tokenAmount,
       holdingDays,
       score,
-      hasEvolvedNFT
+      hasEvolvedNFT,
+      // Add image fields that match our expected structure:
+      image_url: imageUrl,
+      nft_image: imageUrl ? undefined : "loading:indicator", // Use loading indicator instead of local image
+      ipfs_hash: ipfsHash
     };
   });
   

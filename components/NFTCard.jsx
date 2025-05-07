@@ -1,49 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
-import ProgressiveImage from "./ProgressiveImage";
+import React, { useState, useEffect, memo, useRef } from "react";
+import { 
+  processImageUrl, 
+  createPlaceholder, 
+  getOptimalImageSize, 
+  getNftPreviewImage,
+  extractIPFSCid, 
+  getGatewayUrls, 
+  isIPFSUrl,
+  getDirectGatewayUrl,
+  fixIPFSUrl
+} from "../utils/mediaUtils";
+import { getNFTImageUrl, getNFTName, getNFTTier } from "../utils/nftImageUtils";
+import EnhancedProgressiveImage from "./EnhancedProgressiveImage";
 
-// Set your custom IPFS gateway
-const CUSTOM_IPFS_GATEWAY = process.env.NEXT_PUBLIC_CUSTOM_IPFS_GATEWAY || "https://tesola.mypinata.cloud";
+// Video file extensions for type detection
+const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.m4v'];
 
 /**
- * NFT card component with custom IPFS gateway support
+ * NFT card component with optimized image loading and IPFS gateway support
  * 
  * @param {Object} nft - NFT data object
  * @param {function} onClick - Click event handler
  * @param {boolean} showActions - Show action buttons (optional)
  */
-export default function NFTCard({ nft, onClick, showActions = false }) {
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-
-  // Process image URL to use custom IPFS gateway
-  const processImageUrl = (url) => {
-    if (!url) return "";
-    
-    // Handle IPFS URLs with your custom gateway
-    if (url.startsWith('ipfs://')) {
-      return `${CUSTOM_IPFS_GATEWAY}/ipfs/${url.replace('ipfs://', '')}`;
-    }
-    
-    // Replace any other IPFS gateways with your custom one
-    const knownGateways = [
-      'https://ipfs.io/ipfs/',
-      'https://cloudflare-ipfs.com/ipfs/',
-      'https://gateway.pinata.cloud/ipfs/', 
-      'https://ipfs.infura.io/ipfs/',
-      'https://dweb.link/ipfs/'
-    ];
-    
-    for (const gateway of knownGateways) {
-      if (url.includes(gateway)) {
-        const cid = url.split(gateway)[1];
-        return `${CUSTOM_IPFS_GATEWAY}/ipfs/${cid}`;
-      }
-    }
-    
-    return url;
-  };
-
+const NFTCard = ({ nft, onClick, showActions = false }) => {
+  const [loadState, setLoadState] = useState({
+    loading: true,
+    error: false,
+    url: ''
+  });
+  const containerRef = useRef(null);
+  
   // Extract needed info from NFT data
   const { image, name, mint, tier = "Unknown" } = nft;
   
@@ -70,36 +59,121 @@ export default function NFTCard({ nft, onClick, showActions = false }) {
   // Apply padding to display name
   const displayName = formatNftId(formattedName);
   
-  // Process image URL to use custom gateway
-  const processedImageUrl = image ? processImageUrl(image) : "";
+  // Determine if image is video based on extension
+  const isVideo = image && VIDEO_EXTENSIONS.some(ext => image.toLowerCase().endsWith(ext));
+  
+  // Generate placeholder for failed images
+  const placeholderImage = createPlaceholder(displayName);
+
+  // Simplified loading logic - only handling videos
+  useEffect(() => {
+    if (!image) {
+      // No image provided
+      setLoadState({
+        loading: false,
+        error: true,
+        url: placeholderImage 
+      });
+      return;
+    }
+    
+    // For videos, optimize the loading
+    if (isVideo) {
+      // Process URL but load directly
+      const videoUrl = processImageUrl(image);
+      setLoadState({
+        loading: false,
+        error: false,
+        url: videoUrl
+      });
+      return;
+    }
+    
+    // Images are handled by EnhancedProgressiveImage component
+    setLoadState({
+      loading: false,
+      error: false,
+      url: '' // Will be handled by the EnhancedProgressiveImage
+    });
+  }, [image, displayName, placeholderImage, isVideo]);
+
+  // Handle image error with fallback
+  const handleImageError = () => {
+    setLoadState({
+      loading: false,
+      error: true,
+      url: placeholderImage
+    });
+  };
 
   return (
     <div 
+      ref={containerRef}
       className={`border border-purple-500/70 rounded-lg overflow-hidden 
                   hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:border-purple-300 
                   transition-all cursor-pointer transform hover:scale-[1.03] 
                   duration-300 ease-in-out bg-gray-900/50 backdrop-blur-sm 
-                  animate-fade-in ${isImageLoaded ? 'loaded' : 'loading'}`}
+                  animate-fade-in ${loadState.loading ? 'loading' : 'loaded'}`}
       onClick={onClick}
     >
       <div className="relative aspect-square group">
         {/* Glow effect on hover */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500
                         bg-gradient-to-r from-purple-500/10 to-pink-500/10"></div>
-                        
-        <ProgressiveImage 
-          src={processedImageUrl} 
-          alt={displayName}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
-          onLoad={() => setIsImageLoaded(true)}
-          onError={() => setIsImageLoaded(true)}
-          placeholder="/placeholder-nft.jpg"
-        />
         
-        {/* Shimmer effect while loading */}
-        {!isImageLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-800/0 via-gray-800/50 to-gray-800/0 animate-shimmer"></div>
+        {/* Media rendering for video or image */}
+        {isVideo ? (
+          // Video media
+          <video
+            src={loadState.url}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+            autoPlay
+            muted
+            loop
+            playsInline
+            onLoadedData={() => setLoadState(prev => ({ ...prev, loading: false }))}
+            onError={handleImageError}
+            poster={placeholderImage}
+            loading="lazy"
+          />
+        ) : (
+          // Image media - Using EnhancedProgressiveImage for performance
+          <div className="w-full h-full">
+            <EnhancedProgressiveImage
+              src={getNFTImageUrl({
+                id: mint || displayName,
+                name: displayName,
+                image: image,
+                __source: nft.__source || 'NFTCard'  // Pass through source context if available
+              })}
+              alt={displayName}
+              placeholder={placeholderImage}
+              className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.05]"
+              onLoad={() => setLoadState(prev => ({ ...prev, loading: false }))}
+              onError={(e) => {
+                // For staking context, use loading indicator instead of local preview
+                // In staking context, don't use local fallbacks
+                if (nft.__source?.includes('staking') || 
+                    nft.__source?.includes('Staking') ||
+                    nft.__source?.includes('Dashboard') ||
+                    nft.__source?.includes('dashboard') ||
+                    nft.__source?.includes('Leaderboard')) {
+                  // Return an IPFS URL that will be handled by our component system
+                  return `ipfs://placeholder/${Math.random().toString(36).substring(2, 10)}`;
+                }
+                // Try local preview if remote image fails (for non-staking contexts)
+                const localPreview = getNftPreviewImage(displayName);
+                return localPreview;
+              }}
+              __source={nft.__source || 'NFTCard'}  // Also pass source to EnhancedProgressiveImage
+              lazyLoad={true}
+              blur={true}
+              highQuality={false}
+            />
+          </div>
         )}
+        
+        {/* EnhancedProgressiveImage handles loading internally */}
         
         {/* NFT info overlay with animated reveal */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-4
@@ -132,7 +206,7 @@ export default function NFTCard({ nft, onClick, showActions = false }) {
         </div>
       </div>
       
-      {/* Action buttons with enhanced styling and animations */}
+      {/* Action buttons */}
       {showActions && (
         <div className="p-3 bg-gradient-to-r from-gray-800/90 to-gray-900/90 flex justify-between items-center gap-2 backdrop-blur-sm">
           <button 
@@ -159,7 +233,6 @@ export default function NFTCard({ nft, onClick, showActions = false }) {
                       hover:scale-105 transform border border-blue-500/30 hover:border-blue-400/50"
             onClick={(e) => {
               e.stopPropagation(); // Prevent card click event
-              // Implement tweet sharing (using existing logic)
               alert('Tweet sharing will be implemented here');
             }}
           >
@@ -174,4 +247,7 @@ export default function NFTCard({ nft, onClick, showActions = false }) {
       )}
     </div>
   );
-}
+};
+
+// Use memo to prevent unnecessary re-renders
+export default memo(NFTCard);

@@ -1,10 +1,13 @@
-// components/staking/NFTGallery.jsx - UI 개선 버전
+// components/staking/NFTGallery.jsx
 import React, { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { GlassButton, PrimaryButton, SecondaryButton } from "../Buttons";
+import { processImageUrl, createPlaceholder, getNftPreviewImage } from "../../utils/mediaUtils";
+import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from "../../utils/nftImageUtils";
+import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
 
 /**
- * NFTGallery Component - UI 개선 및 사용자 경험 향상
+ * NFTGallery Component
  * Displays user's NFTs and allows for selection for staking
  */
 const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
@@ -15,7 +18,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
   const [hoveredNFT, setHoveredNFT] = useState(null);
   const { publicKey, connected } = useWallet();
   
-  // 컴포넌트 마운트 시 스테이킹 통계 가져오기
+  // Fetch staking statistics when component mounts
   useEffect(() => {
     const fetchStats = async () => {
       if (!connected || !publicKey) return;
@@ -36,7 +39,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
     fetchStats();
   }, [connected, publicKey]);
   
-  // 컴포넌트가 nfts 받을 때마다 총 NFT 개수 업데이트
+  // Update total NFT count whenever nfts prop changes
   useEffect(() => {
     setStats(prev => ({ ...prev, total: nfts.length }));
   }, [nfts]);
@@ -111,11 +114,8 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
     return String(id).padStart(4, '0');
   };
   
-  // Handle image error
-  const handleImageError = (e) => {
-    console.error("Image failed to load:", e.target.src);
-    e.target.src = "/placeholder-nft.jpg";
-  };
+  // This function is no longer used since we're handling errors inline
+  // for more consistent behavior and to prevent caching issues
   
   // Render loading skeleton
   const renderSkeleton = () => (
@@ -389,18 +389,35 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                 >
                   {/* NFT Image with hover effect */}
                   <div className="aspect-square w-full bg-gray-800 relative">
-                    <img 
-                      src={nft.image} 
-                      alt={nft.name || `NFT #${nft.id}`}
-                      className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-110"
-                      onError={handleImageError}
-                      loading="lazy"
-                    />
+                    <div className="w-full h-full relative">
+                      {/* 유틸리티 함수를 사용한 이미지 로딩 - /my-collection 페이지와 동일한 패턴 */}
+                      <EnhancedProgressiveImage
+                        src={getNFTImageUrl({
+                          ...nft,
+                          id: nft.id || nft.mint,
+                          mint: nft.mint,
+                          image: nft.image,
+                          image_url: nft.image_url,
+                          ipfs_hash: nft.ipfs_hash,
+                          metadata: nft.metadata,
+                          __source: 'NFTGallery-card',
+                          _cacheBust: Date.now() // 캐시 버스팅을 위한 타임스탬프
+                        })}
+                        alt={getNFTName(nft)}
+                        placeholder={createPlaceholder(getNFTName(nft))}
+                        className="w-full h-full"
+                        lazyLoad={true}
+                        priority={true}
+                        highQuality={true}
+                        preferRemote={true}
+                        useCache={false} // 캐싱 비활성화
+                      />
+                    </div>
                     
                     {/* Tier badge */}
                     <div className="absolute top-2 right-2 z-10">
-                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getTierBadge(nft)}`}>
-                        {tier}
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getTierStyles(nft).bg}`}>
+                        {getNFTTier(nft)}
                       </span>
                     </div>
                     
@@ -442,7 +459,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
         )}
       </div>
       
-      {/* Info Banner - NFT 목록이 비어있지 않고 Staked NFT가 있을 때 표시 */}
+      {/* Info Banner - Displayed when NFT list is not empty and user has staked NFTs */}
       {stats.staked > 0 && filteredNFTs.length > 0 && (
         <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4 text-blue-300 flex items-start">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">

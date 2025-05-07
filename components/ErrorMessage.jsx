@@ -137,7 +137,7 @@ export default function ErrorMessage({
   };
 
   return (
-    <div className={`rounded-lg ${bgColor} backdrop-blur-md border ${borderColor} p-4 relative animate-fade-in shadow-lg ${className}`}>
+    <div className={`rounded-lg ${bgColor} backdrop-blur-md border-2 ${borderColor} p-4 relative animate-fade-in shadow-xl ${className}`} style={{ borderWidth: '2px' }}>
       {/* 자동 닫기 진행 표시줄 */}
       {autoClose && onDismiss && (
         <div className="absolute top-0 left-0 right-0">

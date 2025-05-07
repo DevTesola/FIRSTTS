@@ -16,7 +16,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io';
+const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
 const RESOURCE_CID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
 
 export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPublicKey) {
@@ -62,11 +62,11 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
       throw new Error(`Payment transaction failed: ${JSON.stringify(txInfo.meta.err)}`);
     }
     
-    // 3. NFT 민팅
+    // 3. NFT Minting
     const filename = String(mintIndex + 1).padStart(4, '0');
     const metadataUrl = `${IPFS_GATEWAY}/ipfs/${RESOURCE_CID}/${filename}.json`;
     
-    console.log('Minting NFT...');
+    console.log('Minting NFT with metadata URL:', metadataUrl);
     const { nft: createdNft, response: createResponse } = await metaplex.nfts().create({
       name: `SOLARA GEN:0 #${mintIndex + 1}`,
       symbol: 'SLR',

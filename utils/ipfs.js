@@ -3,15 +3,15 @@
  * IPFS 관련 유틸리티 함수들
  */
 
-// Next.js 애플리케이션의 기본 URL (기본값은 개발 서버)
+// Base URL for the Next.js application (defaults to development server)
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 /**
- * IPFS URL을 내부 프록시 URL로 변환합니다.
- * 이렇게 하면 모든 IPFS 요청이 동일한 출처(same origin)에서 이루어져 CORS 문제가 해결됩니다.
+ * Converts IPFS URLs to internal proxy URLs.
+ * This ensures all IPFS requests come from the same origin, solving CORS issues.
  * 
- * @param {string} url - 원본 IPFS URL
- * @returns {string} - 프록시된 URL
+ * @param {string} url - Original IPFS URL
+ * @returns {string} - Proxied URL
  */
 export function getProxiedIpfsUrl(url) {
   if (!url) return '';
@@ -27,7 +27,6 @@ export function getProxiedIpfsUrl(url) {
     'https://ipfs.io/ipfs/',
     'https://cloudflare-ipfs.com/ipfs/',
     'https://gateway.pinata.cloud/ipfs/', 
-    'https://ipfs.infura.io/ipfs/',
     'https://dweb.link/ipfs/',
     'https://tesola.mypinata.cloud/ipfs/'  // 개인 게이트웨이도 포함
   ];
@@ -44,10 +43,10 @@ export function getProxiedIpfsUrl(url) {
 }
 
 /**
- * NFT 메타데이터 객체의 이미지 URL을 프록시된 URL로 업데이트합니다.
+ * Updates image URLs in NFT metadata object to use proxied URLs.
  * 
- * @param {Object} nft - NFT 메타데이터 객체
- * @returns {Object} - 이미지 URL이 업데이트된 NFT 메타데이터 객체
+ * @param {Object} nft - NFT metadata object
+ * @returns {Object} - NFT metadata object with updated image URLs
  */
 export function processNftMetadata(nft) {
   if (!nft) return nft;
@@ -71,10 +70,10 @@ export function processNftMetadata(nft) {
 }
 
 /**
- * NFT 메타데이터 배열을 처리합니다.
+ * Processes an array of NFT metadata objects.
  * 
- * @param {Array} nfts - NFT 메타데이터 객체 배열
- * @returns {Array} - 처리된 NFT 메타데이터 객체 배열
+ * @param {Array} nfts - Array of NFT metadata objects
+ * @returns {Array} - Processed array of NFT metadata objects
  */
 export function processNftArray(nfts) {
   if (!Array.isArray(nfts)) return nfts;

@@ -1,11 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState, createContext, useContext } from "react";
+import { useEffect, useState, createContext, useContext, useRef } from "react";
 import Head from "next/head";
 import "../styles/globals.css";
-import "../styles/wallet.css"; // 월렛 커스텀 스타일
-import "../styles/mobile-responsive.css"; // 모바일 최적화 스타일
+import "../styles/wallet.css"; // Wallet custom styles
+import "../styles/mobile-responsive.css"; // Mobile optimization styles
 import "../styles/community.css"; // Community page styles
 import { AnalyticsProvider, PageViewTracker } from "../components/AnalyticsProvider";
 import ErrorBoundary from "../components/ErrorBoundary";
@@ -25,7 +25,7 @@ export const useAppState = () => useContext(AppStateContext);
 // Import the fallback component
 import FallbackLoading from "../components/FallbackLoading";
 
-// 오프라인 감지 컴포넌트 동적 로드
+// Dynamically load offline detector component
 const OfflineDetector = dynamic(() => import("../components/OfflineDetector").catch(err => {
   console.error("Failed to load OfflineDetector:", err);
   return () => null; // Return empty component on error
@@ -34,7 +34,7 @@ const OfflineDetector = dynamic(() => import("../components/OfflineDetector").ca
   loading: () => null // No loading state for this component
 });
 
-// 월렛 래퍼 동적 로드
+// Dynamically load wallet wrapper
 const WalletWrapper = dynamic(() => 
   import("../components/WalletWrapper")
     .catch(err => {
@@ -48,6 +48,9 @@ const WalletWrapper = dynamic(() =>
   }
 );
 
+// Custom cursor is now implemented in /public/cursor.js
+// It's loaded directly from _document.js
+
 export default function MyApp({ Component, pageProps }) {
   const [mounted, setMounted] = useState(false);
   const [analyticsDisabled, setAnalyticsDisabled] = useState(false);
@@ -57,15 +60,22 @@ export default function MyApp({ Component, pageProps }) {
   });
   const [globalError, setGlobalError] = useState(null);
 
-  // 클라이언트 측 마운팅 처리
+  // Client-side mounting handling
   useEffect(() => {
     setMounted(true);
     
-    // 분석 비활성화 설정 확인
-    const disableAnalytics = localStorage.getItem('tesola_analytics_disabled') === 'true';
-    setAnalyticsDisabled(disableAnalytics);
+    // Removed font blocking code - we now use direct Google Fonts URLs
+    if (typeof window !== 'undefined') {
+      console.log('Application initialized');
+    }
     
-    // 성능 측정
+    // Check analytics disable setting
+    if (typeof window !== 'undefined') {
+      const disableAnalytics = localStorage.getItem('tesola_analytics_disabled') === 'true';
+      setAnalyticsDisabled(disableAnalytics);
+    }
+    
+    // Performance measurement
     if (typeof window !== 'undefined' && 'performance' in window) {
       const navigationStart = performance.timing ? performance.timing.navigationStart : 0;
       const now = performance.now ? performance.now() : 0;
@@ -74,7 +84,7 @@ export default function MyApp({ Component, pageProps }) {
       console.log(`Page loaded in ${pageLoadTime.toFixed(2)}ms`);
     }
     
-    // 오류 처리를 위한 전역 이벤트 리스너 설정
+    // Setup global event listener for error handling
     const handleUnhandledError = (event) => {
       console.error('Unhandled error:', event.error || event.reason || 'Unknown error');
       setGlobalError({
@@ -82,25 +92,26 @@ export default function MyApp({ Component, pageProps }) {
         details: event.error?.message || event.reason?.message || 'Application error' 
       });
       
-      // 필요한 경우 오류 분석 서비스에 오류 보고
-      // ...
-      
-      // 기본 동작 방지 (브라우저 오류 콘솔에는 계속 표시됨)
+      // Prevent default behavior (error will still be shown in browser console)
       event.preventDefault();
     };
     
-    // 전역 오류 이벤트 리스너 등록
-    window.addEventListener('error', handleUnhandledError);
-    window.addEventListener('unhandledrejection', handleUnhandledError);
+    // Register global error event listeners
+    if (typeof window !== 'undefined') {
+      window.addEventListener('error', handleUnhandledError);
+      window.addEventListener('unhandledrejection', handleUnhandledError);
+    }
     
     return () => {
-      // 전역 오류 이벤트 리스너 제거
-      window.removeEventListener('error', handleUnhandledError);
-      window.removeEventListener('unhandledrejection', handleUnhandledError);
+      // Remove global error event listeners
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('error', handleUnhandledError);
+        window.removeEventListener('unhandledrejection', handleUnhandledError);
+      }
     };
   }, []);
   
-  // 네트워크 상태 변경 핸들러
+  // Network status change handler
   const handleNetworkStatusChange = (status) => {
     setNetworkStatus({
       isOffline: status.isOffline,
@@ -108,12 +119,12 @@ export default function MyApp({ Component, pageProps }) {
     });
   };
   
-  // 전역 오류 지우기
+  // Clear global error
   const clearGlobalError = () => {
     setGlobalError(null);
   };
 
-  // 앱 상태 컨텍스트 값
+  // App state context value
   const appStateValue = {
     isOffline: networkStatus.isOffline,
     hasSlowConnection: networkStatus.hasSlowConnection,
@@ -122,17 +133,17 @@ export default function MyApp({ Component, pageProps }) {
     clearGlobalError
   };
 
-  // 클라이언트 측 마운팅 전에는 스켈레톤 로딩 상태 표시
+  // Show skeleton loading state before client-side mounting
   if (!mounted) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-screen bg-black text-white">
+      <div className="flex flex-col justify-center items-center min-h-screen bg-black text-white font-orbitron">
         <div className="animate-pulse text-center">
           <div className="relative w-24 h-24 mx-auto mb-4">
             <div className="absolute top-0 left-0 right-0 bottom-0 rounded-full border-4 border-t-purple-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
             <div className="absolute top-2 left-2 right-2 bottom-2 rounded-full border-4 border-t-transparent border-r-purple-400 border-b-transparent border-l-transparent animate-spin"></div>
             <div className="absolute top-4 left-4 right-4 bottom-4 rounded-full border-4 border-t-transparent border-r-transparent border-b-purple-300 border-l-transparent animate-spin"></div>
           </div>
-          <p className="text-lg">Initializing SOLARA application...</p>
+          <p className="text-lg font-orbitron">Initializing SOLARA application...</p>
         </div>
       </div>
     );
@@ -141,26 +152,28 @@ export default function MyApp({ Component, pageProps }) {
   return (
     <AppStateContext.Provider value={appStateValue}>
       <Head>
-        {/* 모바일 최적화 메타 태그 */}
+        {/* Mobile optimization meta tags */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta name="theme-color" content="#000000" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
-        {/* PWA 지원 메타 태그 */}
+        {/* PWA support meta tags */}
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        
+        {/* Only keeping essential meta tags - no font preloads */}
+        <link rel="preconnect" href="data:" />
+        <link rel="dns-prefetch" href="data:" />
       </Head>
       
       <ErrorBoundary>
         <AnalyticsProvider disabled={true}>
           <NotificationProvider>
-            <PageViewTracker />
             <WalletWrapper>
-              {/* 개선된 오프라인 감지기 */}
               <OfflineDetector onStatusChange={handleNetworkStatusChange} />
-              
-              {/* 전역 오류 표시 */}
+              <PageViewTracker />
+              {/* Display global error */}
               {globalError && (
                 <div className="fixed top-4 left-0 right-0 z-50 mx-auto w-full max-w-md px-4 animate-fade-down">
                   <div className="bg-gradient-to-r from-red-900/90 to-red-800/90 backdrop-blur-lg border border-red-500 text-white p-4 rounded-lg shadow-xl animate-pulse-slow">

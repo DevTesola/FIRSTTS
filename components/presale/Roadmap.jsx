@@ -91,7 +91,7 @@ const Roadmap = () => {
   ];
 
   return (
-    <div className="bg-gray-800/40 rounded-xl p-6 border border-purple-500/20 shadow-xl">
+    <div className="bg-gray-800/40 rounded-xl p-6 border border-purple-500/20 shadow-xl font-orbitron">
       <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">
         TESOLA Roadmap
       </h2>

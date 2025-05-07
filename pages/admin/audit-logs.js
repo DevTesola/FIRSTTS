@@ -1,21 +1,14 @@
 // pages/admin/audit-logs.js
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { isAdminWallet } from '../../utils/adminAuth';
 import { getAdminActionTypes, detectSuspiciousActivity } from '../../utils/adminLogger';
-import dynamic from 'next/dynamic';
-
-// Dynamically load wallet button
-const WalletMultiButton = dynamic(
-  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
-  { ssr: false }
-);
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import AdminLayout from '../../components/admin/AdminLayout';
 
 export default function AdminAuditLogs() {
   const { publicKey, connected } = useWallet();
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState([]);
   const [pagination, setPagination] = useState({
@@ -34,26 +27,9 @@ export default function AdminAuditLogs() {
   });
   const [suspiciousActivity, setSuspiciousActivity] = useState(null);
   
-  // Check if user is admin
-  const isAdmin = connected && publicKey && isAdminWallet(publicKey.toString());
-  
-  // Redirect if not admin
-  useEffect(() => {
-    if (connected && publicKey) {
-      console.log('Connected wallet:', publicKey.toString());
-      console.log('Is admin?', isAdmin);
-      console.log('Admin wallets:', process.env.ADMIN_WALLET_ADDRESSES);
-      
-      if (!isAdmin) {
-        alert('You do not have permission to access this page. Your wallet: ' + publicKey.toString());
-        router.push('/');
-      }
-    }
-  }, [connected, publicKey, isAdmin, router]);
-  
   // Fetch logs based on filters and pagination
   const fetchLogs = async () => {
-    if (!connected || !isAdmin) return;
+    if (!connected || !publicKey) return;
     
     setLoading(true);
     try {
@@ -82,11 +58,16 @@ export default function AdminAuditLogs() {
       }
       
       const data = await res.json();
-      setLogs(data.logs);
-      setPagination(data.pagination);
+      setLogs(data.logs || []);
+      setPagination(data.pagination || {
+        total: 0,
+        page: 1,
+        limit: 20,
+        pages: 0
+      });
     } catch (err) {
       console.error('Error fetching audit logs:', err);
-      alert('Failed to load audit logs. Please try again.');
+      toast.error('Failed to load audit logs. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -94,24 +75,28 @@ export default function AdminAuditLogs() {
   
   // Initial fetch
   useEffect(() => {
-    if (connected && isAdmin) {
+    if (connected && publicKey) {
       fetchLogs();
       
       // Also check for suspicious activity
       const checkSuspiciousActivity = async () => {
-        const result = await detectSuspiciousActivity({
-          timeWindowMinutes: 60,
-          actionThreshold: 30
-        });
-        
-        if (result && !result.error) {
-          setSuspiciousActivity(result);
+        try {
+          const result = await detectSuspiciousActivity({
+            timeWindowMinutes: 60,
+            actionThreshold: 30
+          });
+          
+          if (result && !result.error) {
+            setSuspiciousActivity(result);
+          }
+        } catch (error) {
+          console.error('Error checking suspicious activity:', error);
         }
       };
       
       checkSuspiciousActivity();
     }
-  }, [connected, isAdmin, publicKey]);
+  }, [connected, publicKey]);
   
   // Handle filter changes
   const handleFilterChange = (e) => {
@@ -162,7 +147,7 @@ export default function AdminAuditLogs() {
       page: newPage
     }));
     
-    // This will trigger the useEffect to fetch new data
+    fetchLogs();
   };
   
   // Format datetime
@@ -189,43 +174,11 @@ export default function AdminAuditLogs() {
     }
   };
   
-  // Not connected
-  if (!connected) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <Head>
-          <title>Admin Audit Logs | SOLARA</title>
-        </Head>
-        <h1 className="text-3xl font-bold mb-6">Admin Audit Logs</h1>
-        <div className="text-center py-12">
-          <p className="text-xl mb-4">Please connect your admin wallet</p>
-          <div className="mt-4 flex justify-center">
-            <WalletMultiButton />
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Connected but not admin
-  if (connected && !isAdmin) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <Head>
-          <title>Access Denied | SOLARA</title>
-        </Head>
-        <h1 className="text-3xl font-bold mb-6">Access Denied</h1>
-        <p className="text-xl text-center text-red-500">You do not have permission to access this page.</p>
-      </div>
-    );
-  }
-  
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <AdminLayout title="관리자 감사 로그">
       <Head>
         <title>Admin Audit Logs | SOLARA</title>
       </Head>
-      <h1 className="text-3xl font-bold mb-6">Admin Audit Logs</h1>
       
       {/* Suspicious activity alert */}
       {suspiciousActivity && suspiciousActivity.suspicious && (
@@ -346,7 +299,7 @@ export default function AdminAuditLogs() {
           <div className="lg:col-span-3 flex items-center space-x-4 mt-3">
             <button
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             >
               Apply Filters
             </button>
@@ -364,16 +317,16 @@ export default function AdminAuditLogs() {
       {/* Logs table */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-        <>
+        <div className="bg-gray-800 rounded-lg p-6">
           {logs.length === 0 ? (
-            <div className="text-center py-10 bg-gray-800 rounded-lg">
+            <div className="text-center py-10">
               <p className="text-gray-400">No audit logs found with the current filters.</p>
             </div>
           ) : (
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className="overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-700">
                   <thead className="bg-gray-700">
@@ -429,7 +382,7 @@ export default function AdminAuditLogs() {
               
               {/* Pagination */}
               {pagination.pages > 1 && (
-                <div className="bg-gray-800 px-6 py-4 border-t border-gray-700">
+                <div className="mt-4 px-6 py-4 border-t border-gray-700">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-400">
                       Showing {(pagination.page - 1) * pagination.limit + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} logs
@@ -466,7 +419,7 @@ export default function AdminAuditLogs() {
                             onClick={() => handlePageChange(pageNum)}
                             className={`px-3 py-1 rounded-md ${
                               pagination.page === pageNum
-                                ? 'bg-purple-600 text-white'
+                                ? 'bg-blue-600 text-white'
                                 : 'bg-gray-700 text-white hover:bg-gray-600'
                             }`}
                           >
@@ -488,8 +441,10 @@ export default function AdminAuditLogs() {
               )}
             </div>
           )}
-        </>
+        </div>
       )}
-    </div>
+      
+      <ToastContainer position="bottom-right" theme="dark" />
+    </AdminLayout>
   );
 }

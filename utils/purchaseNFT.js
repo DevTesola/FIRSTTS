@@ -27,9 +27,7 @@ const IPFS_GATEWAYS = [
   IPFS_GATEWAY,
   'https://cloudflare-ipfs.com',
   'https://gateway.pinata.cloud',
-  'https://dweb.link',
-  'https://ipfs.fleek.co',
-  'https://ipfs.infura.io'
+  'https://dweb.link'
 ];
 
 const RESOURCE_CID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';

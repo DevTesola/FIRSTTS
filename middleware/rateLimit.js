@@ -76,7 +76,7 @@ function getLimitForPath(path) {
  * @param {Function} next - Next middleware function
  * @returns {void}
  */
-export function rateLimiter(req, res, next) {
+function rateLimiter(req, res, next) {
   // Get IP address or other identifier
   const identifier = req.headers['x-forwarded-for'] || 
                     req.connection.remoteAddress || 
@@ -149,3 +149,7 @@ setInterval(() => {
     }
   }
 }, 60000); // Clean up every minute
+
+module.exports = {
+  rateLimiter
+};

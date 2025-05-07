@@ -64,13 +64,73 @@ export default async function handler(req, res) {
     const nftTier = stakingData.nft_tier || 'COMMON';
     const stakingPeriod = stakingData.staking_period;
     
-    // 계산기 사용하여 정확한 페널티와 최종 보상 계산
-    const penaltyInfo = calculateUnstakingPenalty(
+    // 조기 언스테이킹인지 확인
+    const isPremature = currentDate < releaseDate;
+    const stakingDays = Math.ceil((currentDate - stakingStartDate) / (1000 * 60 * 60 * 24));
+    const daysRemaining = isPremature ? 
+      Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24)) : 0;
+    
+    console.log('Unstaking analysis:', {
+      isPremature,
+      stakingDays,
+      daysRemaining,
       nftTier,
-      stakingStartDate,
-      currentDate,
       stakingPeriod
-    );
+    });
+    
+    // 계산기 사용하여 정확한 페널티와 최종 보상 계산
+    let penaltyInfo;
+    
+    try {
+      // 기존 계산기 시도
+      penaltyInfo = calculateUnstakingPenalty(
+        nftTier,
+        stakingStartDate,
+        currentDate,
+        stakingPeriod
+      );
+    } catch (calcError) {
+      console.error('기존 계산기 오류, 백업 계산 사용:', calcError);
+      
+      // 수동 계산 (기존 계산기가 실패할 경우)
+      // 보상 계산 - 등급에 따른 기본 보상률
+      const baseRatePerDay = {
+        'COMMON': 10,
+        'RARE': 20,
+        'EPIC': 35,
+        'LEGENDARY': 50
+      }[nftTier.toUpperCase()] || 10;
+      
+      // 장기 스테이킹 보너스
+      const longTermBonus = stakingPeriod >= 30 ? 1.1 : 1.0;
+      
+      // 획득한 보상
+      const earnedRewards = Math.round(baseRatePerDay * stakingDays * longTermBonus);
+      
+      // 페널티 계산 (조기 언스테이킹)
+      let penaltyPercentage = 0;
+      let penaltyAmount = 0;
+      
+      if (isPremature) {
+        // 남은 기간에 비례한 페널티 (최대 50%)
+        const remainingPercent = daysRemaining / stakingPeriod;
+        penaltyPercentage = Math.min(Math.round(remainingPercent * 50), 50);
+        penaltyAmount = Math.round(earnedRewards * (penaltyPercentage / 100));
+      }
+      
+      // 최종 보상
+      const finalReward = earnedRewards - penaltyAmount;
+      
+      penaltyInfo = {
+        isPremature,
+        earnedRewards,
+        penaltyAmount,
+        penaltyPercentage,
+        finalReward
+      };
+    }
+    
+    console.log('최종 계산된 보상 정보:', penaltyInfo);
     
     console.log('Unstaking penalty calculation:', {
       earnedRewards: penaltyInfo.earnedRewards,
