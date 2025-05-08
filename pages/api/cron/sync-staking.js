@@ -7,16 +7,12 @@
 import { runSyncCheck } from '../../../utils/staking-helpers/sync-utilities';
 import { logSyncOperation } from '../../../utils/staking-helpers/sync-logger';
 
-export default async function handler(req, res) {
-  // Verify request comes from authorized source
-  const authHeader = req.headers['x-cron-secret'];
-  if (authHeader !== process.env.CRON_SECRET_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+import { CronRequestValidator } from '../../../utils/staking-helpers/security-checker';
 
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+export default async function handler(req, res) {
+  // Validate the request using the CronRequestValidator
+  if (!CronRequestValidator.validate(req, res)) {
+    return; // Response already sent by validator
   }
 
   // Get sync options from request body

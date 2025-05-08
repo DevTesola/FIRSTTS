@@ -10,17 +10,21 @@ import {
   markErrorResolved 
 } from '../../../utils/staking-helpers/sync-logger';
 
+import { AdminRequestValidator, adminApiRateLimiter } from '../../../utils/staking-helpers/security-checker';
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  // Validate the request and check admin permissions
+  if (!AdminRequestValidator.validate(req, res)) {
+    return; // Response already sent by validator
+  }
+  
+  // Apply rate limiting
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (adminApiRateLimiter.isLimited(clientIp)) {
+    return res.status(429).json({ error: 'Too Many Requests' });
   }
 
   try {
-    // Verify admin authentication
-    const { admin_key } = req.headers;
-    if (admin_key !== process.env.ADMIN_SECRET_KEY) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
 
     const { action, limit, operation, status, days, errorId, walletAddress, mintAddress } = req.body;
 

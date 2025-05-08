@@ -9,8 +9,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import ErrorMessage from '../components/ErrorMessage';
 import EnhancedProgressiveImage from '../components/EnhancedProgressiveImage';
 import StakingComponent from '../components/StakingComponent';
-import StakingDashboard from '../components/staking/StakingDashboard';
-import StakingRewards from '../components/staking/StakingRewards';
+import SocialRewardsDashboard from '../components/SocialRewardsDashboard';
 import { useNotification, ConfirmModal } from '../components/Notifications';
 import { processImageUrl, createPlaceholder, getNftPreviewImage } from '../utils/mediaUtils';
 import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from '../utils/nftImageUtils';
@@ -1115,117 +1114,16 @@ export default function MyCollection() {
       );
     }
     
-    // 리워드 대시보드 탭 (기존 스테이킹 대시보드를 개선)
+    // 소셜 보상 대시보드 탭 (새로운 컴포넌트로 변경)
     if (activeTab === "staking") {
       return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            {/* Staked NFTs list */}
-            <div className="bg-gray-800/50 border border-purple-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                </svg>
-                Currently Staked NFTs
-              </h3>
-              
-              {loadingStaked ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-16 bg-gray-700 rounded-lg"></div>
-                  <div className="h-16 bg-gray-700 rounded-lg"></div>
-                  <div className="h-16 bg-gray-700 rounded-lg"></div>
-                </div>
-              ) : !stakedNFTs || stakedNFTs.length === 0 ? (
-                <div className="text-center py-8 bg-gray-900/30 rounded-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <h4 className="text-lg font-medium text-gray-400 mb-2">No Staked NFTs</h4>
-                  <p className="text-gray-500 max-w-md mx-auto mb-4">
-                    You don't have any staked SOLARA NFTs yet. Stake your NFTs to earn TESOLA rewards.
-                  </p>
-                  <PrimaryButton
-                    onClick={() => setActiveTab("collection")}
-                    size="small"
-                  >
-                    Go to Collection
-                  </PrimaryButton>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {stakedNFTs.map((stake) => (
-                    <div 
-                      key={stake.mint_address} 
-                      className="bg-gray-900/50 rounded-lg p-3 border border-purple-500/20 hover:border-purple-400/40 transition-all"
-                    >
-                      <div className="flex items-center">
-                        <div className="w-14 h-14 mr-3 relative rounded overflow-hidden bg-gray-800">
-                          <EnhancedProgressiveImage
-                            src={getNFTImageUrl(stake)}
-                            alt={getNFTName(stake, "SOLARA")}
-                            placeholder={createPlaceholder(getNFTName(stake, "SOLARA"))}
-                            className="w-full h-full"
-                            lazyLoad={true}
-                            priority={true}
-                            highQuality={true}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium text-white">{getNFTName(stake, "SOLARA")}</h4>
-                              <p className="text-xs text-gray-400">{new Date(stake.staked_at).toLocaleDateString()}</p>
-                              <div className="mt-1">
-                                <span className={`text-xs px-1.5 py-0.5 ${getTierStyles(stake).bg} ${getTierStyles(stake).text} rounded-full`}>
-                                  {getNFTTier(stake)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium text-yellow-400">{stake.earned_so_far || 0} TESOLA</p>
-                              <p className="text-xs text-gray-300">of {stake.total_rewards}</p>
-                            </div>
-                          </div>
-                          
-                          {/* Progress bar for staking progress */}
-                          <div className="mt-2">
-                            <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
-                                style={{width: `${stake.progress_percentage || 0}%`}}
-                              ></div>
-                            </div>
-                            <div className="flex justify-between mt-1 text-xs text-gray-400">
-                              <span>{Math.floor(stake.progress_percentage || 0)}%</span>
-                              <span>Unlocks: {new Date(stake.release_date).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* 스테이킹 대시보드 with error boundary */}
-            <ErrorBoundary>
-              <StakingDashboard 
-                stats={stakingStats} 
-                isLoading={loadingStaked} 
-                onRefresh={fetchStakedNFTs}
-              />
-            </ErrorBoundary>
-          </div>
-          <div>
-            <ErrorBoundary>
-              <StakingRewards 
-                stats={stakingStats} 
-                isLoading={loadingStaked}
-              />
-            </ErrorBoundary>
-          </div>
-        </div>
+        <ErrorBoundary>
+          <SocialRewardsDashboard 
+            rewardHistory={rewardHistory} 
+            isLoading={loadingStaked} 
+            onRefresh={fetchRewardHistory}
+          />
+        </ErrorBoundary>
       );
     }
     
@@ -1735,12 +1633,11 @@ export default function MyCollection() {
                   onClick={() => setActiveTab("staking")}
                   icon={
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm4.707 3.707a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L8.414 9H10a3 3 0 013 3v1a1 1 0 102 0v-1a5 5 0 00-5-5H8.414l1.293-1.293z" clipRule="evenodd" />
                     </svg>
                   }
                 >
-                  Rewards Dashboard
+                  Social Rewards
                 </TabButton>
                 <TabButton
                   isActive={activeTab === "stake"}

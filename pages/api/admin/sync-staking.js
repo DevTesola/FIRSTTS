@@ -149,17 +149,21 @@ function solanaTimestampToDate(timestamp) {
   return new Date(timestamp * 1000);
 }
 
+import { AdminRequestValidator, adminApiRateLimiter } from '../../../utils/staking-helpers/security-checker';
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  // Validate the request and check admin permissions
+  if (!AdminRequestValidator.validate(req, res)) {
+    return; // Response already sent by validator
+  }
+  
+  // Apply rate limiting
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (adminApiRateLimiter.isLimited(clientIp)) {
+    return res.status(429).json({ error: 'Too Many Requests' });
   }
 
   try {
-    // 관리자 인증
-    const { admin_key } = req.headers;
-    if (admin_key !== process.env.ADMIN_SECRET_KEY) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
 
     const { action, wallet, mintAddress } = req.body;
 
@@ -449,6 +453,16 @@ export default async function handler(req, res) {
     switch (action) {
       case 'test_auth': {
         return res.status(200).json({ success: true, message: '인증 성공' });
+      }
+      
+      // For log operations, redirect to sync-logs API
+      case 'get_sync_logs':
+      case 'get_sync_errors':
+      case 'get_sync_stats':
+      case 'mark_error_resolved': {
+        // Forward the request to sync-logs API
+        const syncLogsHandler = require('./sync-logs').default;
+        return syncLogsHandler(req, res);
       }
       
       case 'check_discrepancies': {

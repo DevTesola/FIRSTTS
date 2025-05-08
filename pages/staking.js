@@ -5,6 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Layout from "../components/Layout";
 import StakingDashboard from "../components/staking/StakingDashboard";
+import StakingAnalytics from "../components/staking/StakingAnalytics";
 import StakingRewards from "../components/staking/StakingRewards";
 import NFTGallery from "../components/staking/NFTGallery";
 import Leaderboard from "../components/staking/Leaderboard";
@@ -339,6 +340,15 @@ export default function StakingPage() {
             onRefresh={refreshAllData}
           />
         );
+      case "analytics":
+        return (
+          <StakingAnalytics
+            stats={stakingStats}
+            unstaked={userNFTs}
+            isLoading={isLoading} 
+            onRefresh={refreshAllData}
+          />
+        );
       case "nfts":
         return (
           <ErrorBoundary>
@@ -601,7 +611,17 @@ export default function StakingPage() {
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
                 }`}
               >
-                Dashboard
+                Staking Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab("analytics")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "analytics" 
+                    ? "bg-purple-600 text-white" 
+                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                Analytics
               </button>
               <button
                 onClick={() => setActiveTab("nfts")}

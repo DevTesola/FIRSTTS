@@ -5,6 +5,9 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import ErrorMessage from "./ErrorMessage";
 import ErrorBoundary from "./ErrorBoundary";
+import LoadingOverlay from "./LoadingOverlay";
+import TransactionStatus from "./TransactionStatus";
+import ProgressStepper from "./ProgressStepper";
 import { processImageUrl, createPlaceholder, getNftPreviewImage } from "../utils/mediaUtils";
 
 /**
@@ -34,6 +37,11 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
   const [transactionInProgress, setTransactionInProgress] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const connectionAttempts = useRef(0);
+  
+  // Enhanced transaction state tracking
+  const [transactionStatus, setTransactionStatus] = useState("idle"); // idle, preparing, awaiting_approval, submitting, confirming, completed, failed
+  const [transactionDetails, setTransactionDetails] = useState({});
+  const [transactionProgress, setTransactionProgress] = useState(0);
   
   const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
   
@@ -1430,7 +1438,12 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Processing...
+                {transactionStatus !== "idle" ? 
+                  transactionStatus === "preparing" ? "Preparing..." :
+                  transactionStatus === "awaiting_approval" ? "Awaiting Approval..." :
+                  transactionStatus === "submitting" ? "Submitting..." :
+                  transactionStatus === "confirming" ? "Confirming..." :
+                  "Processing..." : "Processing..."}
               </span>
             ) : !isOnline ? (
               "Network Offline"

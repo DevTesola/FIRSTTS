@@ -111,9 +111,9 @@ export default function ErrorMessage({
   
   // 오류 코드 및 메시지에 따른 도움말 및 해결 방법
   const getSolutionText = () => {
-    // 오프라인 상태에서의 특별 처리
+    // Handle offline state
     if (isOffline) {
-      return "인터넷 연결을 확인한 후 다시 시도해보세요.";
+      return "Please check your internet connection and try again.";
     }
     
     // 오류 메시지 패턴에 따른 해결책
