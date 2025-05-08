@@ -10,7 +10,7 @@ import {
   apiCache, 
   apiMiddleware as apiMiddlewareArray, 
   readOnlyApiMiddleware as readOnlyApiMiddlewareArray 
-} from '../middleware';
+} from '../api-middlewares';
 
 /**
  * 미들웨어 체인 함수 생성

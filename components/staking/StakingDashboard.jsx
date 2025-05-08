@@ -352,7 +352,10 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                   // 명시적으로 metadata 전달 확인
                   metadata: stake.metadata,
                   // 진짜 IPFS 이미지 사용 설정
-                  using_actual_nft_data: true
+                  using_actual_nft_data: true,
+                  // 환경 변수 명시적 전달 - 최적화
+                  NEXT_PUBLIC_IMAGES_CID: process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike',
+                  NEXT_PUBLIC_IPFS_GATEWAY: process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud'
                 }} 
                 onRefresh={onRefresh} 
                 isExpanded={expandedView === stake.id}

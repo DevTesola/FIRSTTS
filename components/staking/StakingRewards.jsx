@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PrimaryButton } from "../Buttons";
+import EnhancedImageWithFallback from "../EnhancedImageWithFallback";
+import { createPlaceholder } from "../../utils/mediaUtils";
 
 /**
  * StakingRewards Component
@@ -151,13 +153,84 @@ const StakingRewards = ({ stats, isLoading }) => {
             ))}
           </div>
         ) : stats?.activeStakes?.length > 0 ? (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-3 text-sm">
             {stats.activeStakes.slice(0, 3).map((stake) => (
-              <div key={stake.id} className="flex justify-between">
-                <div className="text-gray-400">
-                  {new Date(stake.staked_at).toLocaleDateString()}
+              <div key={stake.id} className="flex items-center justify-between bg-gray-800/40 rounded-lg p-2">
+                {/* NFT 이미지 미리보기 - 모든 컴포넌트와 동일한 로직 사용 */}
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded overflow-hidden mr-3 border border-gray-700">
+                    <EnhancedImageWithFallback
+                      src={(() => {
+                        // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
+                        let nftId = null;
+                        
+                        // 1. stake.id에서 숫자 추출 시도 (가장 높은 우선순위)
+                        if (stake.id) {
+                          const match = String(stake.id).match(/(\d+)/);
+                          if (match && match[1]) {
+                            nftId = match[1];
+                          }
+                        }
+                        
+                        // 2. stake.nft_name에서 숫자 추출 시도
+                        if (!nftId && stake.nft_name) {
+                          const match = stake.nft_name.match(/#(\d+)/);
+                          if (match && match[1]) {
+                            nftId = match[1];
+                          }
+                        }
+                        
+                        // 3. mint_address 해시로 숫자 생성
+                        if (!nftId && stake.mint_address) {
+                          let hash = 0;
+                          for (let i = 0; i < stake.mint_address.length; i++) {
+                            hash = ((hash << 5) - hash) + stake.mint_address.charCodeAt(i);
+                            hash = hash & hash;
+                          }
+                          nftId = Math.abs(hash) % 999 + 1;
+                        }
+                        
+                        // 최후의 수단: 임의의 숫자 생성
+                        if (!nftId) {
+                          nftId = Math.floor(Math.random() * 999) + 1;
+                        }
+                        
+                        // 모든 상황에서 항상 직접 IPFS URL 생성
+                        const formattedId = String(nftId).padStart(4, '0');
+                        // 최신 환경 변수 사용 (하드코딩 제거)
+                        const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+                        const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
+                        const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
+                        
+                        // 로그로 생성된 URL 확인
+                        console.log(`❗❗❗ StakingRewards: 강제 생성된 IPFS URL: ${gatewayUrl}`);
+                        
+                        return gatewayUrl;
+                      })()}
+                      alt={stake.nft_name || `Staked NFT #${stake.id}`}
+                      placeholder={createPlaceholder(`Staked NFT #${stake.id}`)}
+                      className="w-full h-full object-cover"
+                      id={stake.id || stake.mint_address}
+                      placeholderText="Art loading in metaverse"
+                      lazyLoad={true}
+                      priority={false}
+                      highQuality={true}
+                      preferRemote={true}
+                      useCache={false}
+                      maxRetries={1}
+                      retryInterval={1000}
+                    />
+                  </div>
+                  <div>
+                    <div className="text-gray-300 font-medium">
+                      {stake.nft_name || `SOLARA #${stake.id}`}
+                    </div>
+                    <div className="text-gray-400 text-xs">
+                      {new Date(stake.staked_at).toLocaleDateString()}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-white font-medium">
+                <div className="text-green-400 font-medium">
                   +{stake.earned_so_far} TESOLA
                 </div>
               </div>

@@ -212,7 +212,7 @@ export default async function handler(req, res) {
           
           if (!ipfsHash) {
             // 실제 TESOLA 컬렉션의 IPFS CID
-            const COLLECTION_IPFS_HASH = process.env.COLLECTION_IPFS_HASH || 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+            const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
             ipfsHash = COLLECTION_IPFS_HASH;
           }
           
@@ -443,7 +443,7 @@ function generateMockStakingData(wallet) {
   const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
   
   // 실제 TESOLA 컬렉션의 IPFS CID - 일관된 이미지 로딩을 위해 하나만 사용
-  const COLLECTION_IPFS_HASH = process.env.COLLECTION_IPFS_HASH || 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+  const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
   
   // 내 게이트웨이는 항상 작동하므로 기본값으로 설정
   // My NFTs 탭에서는 잘 작동하는데 여기서는 작동하지 않는 문제 수정

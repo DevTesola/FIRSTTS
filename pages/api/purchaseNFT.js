@@ -1,7 +1,7 @@
 // pages/api/purchaseNFT.js - Fixed Secured version
 import { PublicKey } from '@solana/web3.js';
 import { purchaseNFT } from '../../utils/purchaseNFT';
-import { validateSolanaAddress } from '../../middleware/apiSecurity';
+import { validateSolanaAddress } from '../../api-middlewares/apiSecurity';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

@@ -6,7 +6,7 @@
  * Implements advanced caching, performance optimizations, and error handling
  */
 
-import { withCache, optimizedRateLimit, errorHandler } from '../../middleware';
+import { withCache, optimizedRateLimit, errorHandler } from '../../api-middlewares';
 import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import path from 'path';

@@ -384,10 +384,67 @@ export default function StakingPage() {
                     {selectedNFT.image && (
                       <div className="w-24 h-24 rounded-lg overflow-hidden mr-4">
                         <EnhancedProgressiveImage 
-                          src={getNFTImageUrl({
-                            ...selectedNFT,
-                            __source: 'staking-page-selected-nft'
-                          })}
+                          src={(() => {
+                            console.log(`Staking page - Selected NFT 이미지 필드 정보:`, {
+                              id: selectedNFT.id,
+                              mint: selectedNFT.mint,
+                              image: selectedNFT.image,
+                              image_url: selectedNFT.image_url
+                            });
+                            
+                            // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
+                            // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
+                            
+                            let nftId = null;
+                            
+                            // 1. selectedNFT.id에서 숫자 추출 시도 (가장 높은 우선순위)
+                            if (selectedNFT.id) {
+                              const match = String(selectedNFT.id).match(/(\d+)/);
+                              if (match && match[1]) {
+                                nftId = match[1];
+                                console.log(`스테이킹 페이지: ID에서 숫자 추출: ${nftId}`);
+                              }
+                            }
+                            
+                            // 2. selectedNFT.name에서 숫자 추출 시도
+                            if (!nftId && selectedNFT.name) {
+                              const match = selectedNFT.name.match(/#(\d+)/);
+                              if (match && match[1]) {
+                                nftId = match[1];
+                                console.log(`스테이킹 페이지: 이름에서 숫자 추출: ${nftId}`);
+                              }
+                            }
+                            
+                            // 3. mint 주소 해시로 숫자 생성
+                            if (!nftId && selectedNFT.mint) {
+                              let hash = 0;
+                              for (let i = 0; i < selectedNFT.mint.length; i++) {
+                                hash = ((hash << 5) - hash) + selectedNFT.mint.charCodeAt(i);
+                                hash = hash & hash;
+                              }
+                              nftId = Math.abs(hash) % 999 + 1;
+                              console.log(`스테이킹 페이지: mint 주소 해시로 ID 생성: ${nftId}`);
+                            }
+                            
+                            // 최후의 수단: 임의의 숫자 생성
+                            if (!nftId) {
+                              nftId = Math.floor(Math.random() * 999) + 1;
+                              console.log(`스테이킹 페이지: 임의의 ID 생성: ${nftId}`);
+                            }
+                            
+                            // 모든 상황에서 항상 직접 IPFS URL 생성
+                            const formattedId = String(nftId).padStart(4, '0');
+                            // 최신 환경 변수 사용 (하드코딩 제거)
+                            const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+                            const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
+                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
+                            
+                            // 로그로 생성된 URL 확인
+                            console.log(`❗❗❗ 스테이킹 페이지: 강제 생성된 IPFS URL: ${gatewayUrl}`);
+                            console.log(`❗❗❗ 스테이킹 페이지: 사용된 CID: ${IMAGES_CID}`);
+                            
+                            return gatewayUrl;
+                          })()}
                           alt={selectedNFT.name} 
                           className="w-full h-full"
                           lazyLoad={false}

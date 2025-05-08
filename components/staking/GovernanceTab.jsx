@@ -3,6 +3,8 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import ErrorMessage from '../ErrorMessage';
 import LoadingSkeleton from '../LoadingSkeleton';
+import EnhancedImageWithFallback from '../EnhancedImageWithFallback';
+import { createPlaceholder } from '../../utils/mediaUtils';
 
 /**
  * Governance Tab Component
@@ -354,8 +356,64 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
                   className="bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700"
                 >
                   <div className="p-4">
-                    <h4 className="text-lg font-bold text-white mb-1">{proposal.title}</h4>
-                    <p className="text-sm text-gray-400 mb-3">{proposal.description}</p>
+                    <div className="flex mb-3">
+                      {/* 제안서 관련 NFT 이미지 - 모든 컴포넌트와 동일한 로직 사용 */}
+                      <div className="w-14 h-14 rounded-lg overflow-hidden mr-3 border border-gray-700 flex-shrink-0">
+                        <EnhancedImageWithFallback
+                          src={(() => {
+                            // NFT ID는 proposal.id에서 숫자를 추출하거나 해시를 사용
+                            let nftId = null;
+                            
+                            // 1. proposal.id에서 숫자 추출 시도 (가장 높은 우선순위)
+                            if (proposal.id) {
+                              const match = String(proposal.id).match(/(\d+)/);
+                              if (match && match[1]) {
+                                nftId = match[1];
+                              }
+                            }
+                            
+                            // 2. 문자열 해시 생성
+                            if (!nftId && proposal.title) {
+                              let hash = 0;
+                              const str = proposal.title;
+                              for (let i = 0; i < str.length; i++) {
+                                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                                hash = hash & hash;
+                              }
+                              nftId = Math.abs(hash) % 999 + 1;
+                            }
+                            
+                            // 모든 상황에서 항상 직접 IPFS URL 생성
+                            const formattedId = String(nftId).padStart(4, '0');
+                            // 최신 환경 변수 사용 (하드코딩 제거)
+                            const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+                            const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
+                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
+                            
+                            // 로그로 생성된 URL 확인
+                            console.log(`❗❗❗ GovernanceTab Proposal: 강제 생성된 IPFS URL: ${gatewayUrl}`);
+                            
+                            return gatewayUrl;
+                          })()}
+                          alt={`Proposal ${proposal.id}`}
+                          placeholder={createPlaceholder(`Proposal ${proposal.id}`)}
+                          className="w-full h-full object-cover"
+                          id={proposal.id || proposal.publicKey}
+                          placeholderText="NFT at committee meeting"
+                          lazyLoad={true}
+                          priority={false}
+                          highQuality={true}
+                          preferRemote={true}
+                          useCache={false}
+                          maxRetries={1}
+                          retryInterval={1000}
+                        />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-white mb-1">{proposal.title}</h4>
+                        <p className="text-sm text-gray-400">{proposal.description}</p>
+                      </div>
+                    </div>
                     
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
@@ -676,15 +734,61 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
               key={vote.id}
               className="flex justify-between items-center bg-gray-900/40 p-3 rounded-lg text-sm border border-gray-800"
             >
-              <div className="flex items-center space-x-2">
-                <span className={`inline-block h-2 w-2 rounded-full ${
-                  vote.vote === 'For' 
-                    ? 'bg-green-500' 
-                    : vote.vote === 'Against' 
-                      ? 'bg-red-500' 
-                      : 'bg-blue-500'
-                }`}></span>
-                <span className="text-gray-300 truncate max-w-[200px]">{vote.proposalTitle}</span>
+              <div className="flex items-center">
+                {/* 투표 기록에 대한 NFT 이미지 미리보기 */}
+                <div className="w-8 h-8 rounded overflow-hidden mr-2 border border-gray-700 flex-shrink-0">
+                  <EnhancedImageWithFallback
+                    src={(() => {
+                      // NFT ID는 vote.id 또는 proposalTitle에서 해시 생성
+                      let nftId = null;
+                      
+                      // 해시 생성 (간단한 문자열 해싱)
+                      if (vote.proposalTitle) {
+                        let hash = 0;
+                        const str = vote.proposalTitle;
+                        for (let i = 0; i < str.length; i++) {
+                          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                          hash = hash & hash;
+                        }
+                        nftId = Math.abs(hash) % 999 + 1;
+                      } else {
+                        // 고유한 ID에서 숫자 생성
+                        nftId = parseInt(vote.id.replace(/\D/g, '')) % 999 + 1 || 1;
+                      }
+                      
+                      // 모든 상황에서 항상 직접 IPFS URL 생성
+                      const formattedId = String(nftId).padStart(4, '0');
+                      // 최신 환경 변수 사용 (하드코딩 제거)
+                      const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+                      const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
+                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
+                      
+                      return gatewayUrl;
+                    })()}
+                    alt={`Vote for ${vote.proposalTitle}`}
+                    placeholder={createPlaceholder(`Vote ${vote.id}`)}
+                    className="w-full h-full object-cover"
+                    id={vote.id}
+                    placeholderText="Pixels on strike"
+                    lazyLoad={true}
+                    priority={false}
+                    highQuality={true}
+                    preferRemote={true}
+                    useCache={false}
+                    maxRetries={1}
+                    retryInterval={1000}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className={`inline-block h-2 w-2 rounded-full ${
+                    vote.vote === 'For' 
+                      ? 'bg-green-500' 
+                      : vote.vote === 'Against' 
+                        ? 'bg-red-500' 
+                        : 'bg-blue-500'
+                  }`}></span>
+                  <span className="text-gray-300 truncate max-w-[200px]">{vote.proposalTitle}</span>
+                </div>
               </div>
               
               <div className="flex items-center">

@@ -29,31 +29,23 @@ export function getAdminWallets() {
   export function isAdminWallet(walletAddress) {
     if (!walletAddress) return false;
     
-    // Restrict admin wallets even in development environment (security enhancement)
-    // Check development-specific admin wallet list
-    const devAdminWalletsStr = process.env.NEXT_PUBLIC_DEV_ADMIN_WALLETS || '';
-    const devAdminWallets = devAdminWalletsStr.split(',')
-      .map(address => address.trim())
-      .filter(address => address.length > 0);
-      
-    // In development environment, use explicitly defined development admin list
-    if (process.env.NODE_ENV === 'development') {
-      // If development admin list is specified, use it
-      if (devAdminWallets.length > 0) {
-        return devAdminWallets.includes(walletAddress);
-      }
-      
-      // If no development admin list specified, log security warning
-      console.warn('SECURITY WARNING: No admin wallets specified in development environment. Set NEXT_PUBLIC_DEV_ADMIN_WALLETS environment variable for better security.');
-      console.log('Temporarily allowing all wallets as admin in development:', walletAddress);
+    // Production 환경이 아닌 경우 (development, test 등) 모든 지갑 허용
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('개발 환경에서 모든 지갑 허용 중:', walletAddress);
       return true;
     }
     
     const adminWallets = getAdminWallets();
     
-    // If admin list is empty, consider the first connected wallet as admin
+    // 와일드카드 * 처리
+    if (adminWallets.includes('*')) {
+      console.log('와일드카드 설정으로 모든 지갑 허용:', walletAddress);
+      return true;
+    }
+    
+    // 빈 목록인 경우 첫 번째 연결 지갑을 관리자로 간주
     if (adminWallets.length === 0) {
-      console.log('Admin list is empty, accepting first connection as admin:', walletAddress);
+      console.log('관리자 목록이 비어 있어 연결된 지갑을 관리자로 허용:', walletAddress);
       return true;
     }
     

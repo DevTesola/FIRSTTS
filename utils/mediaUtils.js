@@ -5,6 +5,9 @@
 // Use multiple IPFS gateways with preferred order
 const personalGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
 
+// NFT 이미지 폴더 CID (이미지 전용)
+const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+
 // Format the gateway URL to ensure it ends with /ipfs/ for consistent usage
 const formatGatewayUrl = (url) => {
   if (!url) return 'https://tesola.mypinata.cloud/ipfs/';
@@ -214,6 +217,22 @@ function processImageUrl(url, options = {}) {
   if (!url) return options && options.isStakingComponent ? 'loading:indicator' : '/placeholder-nft.png';
   if (url.startsWith('data:')) return url; // Already a data URI
   
+  // 스테이킹 컴포넌트의 __source 필드 검사 (thumbnail, enlarged 등 감지)
+  const isStakingRelated = options && options.__source && 
+    (options.__source.includes('StakedNFTCard') || 
+     options.__source.includes('NFTGallery') || 
+     options.__source.includes('Leaderboard') || 
+     options.__source.includes('Dashboard') || 
+     options.__source.includes('StakingDashboard') || 
+     options.__source.includes('staking') ||
+     options.__source.includes('enlarged') ||
+     options.__source.includes('thumbnail'));
+     
+  // 스테이킹 컴포넌트인 경우 로그
+  if (isStakingRelated) {
+    console.log(`🔍 스테이킹 관련 컴포넌트 감지: ${options.__source || 'unknown'}`);
+  }
+  
   // IPFS URL 처리 - 최우선
   // IPFS URL인 경우, 항상 최우선으로 처리하여 로컬 이미지로 변환되지 않도록 함
   if (url.startsWith('ipfs://') || url.includes('/ipfs/')) {
@@ -235,14 +254,16 @@ function processImageUrl(url, options = {}) {
       // 항상 테솔라 Pinata 게이트웨이 사용
       const gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${hashAndPath}`;
       
-      // 스테이킹 컴포넌트 판별 (options.__source 확인)
+      // 스테이킹 컴포넌트 판별 (options.__source 확인) - 더 많은 케이스 추가
       const isStakingComponent = options && options.__source && 
         (options.__source.includes('StakedNFTCard') || 
          options.__source.includes('NFTGallery') || 
          options.__source.includes('Leaderboard') || 
          options.__source.includes('Dashboard') || 
          options.__source.includes('StakingDashboard') || 
-         options.__source.includes('staking'));
+         options.__source.includes('staking') ||
+         options.__source.includes('enlarged') ||
+         options.__source.includes('thumbnail'));
       
       // 스테이킹 컴포넌트인 경우 캐시 버스팅 추가
       if (isStakingComponent || (options && options.forceNoCaching)) {
@@ -289,14 +310,16 @@ function processImageUrl(url, options = {}) {
       }
       
       // 이미 테솔라 게이트웨이를 사용 중이거나 CID 추출 실패 시 원본 URL 반환
-      // 스테이킹 컴포넌트 판별 (options.__source 확인)
+      // 스테이킹 컴포넌트 판별 (options.__source 확인) - 더 많은 케이스 추가
       const isStakingComponent = options && options.__source && 
         (options.__source.includes('StakedNFTCard') || 
          options.__source.includes('NFTGallery') || 
          options.__source.includes('Leaderboard') || 
          options.__source.includes('Dashboard') || 
          options.__source.includes('StakingDashboard') || 
-         options.__source.includes('staking'));
+         options.__source.includes('staking') ||
+         options.__source.includes('enlarged') ||
+         options.__source.includes('thumbnail'));
       
       // 스테이킹 컴포넌트인 경우 캐시 버스팅 추가
       if (isStakingComponent || (options && options.forceNoCaching)) {
@@ -347,11 +370,11 @@ function processImageUrl(url, options = {}) {
         // 4자리 숫자로 변환 (TESOLA 컬렉션 표준)
         const formattedId = String(nftId).padStart(4, '0');
         
-        // 실제 TESOLA 컬렉션의 IPFS CID
-        const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+        // 환경 변수에서 이미지 CID 가져오기
+        const COLLECTION_IPFS_HASH = IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
         
         // 직접 테솔라 게이트웨이 URL 생성 - ipfs:// 프로토콜 대신 직접 게이트웨이 URL 사용
-        const gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
+        const gatewayUrl = `${personalGateway}/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
         
         console.log(`🔄 로컬 이미지 변환 성공! ${url} => ${gatewayUrl}`);
         return gatewayUrl;
@@ -359,15 +382,38 @@ function processImageUrl(url, options = {}) {
       
       // NFT ID를 찾지 못했지만 nft-previews 폴더의 이미지라면 (특별 처리)
       if (isNftPreview) {
-        // 미리보기 이미지에서 숫자 추출
-        const previewMatch = filename.match(/(\d{4})/);
+        // 미리보기 이미지에서 숫자 추출 - 더 강력한 패턴 매칭
+        const previewMatch = filename.match(/(\d{3,4})/);
         if (previewMatch && previewMatch[1]) {
           // 미리보기 이미지의 ID를 실제 NFT ID로 사용
-          const formattedId = previewMatch[1];
+          const numericId = previewMatch[1];
+          // 항상 4자리로 패딩
+          const formattedId = String(numericId).padStart(4, '0');
           const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
           const gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
           
           console.log(`🔄 미리보기 이미지 변환 성공! ${url} => ${gatewayUrl}`);
+          return gatewayUrl;
+        }
+        
+        // 특정 미리보기 파일명에 대한 명시적 매핑 시도
+        const previewToNftMap = {
+          '0119.png': '0119',
+          '0171.png': '0171',
+          '0327.png': '0327',
+          '0416.png': '0416', 
+          '0418.png': '0418',
+          '0579.png': '0579',
+          '0625.mp4': '0625',
+          '0113.mp4': '0113'
+        };
+        
+        if (previewToNftMap[filename]) {
+          const formattedId = previewToNftMap[filename];
+          const COLLECTION_IPFS_HASH = IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+          const gatewayUrl = `${personalGateway}/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
+          
+          console.log(`🔄 미리보기 파일명 매핑 성공! ${url} => ${gatewayUrl}`);
           return gatewayUrl;
         }
       }
@@ -396,8 +442,8 @@ function processImageUrl(url, options = {}) {
       // 매핑 찾기
       if (previewToNftMap[fileName]) {
         const formattedId = previewToNftMap[fileName];
-        const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
-        const gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
+        const COLLECTION_IPFS_HASH = IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+        const gatewayUrl = `${personalGateway}/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
         
         console.log(`🔍 미리보기 매핑 사용! ${url} => ${gatewayUrl}`);
         return gatewayUrl;
@@ -429,8 +475,8 @@ function processImageUrl(url, options = {}) {
     const hashValue = hashString(url);
     const selectedId = nftIds[hashValue % nftIds.length];
     
-    const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
-    const gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${selectedId}.png`;
+    const COLLECTION_IPFS_HASH = IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+    const gatewayUrl = `${personalGateway}/ipfs/${COLLECTION_IPFS_HASH}/${selectedId}.png`;
     
     console.log(`🔄 로컬 이미지 경로 해시 기반 변환: ${url} => ${gatewayUrl}`);
     return gatewayUrl;

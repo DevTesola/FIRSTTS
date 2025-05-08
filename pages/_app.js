@@ -34,19 +34,23 @@ const OfflineDetector = dynamic(() => import("../components/OfflineDetector").ca
   loading: () => null // No loading state for this component
 });
 
-// Dynamically load wallet wrapper
-const WalletWrapper = dynamic(() => 
-  import("../components/WalletWrapper")
-    .catch(err => {
-      console.error("Failed to load WalletWrapper:", err);
-      // Return a simple wrapper that just renders children
-      return ({ children }) => <>{children}</>; 
-    }), 
-  { 
-    ssr: false,
-    loading: () => <FallbackLoading message="Loading wallet services..." />
+// Preload wallet adapter styles to avoid CSP issues
+// 병렬 로드를 위해 미리 스타일시트 로드
+import "@solana/wallet-adapter-react-ui/styles.css";
+
+// 지갑 래퍼 정적 임포트 - 동적 임포트 오류 방지
+import WalletWrapperComponent from "../components/WalletWrapper";
+
+// 간단한 래퍼 생성 (에러 처리 포함)
+const WalletWrapper = ({ children }) => {
+  try {
+    return <WalletWrapperComponent>{children}</WalletWrapperComponent>;
+  } catch (err) {
+    console.error("Error rendering WalletWrapper:", err);
+    // 에러 발생시 children만 렌더링
+    return <>{children}</>;
   }
-);
+};
 
 // Custom cursor is now implemented in /public/cursor.js
 // It's loaded directly from _document.js

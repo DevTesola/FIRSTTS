@@ -50,3 +50,6 @@ my-wallet.json
 *.key.json
 *.secret.json
 
+# Windows Zone.Identifier files
+*:Zone.Identifier
+

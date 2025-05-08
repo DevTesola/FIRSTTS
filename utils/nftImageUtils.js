@@ -4,6 +4,7 @@
  * Provides consistent handling of different image fields and formats with fallback mechanisms.
  */
 import { processImageUrl, createPlaceholder } from "./mediaUtils";
+import { ipfsConfig } from "./config";
 
 // Pre-prepared default image paths
 const DEFAULT_PREVIEW_IMAGES = [
@@ -47,7 +48,9 @@ export function getNFTImageUrl(nft) {
                              source.includes('NFTGallery') || 
                              source.includes('Leaderboard') || 
                              source.includes('Dashboard') || 
-                             source.includes('staking');
+                             source.includes('staking') ||
+                             source.includes('enlarged') ||
+                             source.includes('thumbnail');
   
   // 스테이킹 페이지 컴포넌트인 경우 항상 캐시 버스팅 추가
   if (isStakingComponent && !nft._cacheBust) {
@@ -81,7 +84,7 @@ export function getNFTImageUrl(nft) {
       // 우선 순위 1: metadata.image 필드에서 IPFS URL 추출 (가장 신뢰할 수 있는 소스)
       if (nft.metadata && nft.metadata.image && nft.metadata.image.startsWith('ipfs://')) {
         const ipfsPath = nft.metadata.image.replace('ipfs://', '');
-        const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsPath}`;
+        const directGatewayUrl = `${ipfsConfig.gateway}/ipfs/${ipfsPath}`;
         const cacheBuster = nft._cacheBust ? `?cb=${nft._cacheBust}` : '';
         console.log(`🔄 스테이킹 컴포넌트: metadata.image 필드에서 IPFS URL 추출: ${directGatewayUrl}${cacheBuster}`);
         return `${directGatewayUrl}${cacheBuster}`;
@@ -90,7 +93,7 @@ export function getNFTImageUrl(nft) {
       // 우선 순위 2: image 필드에서 IPFS URL 추출
       if (nft.image && nft.image.startsWith('ipfs://')) {
         const ipfsPath = nft.image.replace('ipfs://', '');
-        const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsPath}`;
+        const directGatewayUrl = `${ipfsConfig.gateway}/ipfs/${ipfsPath}`;
         const cacheBuster = nft._cacheBust ? `?cb=${nft._cacheBust}` : '';
         console.log(`🔄 스테이킹 컴포넌트: image 필드에서 IPFS URL 추출: ${directGatewayUrl}${cacheBuster}`);
         return `${directGatewayUrl}${cacheBuster}`;
@@ -99,7 +102,7 @@ export function getNFTImageUrl(nft) {
       // 우선 순위 3: image_url 필드에서 IPFS URL 추출
       if (nft.image_url && nft.image_url.startsWith('ipfs://')) {
         const ipfsPath = nft.image_url.replace('ipfs://', '');
-        const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsPath}`;
+        const directGatewayUrl = `${ipfsConfig.gateway}/ipfs/${ipfsPath}`;
         const cacheBuster = nft._cacheBust ? `?cb=${nft._cacheBust}` : '';
         console.log(`🔄 스테이킹 컴포넌트: image_url 필드에서 IPFS URL 추출: ${directGatewayUrl}${cacheBuster}`);
         return `${directGatewayUrl}${cacheBuster}`;
@@ -109,7 +112,7 @@ export function getNFTImageUrl(nft) {
       if (nft.nft_image && nft.nft_image.includes('/ipfs/')) {
         const parts = nft.nft_image.split('/ipfs/');
         if (parts.length > 1) {
-          const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${parts[1]}`;
+          const directGatewayUrl = `${ipfsConfig.gateway}/ipfs/${parts[1]}`;
           const cacheBuster = nft._cacheBust ? `?cb=${nft._cacheBust}` : '';
           console.log(`🔄 스테이킹 컴포넌트: nft_image 필드에서 게이트웨이 URL 추출: ${directGatewayUrl}${cacheBuster}`);
           return `${directGatewayUrl}${cacheBuster}`;
@@ -153,8 +156,8 @@ export function getNFTImageUrl(nft) {
         const formattedId = String(numericId).padStart(4, '0');
         console.log(`🔢 숫자 ID 기반 포맷팅: ${formattedId} (원본 ID: ${numericId})`);
         
-        // TESOLA 컬렉션의 IPFS CID
-        const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+        // TESOLA 컬렉션의 IPFS CID - 환경 변수에서 가져오기
+        const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
         
         // 스테이킹 페이지에는 직접 Pinata 게이트웨이 URL 사용 (IPFS 프로토콜 건너뛰기)
         const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
@@ -175,7 +178,8 @@ export function getNFTImageUrl(nft) {
         const formattedId = String(numericId).padStart(4, '0');
         console.log(`🔢 이름에서 ID 추출 성공: ${formattedId} (원본 이름: ${nameStr})`);
         
-        const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+        // 환경 변수에서 이미지 CID 가져오기
+        const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
         const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
         
         const cacheBuster = nft._cacheBust ? `?cb=${nft._cacheBust}` : '';
@@ -268,10 +272,10 @@ export function getNFTImageUrl(nft) {
     if (numericId) {
       // 4자리 ID 형식으로 패딩
       const formattedId = String(numericId).padStart(4, '0');
-      // TESOLA 컬렉션의 IPFS CID
-      const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+      // 환경 변수에서 이미지 CID 가져오기 - 설정에서 가져오기
+      const IMAGES_CID = ipfsConfig.imagesCid;
       // IPFS URL 생성
-      const generatedIpfsUrl = `ipfs://${COLLECTION_IPFS_HASH}/${formattedId}.png`;
+      const generatedIpfsUrl = `ipfs://${IMAGES_CID}/${formattedId}.png`;
       
       // 로그 제거
       // const source = nft.__source || 'unknown';
@@ -347,7 +351,7 @@ export function getNFTImageUrl(nft) {
       const parts = selectedUrl.split('/ipfs/');
       if (parts.length > 1) {
         // Always use Tesola Pinata gateway
-        const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${parts[1]}`;
+        const directGatewayUrl = `${ipfsConfig.gateway}/ipfs/${parts[1]}`;
         
         // Add cache busting if requested
         if (nft._cacheBust) {

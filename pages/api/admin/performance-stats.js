@@ -1,11 +1,11 @@
 // pages/api/admin/performance-stats.js
 import { getPerformanceStatistics, resetPerformanceMetrics } from '../../../utils/staking-helpers/performance-logger';
-import { isAdmin } from '../../../utils/adminAuth';
+import { isAdminWallet } from '../../../utils/adminAuth';
 
 export default async function handler(req, res) {
   // 관리자 권한 확인
   const walletAddress = req.headers['x-wallet-address'];
-  if (!walletAddress || !(await isAdmin(walletAddress))) {
+  if (!walletAddress || !isAdminWallet(walletAddress)) {
     return res.status(403).json({ error: '관리자 권한이 필요합니다' });
   }
 

@@ -1,6 +1,6 @@
 import { PublicKey, SystemProgram, Transaction, Connection } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
-import { validateSolanaAddress } from '../../../middleware/apiSecurity';
+import { validateSolanaAddress } from '../../../api-middlewares/apiSecurity';
 import { v4 as uuidv4 } from 'uuid';
 import { SELLER_KEYPAIR } from '../../../server/utils/sellerKeypair';
 

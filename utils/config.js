@@ -60,6 +60,12 @@ export const ipfsConfig = {
   // Default IPFS gateway
   gateway: process.env.NEXT_PUBLIC_CUSTOM_IPFS_GATEWAY || 'https://tesola.mypinata.cloud',
   
+  // Collection resources CID (metadata JSON 폴더)
+  resourceCid: process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu',
+  
+  // NFT 이미지 전용 CID (이미지 폴더)
+  imagesCid: process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike',
+  
   // Fallback gateway list
   fallbackGateways: [
     'https://cloudflare-ipfs.com',
@@ -90,6 +96,24 @@ export const ipfsConfig = {
       : this.fallbackGateways[0];
       
     return `${gateway}/ipfs/${cleanCid}`;
+  },
+  
+  // Create NFT image URL (from NFT ID)
+  getNftImageUrl: function(nftId, options = {}) {
+    if (!nftId) return '';
+    
+    // Format NFT ID to 4 digits
+    const numericId = parseInt(String(nftId).replace(/\D/g, ''));
+    const formattedId = String(numericId).padStart(4, '0');
+    
+    const { protocol = 'gateway', gateway = this.gateway } = options;
+    
+    // Return either the IPFS protocol URL or the gateway URL
+    if (protocol === 'ipfs') {
+      return `ipfs://${this.imagesCid}/${formattedId}.png`;
+    } else {
+      return `${gateway}/ipfs/${this.imagesCid}/${formattedId}.png`;
+    }
   }
 };
 
@@ -136,6 +160,8 @@ export const appConfig = {
       
       console.log('IPFS Config:', {
         gateway: ipfsConfig.gateway,
+        resourceCid: ipfsConfig.resourceCid,
+        imagesCid: ipfsConfig.imagesCid,
         hasPinataAccess: ipfsConfig.hasPinataAccess()
       });
       

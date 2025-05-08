@@ -74,7 +74,9 @@ export default function EnhancedProgressiveImage({
      props.__source.includes('Leaderboard') || 
      props.__source.includes('StakingDashboard') || 
      props.__source.includes('Dashboard') || 
-     props.__source.includes('staking'));
+     props.__source.includes('staking') ||
+     props.__source.includes('enlarged') ||
+     props.__source.includes('thumbnail'));
      
   if (isStakingComponent) {
     console.log(`🔍 스테이킹 페이지 컴포넌트 감지됨: ${props.__source}`);
@@ -198,18 +200,17 @@ export default function EnhancedProgressiveImage({
           console.log(`EnhancedProgressiveImage loading for: ${src}`);
           console.log(`Classification: isLocalPreview=${isLocalPreview}, isIpfsImage=${isIpfsImage}`);
           
-          // 지속적인 403 오류 문제 해결을 위한 로컬 폴백 자동 추출
+          // 로컬 폴백 비활성화 - EnhancedImageWithFallback이 대신 처리
           let localFallback = null;
-          if (isIpfsImage) {
-            // 이미지 ID 추출 시도
-            const match = src.match(/\/(\d{4})\.png$/);
-            if (match && match[1]) {
-              const id = parseInt(match[1]);
-              const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
-              localFallback = `/nft-previews/${previewImages[id % previewImages.length]}`;
-              // console.log(`자동 로컬 폴백 생성: ${src} -> ${localFallback}`);
-            }
-          }
+          // if (isIpfsImage) {
+          //   // 이미지 ID 추출 시도
+          //   const match = src.match(/\/(\d{4})\.png$/);
+          //   if (match && match[1]) {
+          //     const id = parseInt(match[1]);
+          //     const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
+          //     localFallback = `/nft-previews/${previewImages[id % previewImages.length]}`;
+          //   }
+          // }
           
           // IPFS URL인 경우 직접 간단하게 게이트웨이 URL로 변환 시도
           let processedSrc = src;
@@ -227,7 +228,11 @@ export default function EnhancedProgressiveImage({
                (props.__source.includes('StakedNFTCard') || 
                 props.__source.includes('NFTGallery') || 
                 props.__source.includes('Leaderboard') || 
-                props.__source.includes('staking'));
+                props.__source.includes('Dashboard') || 
+                props.__source.includes('StakingDashboard') || 
+                props.__source.includes('staking') ||
+                props.__source.includes('enlarged') ||
+                props.__source.includes('thumbnail'));
                 
             if (isStakingComponent) {
               // 캐시 버스팅 파라미터 추가 (항상 새로운 이미지 로드)
@@ -377,32 +382,32 @@ export default function EnhancedProgressiveImage({
           console.log(`EnhancedProgressiveImage loading full image from ${src}`);
           console.log(`isIPFS=${isIPFSUrl(src)}, currentGateway=${currentGatewayIndex}`);
           
-          // 로컬 폴백 자동 추출 - 이미지 로딩 실패시 사용
+          // 로컬 폴백 비활성화 - EnhancedImageWithFallback이 대신 처리
           let fullImageLocalFallback = null;
-          if (isIPFSUrl(src)) {
-            // 이미지 ID 추출 시도
-            const match = src.match(/\/(\d{4})\.png$/);
-            if (match && match[1]) {
-              const id = parseInt(match[1]);
-              const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
-              fullImageLocalFallback = `/nft-previews/${previewImages[id % previewImages.length]}`;
-              console.log(`전체 이미지 로컬 폴백 준비: ${fullImageLocalFallback}`);
-            }
-          }
+          // if (isIPFSUrl(src)) {
+          //   // 이미지 ID 추출 시도
+          //   const match = src.match(/\/(\d{4})\.png$/);
+          //   if (match && match[1]) {
+          //     const id = parseInt(match[1]);
+          //     const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
+          //     fullImageLocalFallback = `/nft-previews/${previewImages[id % previewImages.length]}`;
+          //     console.log(`전체 이미지 로컬 폴백 준비: ${fullImageLocalFallback}`);
+          //   }
+          // }
           
-          // 이미 썸네일 단계에서 로컬 폴백 사용 중이면 완료 처리
-          if (isIPFSUrl(src) && loadState.thumbnailLoaded && loadState.src.startsWith('/nft-previews/')) {
-            console.log(`이미 로컬 폴백 사용 중, 로딩 완료 처리`);
-            setLoadState(prev => ({
-              ...prev,
-              loading: false,
-              fullLoaded: true,
-              error: false
-            }));
-            
-            if (onLoad) onLoad();
-            return;
-          }
+          // 이미 썸네일 단계에서 로컬 폴백 사용 중이면 완료 처리 - 비활성화
+          // if (isIPFSUrl(src) && loadState.thumbnailLoaded && loadState.src.startsWith('/nft-previews/')) {
+          //   console.log(`이미 로컬 폴백 사용 중, 로딩 완료 처리`);
+          //   setLoadState(prev => ({
+          //     ...prev,
+          //     loading: false,
+          //     fullLoaded: true,
+          //     error: false
+          //   }));
+          //   
+          //   if (onLoad) onLoad();
+          //   return;
+          // }
           
           // IPFS URL인 경우 게이트웨이 URL로 변환
           let processedSrc = src;
@@ -492,32 +497,32 @@ export default function EnhancedProgressiveImage({
               }
             }
 
-            // 충분히 시도한 후에 로컬 폴백 사용
-            if (fullImageLocalFallback) {
-              console.log(`모든 IPFS 게이트웨이 시도 후 로컬 폴백 사용: ${fullImageLocalFallback}`);
-              
-              // 디버깅을 위한 추가 컨텍스트 로그
-              console.debug(`전체 이미지 로딩 실패 컨텍스트:`, {
-                src: src,
-                attemptedGateways: currentGatewayIndex + 1,
-                totalGateways: IPFS_GATEWAYS.length,
-                retryCount,
-                preferRemote
-              });
-              
-              // 로컬 이미지로 전환
-              setLoadState(prev => ({
-                ...prev,
-                loading: false,
-                fullLoaded: true,
-                src: fullImageLocalFallback,
-                error: false
-              }));
-              
-              // 로딩 완료 처리
-              if (onLoad) onLoad();
-              return;
-            }
+            // 로컬 폴백 사용 비활성화 - EnhancedImageWithFallback이 처리
+            // if (fullImageLocalFallback) {
+            //   console.log(`모든 IPFS 게이트웨이 시도 후 로컬 폴백 사용: ${fullImageLocalFallback}`);
+            //   
+            //   // 디버깅을 위한 추가 컨텍스트 로그
+            //   console.debug(`전체 이미지 로딩 실패 컨텍스트:`, {
+            //     src: src,
+            //     attemptedGateways: currentGatewayIndex + 1,
+            //     totalGateways: IPFS_GATEWAYS.length,
+            //     retryCount,
+            //     preferRemote
+            //   });
+            //   
+            //   // 로컬 이미지로 전환
+            //   setLoadState(prev => ({
+            //     ...prev,
+            //     loading: false,
+            //     fullLoaded: true,
+            //     src: fullImageLocalFallback,
+            //     error: false
+            //   }));
+            //   
+            //   // 로딩 완료 처리
+            //   if (onLoad) onLoad();
+            //   return;
+            // }
             
             // 로컬 폴백이 없으면 다음 게이트웨이 시도
             tryNextGateway();
@@ -642,142 +647,44 @@ export default function EnhancedProgressiveImage({
             return;
           }
           
-          // Option 2: For IPFS URLs that failed, try local fallback if available
-          // This is the key improvement - explicitly try all local versions when IPFS fails
-          if (isIPFSUrl(src)) {
-            // More aggressive NFT ID extraction with multiple patterns
-            let nftIdMatch = null;
-            const patterns = [
-              // Try to extract from path segments with 3-4 digits
-              /\/([0-9]{3,4})[/\.]/,
-              // Also try broader pattern for various ID formats
-              /\W([0-9]{1,4})\W/,
-              // Try to extract any alphanumeric ID
-              /\/([0-9a-zA-Z]{3,8})[/.]/
-            ];
-            
-            // Try each pattern
-            for (const pattern of patterns) {
-              const match = (typeof src === 'string' && src.match(pattern) || []);
-              if (match && match[1]) {
-                nftIdMatch = match[1];
-                break;
-              }
-            }
-            
-            if (nftIdMatch) {
-              // Format the ID properly and try to load from local preview folder
-              let formattedId;
-              try {
-                // Try to treat as number if possible
-                formattedId = String(parseInt(nftIdMatch)).padStart(4, '0');
-              } catch (e) {
-                // If not a number, use as is
-                formattedId = String(nftIdMatch).padStart(4, '0');
-              }
-              
-              // Define available preview images
-              const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
-              const index = parseInt(formattedId) % previewImages.length;
-              const localPathToTry = `/nft-previews/${previewImages[index]}`;
-              
-              console.log(`IPFS load failed, trying local fallback for ${nftIdMatch}: ${localPathToTry}`);
-              
-              // Load the local image
-              const localImg = new Image();
-              localImg.onload = () => {
-                if (!isMounted) return;
-                
-                console.log(`Local fallback succeeded for ${src}: ${localPathToTry}`);
-                setLoadState(prev => ({
-                  ...prev,
-                  loading: false,
-                  fullLoaded: true,
-                  error: false,
-                  src: localPathToTry
-                }));
-              };
-              
-              localImg.onerror = () => {
-                if (!isMounted) return;
-                // If specific local fallback failed, try a fixed fallback from the set
-                tryFixedLocalFallback();
-              };
-              
-              localImg.src = localPathToTry;
-              return;
-            } else {
-              // No ID found, try fixed fallbacks
-              tryFixedLocalFallback();
-              return;
-            }
-          }
+          // 로컬 폴백 비활성화 - EnhancedImageWithFallback이 대신 처리
+          // Option 2: For IPFS URLs that failed, try local fallback if available (비활성화)
+          // if (isIPFSUrl(src)) {
+          //   // 설명: 이 부분이 이미지가 잘 뜨다가 로딩으로 되돌아가는 원인이므로 비활성화합니다.
+          //   // EnhancedImageWithFallback에서 그라데이션 배경과 메시지로 대체해야 합니다.
+          // }
           
-          // Try one of the fixed local fallback images
+          // 과거 로컬 이미지 폴백 로직은 제거하고 바로 에러 핸들링으로 넘어갑니다.
+          // 이 부분이 빠지면 이미지 로딩 실패 시 EnhancedImageWithFallback의 fallback이 작동합니다.
+          
+          // 로컬 폴백 함수 비활성화 - 대신 바로 usePlaceholder()로 이동
+          // 설명: 이 함수는 고정된 로컬 이미지 세트에서 이미지를 선택하는 로직입니다.
+          // 이 부분을 비활성화하고 대신 바로 오류 상태로 전환하면 
+          // EnhancedImageWithFallback에서 제공하는 그라데이션 배경과 메시지가 표시됩니다.
           function tryFixedLocalFallback() {
-            // Use a deterministic selection from available previews based on src string
-            const hashCode = src.split('').reduce((a, b) => {
-              a = ((a << 5) - a) + b.charCodeAt(0);
-              return a & a;
-            }, 0);
-            
-            const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
-            const index = Math.abs(hashCode) % previewImages.length;
-            const fallbackPath = `/nft-previews/${previewImages[index]}`;
-            
-            console.log(`Using fixed local fallback: ${fallbackPath}`);
-            
-            const fixedImg = new Image();
-            fixedImg.onload = () => {
-              if (!isMounted) return;
-              
-              setLoadState(prev => ({
-                ...prev,
-                loading: false,
-                fullLoaded: true,
-                error: false,
-                src: fallbackPath
-              }));
-            };
-            
-            fixedImg.onerror = () => {
-              if (!isMounted) return;
-              // All fallbacks failed, use placeholder
-              usePlaceholder();
-            };
-            
-            fixedImg.src = fallbackPath;
+            // 로컬 폴백 대신 바로 placeholder 사용
+            usePlaceholder();
           }
           
           // Option 3: Use placeholder as last resort
           usePlaceholder();
           
-          // Helper function for creating placeholders
+          // 설명: 이미지 로딩 실패 시 오류 상태로 설정하는 함수
+          // 로컬 이미지 표시 대신 오류 상태만 설정하여 EnhancedImageWithFallback의 fallback이 작동하도록 합니다
           function usePlaceholder() {
-            // Try to use a generated placeholder based on NFT name or number
-            const nftIdMatch = typeof src === 'string' && src.match(/\/([0-9]{3,4})\./);
-            let placeholderSrc = '';
+            console.warn(`Failed to load image after all attempts: ${src} - triggering error state`);
             
-            if (nftIdMatch && nftIdMatch[1]) {
-              // Create a special placeholder for NFTs with ID
-              const nftNumber = nftIdMatch[1];
-              placeholderSrc = createPlaceholder(`SOLARA #${nftNumber}`, null, { 
-                gradient: true, 
-                blur: false 
-              });
-            } else {
-              // Generic placeholder for other images
-              placeholderSrc = '/placeholder-nft.png';
-            }
-            
-            console.warn(`Failed to load image after all attempts: ${src} - using placeholder`);
-            
-            // No thumbnail, show error placeholder
+            // 단순히 error 상태를 true로 설정
+            // 이렇게 하면 EnhancedImageWithFallback이 자체 fallback을 표시합니다
+            // 여기서 src 속성은 유지해야 이미지 요소가 깨지지 않습니다
+            // 하지만 실제 이미지는 보이지 않게 처리하고 error 상태를 활성화합니다
             setLoadState(prev => ({
               ...prev,
               loading: false,
               error: true,
-              src: placeholderSrc
+              // src는 이전 값을 유지하거나, 투명 이미지를 사용합니다
+              // 실제로는 error 상태가 활성화되면 이미지가 보이지 않으므로 중요하지 않습니다
+              src: prev.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' // 투명 이미지
             }));
             
             if (onError) onError();
@@ -869,12 +776,14 @@ export default function EnhancedProgressiveImage({
       {/* Loading indicators */}
       {renderLoadingIndicator()}
       
-      {/* Error state overlay - 로딩 스타일로 변경 */}
+      {/* Error state overlay - 명확한 에러 상태 표시 */}
       {loadState.error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-purple-900/20 to-blue-900/20 backdrop-blur-sm">
-          <div className="text-center p-2 animate-pulse">
-            <div className="w-12 h-12 mx-auto border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p className="text-xs text-gray-300">Loading NFT image...</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-red-900/30 to-purple-900/30 backdrop-blur-sm">
+          <div className="text-center p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto text-red-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-xs text-red-300">Failed to load image</p>
           </div>
         </div>
       )}

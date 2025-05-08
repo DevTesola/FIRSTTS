@@ -5,6 +5,8 @@
   "scripts": {
     "patch-font": "node scripts/apply-font.cjs",
     "dev": "node scripts/apply-font.cjs && next dev",
+    "dev:simple": "next dev",
+    "dev:polling": "NODE_ENV=development node scripts/apply-font.cjs && next dev",
     "build": "node scripts/apply-font.cjs && next build",
     "analyze": "ANALYZE=true next build",
     "start": "next start",

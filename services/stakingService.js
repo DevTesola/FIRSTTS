@@ -161,7 +161,8 @@ export async function getStakingStats(wallet, options = {}) {
             const numericId = typeof id === 'string' ? id.match(/(\d+)/) : null;
             if (numericId && numericId[1]) {
               const formattedId = String(numericId[1]).padStart(4, '0');
-              const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+              // Use environment variable for IMAGES_CID
+              const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
               imageFields.image_url = `ipfs://${COLLECTION_IPFS_HASH}/${formattedId}.png`;
             }
           } else {

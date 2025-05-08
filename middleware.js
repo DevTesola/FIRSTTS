@@ -13,14 +13,22 @@ export function middleware(request) {
   // Get a response object
   const response = NextResponse.next();
 
-  // Add security headers
-  const securityHeaders = {
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'X-XSS-Protection': '1; mode=block',
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-    'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: *.solana.com unpkg.com *.arweave.net *.arweave.dev; img-src 'self' data: blob: ipfs.io cloudflare-ipfs.com gateway.pinata.cloud; connect-src 'self' wss://*.solana.com swr.solana.com *.solscan.io *.arweave.net *.arweave.dev;"
-  };
+  // Define secure headers
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  
+  // 매우 완화된 CSP 설정 - 모든 리소스 허용하는 방식으로 설정
+  response.headers.set(
+    'Content-Security-Policy', 
+    "default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+    "img-src * 'self' data: blob:; " +
+    "connect-src * 'self' wss:; " +
+    "style-src * 'self' 'unsafe-inline'; " +
+    "font-src * 'self' data:; " + 
+    "script-src * 'self' 'unsafe-inline' 'unsafe-eval' blob:;"
+  );
 
   // Set cache-control header for assets that should be cached
   if (
@@ -30,18 +38,11 @@ export function middleware(request) {
   ) {
     response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   }
-
-  // Apply security headers
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
   
   // Add font preload for performance (use Google Fonts Orbitron)
   response.headers.set(
     'Link', 
-    '<https://fonts.googleapis.com>; rel=preconnect, ' +
-    '<https://fonts.gstatic.com>; rel=preconnect; crossorigin, ' +
-    '<https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap>; rel=preload; as=style'
+    '<https://fonts.googleapis.com>; rel=preconnect, <https://fonts.gstatic.com>; rel=preconnect; crossorigin, <https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap>; rel=preload; as=style'
   );
 
   return response;

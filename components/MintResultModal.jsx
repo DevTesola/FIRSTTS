@@ -54,13 +54,23 @@ export default function MintResultModal({ result, onClose }) {
   // Simple direct gateway URL approach
   const originalImageUrl = metadata.image || "";
   
-  // Use direct gateway URL - simplest possible approach
+  // Use more direct approach for handling IPFS URLs
   let imageUrl = originalImageUrl;
   
-  // If it's an IPFS URL, convert to HTTP gateway
-  if (isIPFSUrl(originalImageUrl)) {
-    imageUrl = getDirectGatewayUrl(originalImageUrl);
+  // If it's an IPFS URL, convert to HTTP gateway using simple conversion
+  if (originalImageUrl.startsWith('ipfs://')) {
+    const ipfsPath = originalImageUrl.replace('ipfs://', '');
+    imageUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsPath}`;
+  } else if (originalImageUrl.includes('/ipfs/')) {
+    // Already a gateway URL, ensure it uses our preferred gateway
+    const ipfsPath = originalImageUrl.split('/ipfs/')[1];
+    imageUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsPath}`;
   }
+  
+  // Add cache busting to ensure fresh content
+  imageUrl = imageUrl.includes('?') ? 
+    `${imageUrl}&_cb=${Date.now()}` : 
+    `${imageUrl}?_cb=${Date.now()}`;
   
   // Ensure the URL is valid by logging
   console.log("Original NFT Image URL:", originalImageUrl);
@@ -179,7 +189,34 @@ export default function MintResultModal({ result, onClose }) {
   };
 
   const handleImageError = () => {
+    console.warn("Image loading failed:", imageUrl);
     setImageError(true);
+    
+    // Try alternate approach if first load fails
+    if (!originalImageUrl.includes("tesola.mypinata.cloud")) {
+      // Get NFT ID from filename
+      const nftId = formattedId;
+      
+      // Create direct URL to collection
+      const COLLECTION_IPFS_HASH = 'QmZxNmoVrJR1qyCLY1fUXPRNfdMNeu7vKLMdgY7LXXHbZ3';
+      const fallbackUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${nftId}.png?_fb=1`;
+      
+      console.log("Trying fallback URL:", fallbackUrl);
+      
+      // Create a new image element to test the fallback
+      const testImg = new Image();
+      testImg.onload = () => {
+        // If fallback loads successfully, update the image URL
+        console.log("Fallback image loaded successfully");
+        const imgElement = document.querySelector('.modal-nft-image');
+        if (imgElement) {
+          imgElement.src = fallbackUrl;
+          setImageLoaded(true);
+          setImageError(false);
+        }
+      };
+      testImg.src = fallbackUrl;
+    }
   };
   
   return (
@@ -208,7 +245,7 @@ export default function MintResultModal({ result, onClose }) {
                 <img
                   src={imageUrl}
                   alt={metadata.name || "Solara NFT"}
-                  className={`w-full h-full object-cover ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+                  className={`modal-nft-image w-full h-full object-cover ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                   loading="eager" 

@@ -5,6 +5,10 @@ const nextConfig = {
   // Disable font optimization - prevents automatic Google Font preloading
   optimizeFonts: false,
   
+  // 빌드 프로세스에서 특정 파일 제외
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'md', 'mdx'],
+  poweredByHeader: false,
+  
   // Security headers
   async headers() {
     return [
@@ -78,6 +82,21 @@ const nextConfig = {
     deviceSizes: [320, 480, 640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 64, 96, 128, 256],
     formats: ['image/webp', 'image/avif'],
+  },
+
+  // 파일 감시 설정 최적화 - WSL 환경에서 발생하는 문제 해결
+  webpack: (config, { isServer }) => {
+    config.watchOptions = {
+      ignored: [
+        '**/node_modules',
+        '**/.git',
+        '**/*.Zone.Identifier'
+      ],
+      followSymlinks: false,
+      poll: 1000, // 폴링 사용, 1초마다 확인
+      aggregateTimeout: 800 // 변경 후 리빌드 지연시간
+    };
+    return config;
   },
 };
 

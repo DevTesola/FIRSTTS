@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { validateSolanaAddress } from '../../../middleware/apiSecurity';
+import { validateSolanaAddress } from '../../../api-middlewares/apiSecurity';
 
 // Initialize Supabase client
 const supabase = createClient(
