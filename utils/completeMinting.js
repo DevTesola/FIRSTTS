@@ -19,20 +19,32 @@ const supabase = createClient(
 const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
 const RESOURCE_CID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
 
+// Lock timeout in milliseconds (3 minutes)
+const LOCK_TIMEOUT_MS = 180000;
+
+/**
+ * Complete the minting process after payment confirmation
+ * @param {string} paymentTxId - Payment transaction ID/signature
+ * @param {number} mintIndex - The NFT mint index to complete
+ * @param {string} lockId - Lock ID from the purchase transaction
+ * @param {PublicKey} buyerPublicKey - Buyer's Solana wallet address
+ * @returns {Object} Minting completion result
+ */
 export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPublicKey) {
   if (!(buyerPublicKey instanceof PublicKey)) {
     throw new Error('Invalid wallet address');
   }
 
   let nft = null;
+  const requestId = `req_complete_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
   try {
-    console.log(`Completing minting for mintIndex: ${mintIndex}, lockId: ${lockId}`);
+    console.log(`[${requestId}] Completing minting for mintIndex: ${mintIndex}, lockId: ${lockId}`);
     
-    // 1. 락 상태 확인
+    // 1. 락 상태 확인 with timeout validation
     const { data: lockData, error: lockError } = await supabase
       .from('minted_nfts')
-      .select('status, lock_id, wallet')
+      .select('status, lock_id, wallet, updated_at')
       .eq('mint_index', mintIndex)
       .single();
     
@@ -40,13 +52,40 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
       throw new Error(`Lock verification failed: ${lockError.message}`);
     }
     
-    if (!lockData || lockData.status !== 'pending' || lockData.lock_id !== lockId) {
-      throw new Error('Invalid lock state or lock expired');
+    // Check if lock exists and is in pending state
+    if (!lockData || lockData.status !== 'pending') {
+      throw new Error(`Invalid lock state: ${lockData?.status || 'missing'}`);
     }
     
+    // Verify lock ID matches
+    if (lockData.lock_id !== lockId) {
+      throw new Error(`Lock ID mismatch. Expected: ${lockId}, Found: ${lockData.lock_id}`);
+    }
+    
+    // Check if lock has expired
+    if (lockData.updated_at) {
+      const lockTimestamp = new Date(lockData.updated_at).getTime();
+      const currentTime = Date.now();
+      
+      if (currentTime - lockTimestamp > LOCK_TIMEOUT_MS) {
+        throw new Error(`Lock expired. Lock time: ${lockData.updated_at}, Timeout: ${LOCK_TIMEOUT_MS}ms`);
+      }
+    }
+    
+    // Verify wallet ownership
     if (lockData.wallet !== buyerPublicKey.toBase58()) {
       throw new Error('Wallet mismatch, possible front-running attempt');
     }
+    
+    // Refresh lock timestamp to prevent expiration during minting
+    await supabase
+      .from('minted_nfts')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('mint_index', mintIndex)
+      .eq('lock_id', lockId)
+      .eq('status', 'pending');
+    
+    console.log(`[${requestId}] Lock verified and refreshed successfully`);
     
     // 2. 결제 트랜잭션 확인
     const txInfo = await connection.getTransaction(paymentTxId, {
