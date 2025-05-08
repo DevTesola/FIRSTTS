@@ -54,6 +54,7 @@ export default function AdminLayout({ children, title = 'Admin Panel' }) {
     { href: '/admin/audit-logs', label: 'Audit Logs' },
     { href: '/admin/initialize-pool', label: 'Staking Pool' },
     { href: '/admin/sync-staking', label: 'Sync Staking Data' },
+    { href: '/admin/sync-logs', label: 'Sync Logs' },
   ];
   
   return (
