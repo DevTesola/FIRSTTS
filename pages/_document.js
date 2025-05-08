@@ -71,8 +71,11 @@ export default function MyDocument() {
         {/* Custom cursor script */}
         <script src="/cursor.js" />
         
-        {/* Service worker registration */}
-        <script src="/register-sw.js" />
+        {/* Service worker registration - disabled for Vercel compatibility */}
+        {/* <script src="/register-sw.js" /> */}
+        
+        {/* Service worker unregister patch for Vercel compatibility */}
+        <script src="/swr-patch.js" />
       </body>
     </Html>
   );

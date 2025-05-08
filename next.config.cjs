@@ -17,6 +17,14 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
+  // Vercel 호환성을 위한 런타임 설정
+  experimental: {
+    // 서버 컴포넌트 비활성화
+    serverComponents: false,
+    // Edge 런타임 대신 Node.js 사용
+    runtime: 'nodejs',
+  },
+  
   // Security headers
   async headers() {
     return [
