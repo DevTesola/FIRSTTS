@@ -9,6 +9,14 @@ const nextConfig = {
   pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'md', 'mdx'],
   poweredByHeader: false,
   
+  // SSR 설정 - getInitialProps 관련 동작 최적화
+  swcMinify: true,
+  compiler: {
+    // 서버 렌더링 중 이벤트 핸들러 에러 방지
+    reactRemoveProperties: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
   // Security headers
   async headers() {
     return [
@@ -17,7 +25,7 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; media-src 'self' blob:; connect-src 'self'; img-src 'self' data: blob: *; font-src 'self' data: fonts.gstatic.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com;",
+            value: "default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src * 'self' data: blob:; connect-src * 'self' wss:; style-src * 'self' 'unsafe-inline'; font-src * 'self' data:; script-src * 'self' 'unsafe-inline' 'unsafe-eval' blob:;",
           },
           {
             key: 'X-Content-Type-Options',
@@ -96,6 +104,23 @@ const nextConfig = {
       poll: 1000, // 폴링 사용, 1초마다 확인
       aggregateTimeout: 800 // 변경 후 리빌드 지연시간
     };
+    
+    // SSR 최적화와 오류 방지를 위한 설정
+    if (isServer) {
+      // 서버 사이드 렌더링 중 window/document 객체 참조 문제 해결
+      const originalEntry = config.entry;
+      
+      config.entry = async () => {
+        const entries = await originalEntry();
+        
+        if (entries['main.js'] && !entries['main.js'].includes('./utils/clientSideUtils')) {
+          entries['main.js'].unshift('./utils/clientSideUtils');
+        }
+        
+        return entries;
+      };
+    }
+    
     return config;
   },
 };

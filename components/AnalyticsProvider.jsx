@@ -1,13 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { safeLocalStorage, safeSetLocalStorage, isClient } from "../utils/clientSideUtils";
 
 // 익명 사용자 ID 생성 함수
 const generateAnonymousId = () => {
-  if (typeof window === 'undefined') return 'no-id';
+  if (!isClient) return 'no-id';
   
   try {
-    const storedId = localStorage.getItem('tesola_anonymous_id');
+    const storedId = safeLocalStorage('tesola_anonymous_id');
     if (storedId) return storedId;
     
     // UUID v4 간단 구현
@@ -16,7 +17,7 @@ const generateAnonymousId = () => {
       return v.toString(16);
     });
     
-    localStorage.setItem('tesola_anonymous_id', uuid);
+    safeSetLocalStorage('tesola_anonymous_id', uuid);
     return uuid;
   } catch (e) {
     console.error("Error generating anonymous ID:", e);
@@ -49,10 +50,10 @@ export function AnalyticsProvider({ children, disabled = true }) { // 기본값�
   
   // 초기화 및 옵트아웃 상태 확인
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!isClient) return;
     
     try {
-      const optedOut = localStorage.getItem('tesola_analytics_opt_out') === 'true';
+      const optedOut = safeLocalStorage('tesola_analytics_opt_out') === 'true';
       setIsOptedOut(optedOut || disabled);
       
       // 익명 ID 설정
@@ -68,7 +69,7 @@ export function AnalyticsProvider({ children, disabled = true }) { // 기본값�
   
   // 이벤트 추적 함수 - 중복 이벤트 방지 로직 추가
   const trackEvent = (eventName, properties = {}) => {
-    if (isOptedOut || disabled) return;
+    if (isOptedOut || disabled || !isClient) return;
     
     // 동일한 이벤트가 짧은 시간 내에 반복되는 것 방지
     const now = Date.now();
@@ -97,9 +98,9 @@ export function AnalyticsProvider({ children, disabled = true }) { // 기본값�
   
   // 페이지 뷰 추적 함수 - 중복 페이지뷰 방지
   const trackPageView = (path) => {
-    if (isOptedOut || disabled) return;
+    if (isOptedOut || disabled || !isClient) return;
     
-    const currentPath = path || (typeof window !== 'undefined' ? window.location.pathname : '');
+    const currentPath = path || (isClient ? window.location.pathname : '');
     
     // 동일한 페이지 뷰 반복 방지
     if (currentPath === lastPageView) {
@@ -110,15 +111,17 @@ export function AnalyticsProvider({ children, disabled = true }) { // 기본값�
     
     trackEvent('page_view', {
       path: currentPath,
-      referrer: typeof document !== 'undefined' ? document.referrer : '',
-      title: typeof document !== 'undefined' ? document.title : '',
+      referrer: isClient ? document.referrer : '',
+      title: isClient ? document.title : '',
     });
   };
   
   // 옵트아웃 함수
   const optOut = () => {
+    if (!isClient) return;
+    
     try {
-      localStorage.setItem('tesola_analytics_opt_out', 'true');
+      safeSetLocalStorage('tesola_analytics_opt_out', 'true');
       setIsOptedOut(true);
     } catch (e) {
       console.error("Error opting out:", e);
@@ -127,8 +130,10 @@ export function AnalyticsProvider({ children, disabled = true }) { // 기본값�
   
   // 옵트인 함수
   const optIn = () => {
+    if (!isClient) return;
+    
     try {
-      localStorage.setItem('tesola_analytics_opt_out', 'false');
+      safeSetLocalStorage('tesola_analytics_opt_out', 'false');
       setIsOptedOut(false);
       
       // 익명 ID 재설정
@@ -173,7 +178,10 @@ export function PageViewTracker({ path }) {
   const { trackPageView } = useAnalytics();
   
   useEffect(() => {
-    trackPageView(path);
+    // 클라이언트 측에서만 페이지 뷰 추적
+    if (isClient) {
+      trackPageView(path);
+    }
   }, [path, trackPageView]);
   
   return null;

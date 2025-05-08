@@ -49,8 +49,10 @@ export function middleware(request) {
 }
 
 // Configure matching paths - exclude API routes, static files and assets
+// Updated matcher to be more precise and avoid conflicts with API middleware
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.mp4$).*)'
+    // Apply middleware to all pages but not to API routes, static files, or assets
+    '/((?!api/|_next/static|_next/image|_next/data|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.mp4$|.*\\.webm$|.*\\.webp$|.*\\.ico$).*)'
   ],
 };

@@ -352,6 +352,9 @@ const Layout = ({ children }) => {
   useEffect(() => {
     setIsClient(true);
     
+    // Only add event listeners on client side
+    if (typeof window === 'undefined') return;
+    
     // Close modal when ESC key is pressed
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && activeModal) {
@@ -372,10 +375,8 @@ const Layout = ({ children }) => {
     } else if (href === '#roadmap') {
       setActiveModal('roadmap');
     } else {
-      // For other pages, use client-side navigation
-      if (typeof window !== 'undefined') {
-        window.location.href = href;
-      }
+      // For other pages, use router for navigation
+      router.push(href);
     }
   };
 

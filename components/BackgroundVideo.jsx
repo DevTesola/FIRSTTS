@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, memo } from "react";
 import Image from "next/image";
+import { isClient, getConnectionInfo, safeAddEventListener } from "../utils/clientSideUtils";
 
 // 미디어 옵션을 위한 상수
 const VIDEO_OPTIONS = {
@@ -24,29 +25,40 @@ const BackgroundVideo = () => {
 
   // 1. 네트워크 상태 감지 및 최적 비디오 소스 선택
   useEffect(() => {
+    if (!isClient) return;
+    
     // 느린 연결 감지 (navigator.connection API 사용)
     const detectConnectionSpeed = () => {
-      if (navigator.connection) {
-        const { effectiveType, saveData } = navigator.connection;
-        
-        // 2G, 3G 연결 또는 데이터 절약 모드인 경우 저화질 비디오 사용
-        if (saveData || ['slow-2g', '2g', '3g'].includes(effectiveType)) {
-          setIsLowBandwidth(true);
-        }
+      const connectionInfo = getConnectionInfo();
+      
+      // 2G, 3G 연결 또는 데이터 절약 모드인 경우 저화질 비디오 사용
+      if (
+        connectionInfo.saveData || 
+        ['slow-2g', '2g', '3g'].includes(connectionInfo.connectionType)
+      ) {
+        setIsLowBandwidth(true);
       }
     };
 
     detectConnectionSpeed();
 
     // 연결 상태 변경 리스너 (지원되는 경우)
-    if (navigator.connection) {
-      navigator.connection.addEventListener('change', detectConnectionSpeed);
-      return () => navigator.connection.removeEventListener('change', detectConnectionSpeed);
+    let cleanup = () => {};
+    if (isClient && navigator.connection) {
+      cleanup = safeAddEventListener(
+        navigator.connection, 
+        'change', 
+        detectConnectionSpeed
+      );
     }
+    
+    return cleanup;
   }, []);
 
   // 2. 비디오 재생 관리 (최적화됨)
   useEffect(() => {
+    if (!isClient) return;
+    
     const video = videoRef.current;
     if (!video) return;
     
@@ -126,31 +138,39 @@ const BackgroundVideo = () => {
     
     // 가시성 변경 처리
     const handleVisibilityChange = () => {
-      if (!document.hidden && video.paused) {
+      if (document && !document.hidden && video.paused) {
         video.play().catch(() => {});
       }
     };
     
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const visibilityCleanup = safeAddEventListener(
+      document, 
+      'visibilitychange', 
+      handleVisibilityChange
+    );
     
     // 클린업
     return () => {
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('error', handleError);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      
-      // 모든 타이머 정리
-      timers.forEach(timer => clearTimeout(timer));
-      if (playAttemptRef.current) {
-        clearInterval(playAttemptRef.current);
+      if (video) {
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('error', handleError);
+        visibilityCleanup();
+        
+        // 모든 타이머 정리
+        timers.forEach(timer => clearTimeout(timer));
+        if (playAttemptRef.current) {
+          clearInterval(playAttemptRef.current);
+        }
+        
+        video.pause();
       }
-      
-      video.pause();
     };
   }, []);
 
   // 3. Fallback timer (optimized: reduced time)
   useEffect(() => {
+    if (!isClient) return;
+    
     const timer = setTimeout(() => {
       if (!isLoaded && !hasError) {
         setIsLoaded(true);

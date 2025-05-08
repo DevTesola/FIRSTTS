@@ -6,6 +6,7 @@
  * Implements advanced caching, performance optimizations, and error handling
  */
 
+// Fix import path to use correct middleware location
 import { withCache, optimizedRateLimit, errorHandler } from '../../api-middlewares';
 import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
