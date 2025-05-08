@@ -1,17 +1,16 @@
 // pages/api/cron/check-suspicious-activity.js
 import { detectSuspiciousActivity } from '../../../utils/adminLogger';
-import nodemailer from 'nodemailer';
 
-// Configure email transport
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER, // your email address
-    pass: process.env.SMTP_PASS, // your email password or app password
-  },
-});
+// Mock email transport for Vercel compatibility (remove nodemailer dependency)
+const mockTransporter = {
+  async sendMail(options) {
+    console.log(`[MOCK EMAIL] Would send email to ${options.to} with subject: ${options.subject}`);
+    return { messageId: `mock-${Date.now()}`, response: 'Mock email sent' };
+  }
+};
+
+// Use mock transport
+const transporter = mockTransporter;
 
 // Configure Telegram bot (if enabled)
 const TELEGRAM_ENABLED = process.env.TELEGRAM_ENABLED === 'true';
