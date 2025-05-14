@@ -139,10 +139,11 @@ async function fallbackToOriginalMethod(req, res, wallet) {
       console.error('[getStakingNFTs] Error during database lookup:', dbLookupError);
     }
     
-    // If database approach fails, use mock data for testing
+    // 모의 데이터 비활성화 - 실제 데이터만 표시
     if (userNFTs.length === 0) {
-      console.log('[getStakingNFTs] No NFTs found in database, generating mock data');
-      userNFTs = generateMockNFTs(wallet);
+      console.log('[getStakingNFTs] No NFTs found in database, returning empty array');
+      // 실제 프로덕션에서는 모의 데이터를 사용하지 않음
+      // userNFTs = generateMockNFTs(wallet);
     }
     
     // Step 2: Check which NFTs are already staked
@@ -193,35 +194,10 @@ async function fallbackToOriginalMethod(req, res, wallet) {
 /**
  * Generate mock NFT data for testing purposes
  */
+// 모의 데이터 생성 함수 제거 - 실제 프로덕션 환경에서는 사용하지 않음
+/*
 function generateMockNFTs(wallet) {
-  // Hash the wallet address to get a consistent but unique set of NFTs for each wallet
-  const hash = Array.from(wallet).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const nftCount = (hash % 5) + 2; // 2-6 NFTs per wallet
-  
-  const mockNFTs = [];
-  const tiers = ['Common', 'Rare', 'Epic', 'Legendary'];
-  
-  for (let i = 0; i < nftCount; i++) {
-    // Generate a unique ID based on wallet and index
-    const id = ((hash + i) % 999) + 1;
-    
-    // Select a tier based on rarity
-    const tierIndex = Math.min(Math.floor(Math.random() * 10 / 3), 3); // Weighted towards common
-    const tier = tiers[tierIndex];
-    
-    mockNFTs.push({
-      id: id.toString().padStart(4, '0'),
-      mint: `mock${id}${wallet.substr(0, 8)}`, // Mock mint address
-      name: `SOLARA #${id}`,
-      image: "loading:indicator", // Use loading indicator instead of local image
-      attributes: [
-        {
-          trait_type: "Tier",
-          value: tier
-        }
-      ]
-    });
-  }
-  
-  return mockNFTs;
+  // 이 함수는 비활성화되었습니다
+  return [];
 }
+*/

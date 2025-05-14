@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { GlassButton, SecondaryButton } from "../Buttons";
 import StakedNFTCard from "./StakedNFTCard";
+import CollectionBonus from "./CollectionBonus";
+import useStakingEvents from "../../utils/hooks/useStakingEvents";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 /**
  * Enhanced Staking Dashboard Component
@@ -11,7 +14,136 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
   const [showWelcomeGuide, setShowWelcomeGuide] = useState(true);
   const [sortBy, setSortBy] = useState("newest"); // "newest", "oldest", "rewards"
   const [expandedView, setExpandedView] = useState(null);
-  
+  const [realtimeUpdates, setRealtimeUpdates] = useState([]);
+  const [liveUpdateEnabled, setLiveUpdateEnabled] = useState(true);
+  const { publicKey } = useWallet();
+
+  // Handle real-time updates from staking events
+  const handleStakeAccountUpdate = useCallback((update) => {
+    if (!liveUpdateEnabled) return;
+
+    console.log('Stake account update received:', update);
+
+    // Add update to the realtime updates array
+    setRealtimeUpdates(prev => {
+      // Check if we already have an update for this mint address
+      const existingIndex = prev.findIndex(item =>
+        item.mintAddress === update.mintAddress
+      );
+
+      if (existingIndex >= 0) {
+        // Update existing entry
+        const newUpdates = [...prev];
+        newUpdates[existingIndex] = {
+          ...newUpdates[existingIndex],
+          timestamp: Date.now(),
+          data: update.data,
+          animateUpdate: true
+        };
+        return newUpdates;
+      } else {
+        // Add new entry
+        return [
+          {
+            mintAddress: update.mintAddress,
+            type: 'stake_update',
+            timestamp: Date.now(),
+            data: update.data,
+            animateUpdate: true
+          },
+          ...prev.slice(0, 9) // Keep only last 10 updates
+        ];
+      }
+    });
+
+    // Request a data refresh to update the UI with latest data
+    if (onRefresh && typeof onRefresh === 'function') {
+      // Use a debounced refresh to avoid too many API calls
+      if (window.stakingRefreshTimeout) {
+        clearTimeout(window.stakingRefreshTimeout);
+      }
+      window.stakingRefreshTimeout = setTimeout(() => {
+        onRefresh();
+      }, 2000); // Wait 2 seconds before refreshing to batch multiple updates
+    }
+  }, [onRefresh, liveUpdateEnabled]);
+
+  // Handle user staking info updates
+  const handleUserStakingUpdate = useCallback((update) => {
+    if (!liveUpdateEnabled) return;
+
+    console.log('User staking update received:', update);
+
+    // Add update to the realtime updates array
+    setRealtimeUpdates(prev => [
+      {
+        type: 'user_staking_update',
+        timestamp: Date.now(),
+        data: update.data,
+        animateUpdate: true
+      },
+      ...prev.slice(0, 9) // Keep only last 10 updates
+    ]);
+
+    // Request a data refresh to update the UI with latest data
+    if (onRefresh && typeof onRefresh === 'function') {
+      // Use a debounced refresh to avoid too many API calls
+      if (window.stakingRefreshTimeout) {
+        clearTimeout(window.stakingRefreshTimeout);
+      }
+      window.stakingRefreshTimeout = setTimeout(() => {
+        onRefresh();
+      }, 2000); // Wait 2 seconds before refreshing to batch multiple updates
+    }
+  }, [onRefresh, liveUpdateEnabled]);
+
+  // Configure staking event subscriptions
+  const {
+    subscribeToNFT,
+    subscribeToMultipleNFTs,
+    activeSubscriptions,
+    isSubscribing,
+    eventUpdates
+  } = useStakingEvents({
+    autoSubscribeUserAccount: true,
+    onStakeAccountUpdate: handleStakeAccountUpdate,
+    onUserStakingUpdate: handleUserStakingUpdate
+  });
+
+  // Subscribe to all stake accounts when stats change
+  useEffect(() => {
+    if (stats?.activeStakes && stats.activeStakes.length > 0 && !isLoading) {
+      // Extract mint addresses
+      const mintAddresses = stats.activeStakes
+        .filter(stake => stake.mint_address)
+        .map(stake => stake.mint_address);
+
+      // Subscribe to all mint addresses that aren't already subscribed
+      const currentMints = activeSubscriptions
+        .filter(sub => sub.type === 'stake_account')
+        .map(sub => sub.key);
+
+      const newMints = mintAddresses.filter(mint => !currentMints.includes(mint));
+
+      if (newMints.length > 0) {
+        subscribeToMultipleNFTs(newMints);
+      }
+    }
+  }, [stats, isLoading, subscribeToMultipleNFTs, activeSubscriptions]);
+
+  // Animate updates after a small delay
+  useEffect(() => {
+    if (realtimeUpdates.some(update => update.animateUpdate)) {
+      const timer = setTimeout(() => {
+        setRealtimeUpdates(updates =>
+          updates.map(update => ({ ...update, animateUpdate: false }))
+        );
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [realtimeUpdates]);
+
   // Trigger number animation when stats change
   useEffect(() => {
     if (stats && !isLoading) {
@@ -267,6 +399,9 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
         </div>
       </div>
 
+      {/* Collection Bonus Component */}
+      <CollectionBonus stats={stats} />
+
       {/* Active Staking Section with Enhanced UI */}
       <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
@@ -297,8 +432,8 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
               </div>
             </div>
             
-            <GlassButton 
-              size="small" 
+            <GlassButton
+              size="small"
               onClick={onRefresh}
               disabled={isLoading}
               icon={
@@ -316,6 +451,19 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             >
               Refresh
             </GlassButton>
+
+            {/* Live Updates Toggle */}
+            <button
+              onClick={() => setLiveUpdateEnabled(!liveUpdateEnabled)}
+              className={`px-2 py-1 rounded-md text-xs flex items-center border ${
+                liveUpdateEnabled
+                  ? 'bg-green-900/20 border-green-500/30 text-green-300'
+                  : 'bg-gray-800/30 border-gray-700/30 text-gray-400'
+              }`}
+            >
+              <div className={`h-2 w-2 rounded-full mr-1 ${liveUpdateEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`}></div>
+              {liveUpdateEnabled ? 'Live Updates' : 'Updates Paused'}
+            </button>
             
             <GlassButton
               size="small"
@@ -341,23 +489,23 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
         ) : sortedStakes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sortedStakes.map((stake) => (
-              <StakedNFTCard 
-                key={stake.id} 
+              <StakedNFTCard
+                key={stake.id}
                 stake={{
                   ...stake,
                   // Add source property for component identification
                   __source: 'StakingDashboard-card',
-                  // Add cache busting
+                  // Add cache busting with timestamp
                   _cacheBust: Date.now(),
-                  // 명시적으로 metadata 전달 확인
+                  // Explicit metadata transfer
                   metadata: stake.metadata,
-                  // 진짜 IPFS 이미지 사용 설정
+                  // Force using actual NFT data
                   using_actual_nft_data: true,
-                  // 환경 변수 명시적 전달 - 최적화
+                  // Pass environment variables explicitly
                   NEXT_PUBLIC_IMAGES_CID: process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike',
                   NEXT_PUBLIC_IPFS_GATEWAY: process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud'
-                }} 
-                onRefresh={onRefresh} 
+                }}
+                onRefresh={onRefresh}
                 isExpanded={expandedView === stake.id}
                 onToggleExpand={() => {
                   setExpandedView(expandedView === stake.id ? null : stake.id);
@@ -387,6 +535,123 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           </div>
         )}
       </div>
+
+      {/* Live Updates Feed Section - 항상 표시 */}
+        <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-white flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+              </svg>
+              Real-time Updates
+            </h3>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-gray-400">
+                <span className="font-medium">{activeSubscriptions.length}</span> active subscriptions
+              </div>
+              {isSubscribing && (
+                <div className="text-xs text-blue-400 flex items-center">
+                  <svg className="animate-spin mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Subscribing...
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            {realtimeUpdates.length > 0 ? (
+              realtimeUpdates.map((update, index) => {
+                // Different styling for different update types
+                let color = 'blue';
+                let icon = (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                );
+
+                if (update.type === 'stake_update') {
+                  color = 'green';
+                  icon = (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                    </svg>
+                  );
+                } else if (update.type === 'user_staking_update') {
+                  color = 'purple';
+                  icon = (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                    </svg>
+                  );
+                }
+
+                return (
+                  <div
+                    key={`${update.type}-${index}`}
+                    className={`p-3 rounded-lg border ${
+                      update.animateUpdate
+                        ? `animate-highlight-${color} border-${color}-500/40`
+                        : `bg-gray-900/40 border-gray-700/30`
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start">
+                        <div className={`text-${color}-400 flex items-center mt-0.5`}>
+                          {icon}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-white">
+                            {update.type === 'stake_update'
+                              ? `NFT Update: ${update.mintAddress.slice(0, 4)}...${update.mintAddress.slice(-4)}`
+                              : 'User Staking Update'
+                            }
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {update.type === 'stake_update' && (
+                              <>
+                                {update.data.isStaked
+                                  ? `Staked: ${new Date(update.data.stakedAt * 1000).toLocaleDateString()}`
+                                  : 'Not staked'
+                                }
+                                {update.data.currentTimeMultiplier > 0 &&
+                                  ` • Multiplier: +${update.data.currentTimeMultiplier / 100}%`
+                                }
+                              </>
+                            )}
+                            {update.type === 'user_staking_update' && (
+                              <>
+                                Staked NFTs: {update.data.stakedCount}
+                                {update.data.collectionBonus > 0 &&
+                                  ` • Collection Bonus: +${update.data.collectionBonus / 100}%`
+                                }
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(update.timestamp).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-3 bg-gray-900/30 rounded-lg text-gray-400 text-sm">
+                {liveUpdateEnabled
+                  ? 'Waiting for real-time updates...'
+                  : 'Updates paused. Enable real-time updates to see changes.'}
+              </div>
+            )}
+          </div>
+
+          <div className="text-xs text-gray-400">
+            <p>Real-time updates are enabled for your staked NFTs. You'll see live data when values change on the blockchain.</p>
+          </div>
+        </div>
 
       {/* Staking Tiers Info with Visual Enhancement */}
       <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
@@ -489,9 +754,39 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           from { opacity: 0.5; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        
+
         .animate-count {
           animation: countUp 0.5s ease-out forwards;
+        }
+
+        @keyframes highlightGreen {
+          0% { background-color: rgba(16, 185, 129, 0.2); }
+          70% { background-color: rgba(16, 185, 129, 0.2); }
+          100% { background-color: transparent; }
+        }
+
+        @keyframes highlightBlue {
+          0% { background-color: rgba(59, 130, 246, 0.2); }
+          70% { background-color: rgba(59, 130, 246, 0.2); }
+          100% { background-color: transparent; }
+        }
+
+        @keyframes highlightPurple {
+          0% { background-color: rgba(168, 85, 247, 0.2); }
+          70% { background-color: rgba(168, 85, 247, 0.2); }
+          100% { background-color: transparent; }
+        }
+
+        .animate-highlight-green {
+          animation: highlightGreen 5s ease-out forwards;
+        }
+
+        .animate-highlight-blue {
+          animation: highlightBlue 5s ease-out forwards;
+        }
+
+        .animate-highlight-purple {
+          animation: highlightPurple 5s ease-out forwards;
         }
       `}</style>
     </div>

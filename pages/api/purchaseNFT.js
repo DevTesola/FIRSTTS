@@ -1,6 +1,7 @@
-// pages/api/purchaseNFT.js - Fixed Secured version
+// pages/api/purchaseNFT.js - Enhanced Fixed Secured version
 import { PublicKey } from '@solana/web3.js';
-import { purchaseNFT } from '../../utils/purchaseNFT';
+// Import from the fixed version to resolve lock issues
+import { purchaseNFT } from '../../utils/purchaseNFT-fix';
 import { validateSolanaAddress } from '../../api-middlewares/apiSecurity';
 
 export default async function handler(req, res) {

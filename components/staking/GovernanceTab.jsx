@@ -3,7 +3,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import ErrorMessage from '../ErrorMessage';
 import LoadingSkeleton from '../LoadingSkeleton';
-import EnhancedImageWithFallback from '../EnhancedImageWithFallback';
+import EnhancedProgressiveImage from '../EnhancedProgressiveImage';
 import { createPlaceholder } from '../../utils/mediaUtils';
 
 /**
@@ -359,11 +359,11 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
                     <div className="flex mb-3">
                       {/* 제안서 관련 NFT 이미지 - 모든 컴포넌트와 동일한 로직 사용 */}
                       <div className="w-14 h-14 rounded-lg overflow-hidden mr-3 border border-gray-700 flex-shrink-0">
-                        <EnhancedImageWithFallback
+                        <EnhancedProgressiveImage
                           src={(() => {
                             // NFT ID는 proposal.id에서 숫자를 추출하거나 해시를 사용
                             let nftId = null;
-                            
+
                             // 1. proposal.id에서 숫자 추출 시도 (가장 높은 우선순위)
                             if (proposal.id) {
                               const match = String(proposal.id).match(/(\d+)/);
@@ -371,7 +371,7 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
                                 nftId = match[1];
                               }
                             }
-                            
+
                             // 2. 문자열 해시 생성
                             if (!nftId && proposal.title) {
                               let hash = 0;
@@ -382,29 +382,30 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
                               }
                               nftId = Math.abs(hash) % 999 + 1;
                             }
-                            
+
                             // 모든 상황에서 항상 직접 IPFS URL 생성
                             const formattedId = String(nftId).padStart(4, '0');
                             // 최신 환경 변수 사용 (하드코딩 제거)
                             const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                             const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-                            
+                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_t=${Date.now()}`;
+
                             // 로그로 생성된 URL 확인
-                            console.log(`❗❗❗ GovernanceTab Proposal: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                            
+                            console.log(`✅ GovernanceTab Proposal: IPFS URL 생성: ${gatewayUrl}`);
+
                             return gatewayUrl;
                           })()}
                           alt={`Proposal ${proposal.id}`}
                           placeholder={createPlaceholder(`Proposal ${proposal.id}`)}
                           className="w-full h-full object-cover"
                           id={proposal.id || proposal.publicKey}
-                          placeholderText="NFT at committee meeting"
                           lazyLoad={true}
                           priority={false}
                           highQuality={true}
+                          blur={true}
                           preferRemote={true}
                           useCache={false}
+                          __source="GovernanceTab-proposal"
                           maxRetries={1}
                           retryInterval={1000}
                         />

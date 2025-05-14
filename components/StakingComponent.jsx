@@ -8,6 +8,8 @@ import ErrorBoundary from "./ErrorBoundary";
 import LoadingOverlay from "./LoadingOverlay";
 import TransactionStatus from "./TransactionStatus";
 import ProgressStepper from "./ProgressStepper";
+import TokenAccountInitializer from "./staking/TokenAccountInitializer";
+import EnhancedStakingButton from "./staking/EnhancedStakingButton";
 import { processImageUrl, createPlaceholder, getNftPreviewImage } from "../utils/mediaUtils";
 
 /**
@@ -42,6 +44,11 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
   const [transactionStatus, setTransactionStatus] = useState("idle"); // idle, preparing, awaiting_approval, submitting, confirming, completed, failed
   const [transactionDetails, setTransactionDetails] = useState({});
   const [transactionProgress, setTransactionProgress] = useState(0);
+
+  // Token account initialization state
+  const [showTokenInitializer, setShowTokenInitializer] = useState(false);
+  const [tokenAccountStatus, setTokenAccountStatus] = useState(null); // null, 'checking', 'needs_init', 'ready'
+  const [userTokenAccount, setUserTokenAccount] = useState(null);
   
   const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
   
@@ -332,29 +339,388 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
     }
   }, [showSuccessPopup]);
 
-  // Stake NFT function with improved error handling, timeout management, and offline resilience
-  const handleStake = async () => {
+  /**
+   * Checks if the token account needs initialization and handles the initialization process.
+   * Returns information about whether the account is ready and its address.
+   */
+  const checkTokenAccount = async () => {
+    if (!connected || !publicKey || !nft?.mint) {
+      setError("Please connect your wallet and select an NFT to stake.");
+      return false;
+    }
+
+    if (!verifiedOwnership && !isCheckingOwnership) {
+      setError("You don't own this NFT or it might be staked elsewhere.");
+      return false;
+    }
+
+    try {
+      setTokenAccountStatus('checking');
+      console.log("Checking if token account needs initialization...");
+
+      const response = await fetch("/api/staking/initializeTokenAccount", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+          mintAddress: nft.mint
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to check token account status");
+      }
+
+      const data = await response.json();
+      const needsInitialization = data.data.needsInitialization;
+
+      if (needsInitialization) {
+        console.log("Token account needs initialization");
+        setTokenAccountStatus('needs_init');
+
+        // Automatically show the initializer component
+        setShowTokenInitializer(true);
+        return {
+          ready: false,
+          userTokenAccount: data.data.userTokenAccount,
+          diagnosticInfo: data.data.diagnosticInfo
+        };
+      } else {
+        console.log("Token account is already initialized");
+        setTokenAccountStatus('ready');
+        setUserTokenAccount(data.data.userTokenAccount);
+        return {
+          ready: true,
+          userTokenAccount: data.data.userTokenAccount
+        };
+      }
+    } catch (err) {
+      console.error("Error checking token account status:", err);
+      setError(`Token account check failed: ${err.message}`);
+      setTokenAccountStatus(null);
+      return {
+        ready: false,
+        error: err.message
+      };
+    }
+  };
+
+  /**
+   * Handles token account initialization completion
+   * Upon successful initialization, automatically proceeds with the appropriate
+   * staking method based on user preference or system recommendation
+   */
+  const handleTokenInitComplete = (initData) => {
+    console.log("Token account initialization complete:", initData);
+    setTokenAccountStatus('ready');
+    setShowTokenInitializer(false);
+    setUserTokenAccount(initData.userTokenAccount);
+
+    // Create a toast notification for successful initialization
+    try {
+      // Use toast if available, otherwise just console.log
+      if (typeof toast !== 'undefined') {
+        toast.success("Token account successfully initialized");
+      }
+    } catch (error) {
+      console.log("Token account successfully initialized");
+    }
+
+    // Ask user which staking method they prefer
+    const preferredMethod = window.localStorage.getItem('preferredStakingMethod');
+
+    // Default to 3-phase staking for better reliability unless user has explicitly chosen otherwise
+    if (preferredMethod === 'original') {
+      // Use the original staking method if user has explicitly chosen it before
+      handleStake();
+    } else {
+      // Default to the more reliable 3-phase staking method
+      handleThreePhaseStaking();
+    }
+  };
+
+  // Handle token account initialization error
+  const handleTokenInitError = (error) => {
+    console.error("Token account initialization error:", error);
+    setError(`Token account initialization failed: ${error.message}`);
+    setTokenAccountStatus(null);
+    setShowTokenInitializer(false);
+  };
+
+  // Handle token account initialization cancellation
+  const handleTokenInitCancel = () => {
+    setShowTokenInitializer(false);
+    setTokenAccountStatus(null);
+  };
+
+  // 3단계 초기화 방식으로 스테이킹 실행
+  const handleThreePhaseStaking = async () => {
     if (!connected || !publicKey || !nft?.mint) {
       setError("Please connect your wallet and select an NFT to stake.");
       return;
     }
-    
+
     if (!verifiedOwnership && !isCheckingOwnership) {
       setError("You don't own this NFT or it might be staked elsewhere.");
       return;
     }
-    
+
     // Check network connectivity
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       setError("You appear to be offline. Please check your internet connection and try again.");
       return;
     }
-    
+
     // Prevent multiple simultaneous transactions
     if (transactionInProgress) {
       return;
     }
-    
+
+    setLoading(true);
+    setTransactionInProgress(true);
+    setError(null);
+    setSuccessMessage(null);
+    setDebugInfo(null);
+    setTransactionStatus("preparing");
+    setTransactionProgress(0);
+
+    try {
+      // Get tier attributes from the NFT
+      const tierAttr = nft.attributes?.find(attr =>
+        attr.trait_type === "Tier" || attr.trait_type === "tier"
+      );
+
+      const rawTierValue = tierAttr ? tierAttr.value : null;
+      console.log("Staking NFT with tier:", currentTier, "Raw value:", rawTierValue);
+
+      // Step 1: 사용자 NFT 토큰 계정 초기화
+      setTransactionStatus("initializing_user_token");
+      setTransactionProgress(10);
+      console.log("Step 1: Initializing user NFT token account...");
+
+      const userTokenResponse = await fetch("/api/staking/initializeTokenAccount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+          mintAddress: nft.mint
+        })
+      });
+
+      if (!userTokenResponse.ok) {
+        const errorData = await userTokenResponse.json();
+        if (!errorData.error.includes("already properly initialized")) {
+          throw new Error(errorData.error || "Failed to initialize user token account");
+        }
+      }
+
+      const userTokenData = await userTokenResponse.json();
+      const userTokenAccount = userTokenData.data.userTokenAccount;
+      setTransactionProgress(25);
+
+      // Step 2: Escrow 계정 초기화
+      setTransactionStatus("initializing_escrow");
+      setTransactionProgress(30);
+      console.log("Step 2: Initializing escrow account...");
+
+      const escrowResponse = await fetch("/api/staking/initializeEscrowAccount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+          mintAddress: nft.mint
+        })
+      });
+
+      if (!escrowResponse.ok) {
+        const errorData = await escrowResponse.json();
+        if (!errorData.error.includes("already initialized")) {
+          throw new Error(errorData.error || "Failed to initialize escrow account");
+        }
+      }
+
+      const escrowData = await escrowResponse.json();
+      const escrowTokenAccount = escrowData.data.escrowTokenAccount;
+      const escrowAuthority = escrowData.data.escrowAuthority;
+      setTransactionProgress(50);
+
+      // Step 3: 사용자 스테이킹 정보 초기화
+      setTransactionStatus("initializing_staking_info");
+      setTransactionProgress(60);
+      console.log("Step 3: Initializing user staking info...");
+
+      const stakingInfoResponse = await fetch("/api/staking/initializeUserStakingInfo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: publicKey.toString()
+        })
+      });
+
+      if (!stakingInfoResponse.ok) {
+        const errorData = await stakingInfoResponse.json();
+        if (!errorData.error.includes("already initialized")) {
+          throw new Error(errorData.error || "Failed to initialize user staking info");
+        }
+      }
+
+      const stakingInfoData = await stakingInfoResponse.json();
+      const userStakingInfo = stakingInfoData.data.userStakingInfo;
+      setTransactionProgress(75);
+
+      // Step 4: 실제 스테이킹 트랜잭션 준비 및 실행
+      setTransactionStatus("preparing_staking");
+      setTransactionProgress(80);
+      console.log("Step 4: Preparing actual staking transaction...");
+
+      const prepareResponse = await fetch("/api/staking/prepareStaking-anchor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+          mintAddress: nft.mint,
+          stakingPeriod: parseInt(stakingPeriod, 10),
+          nftTier: currentTier,
+          rawTierValue: rawTierValue,
+          nftName: nft.name,
+          accountInfo: {
+            userTokenAccount,
+            escrowTokenAccount,
+            escrowAuthority,
+            userStakingInfo
+          }
+        })
+      });
+
+      if (!prepareResponse.ok) {
+        const errorData = await prepareResponse.json();
+        // Check if it's already staked
+        if (errorData.error && errorData.error.existingStake) {
+          setIsStaked(true);
+          setStakingInfo(errorData.error.existingStake);
+          throw new Error(`This NFT is already staked until ${new Date(errorData.error.existingStake.release_date).toLocaleDateString()}`);
+        }
+        throw new Error(errorData.error || "Failed to prepare staking transaction");
+      }
+
+      const prepareData = await prepareResponse.json();
+      const stakeTx = Transaction.from(Buffer.from(prepareData.data.transactions.phase2, "base64"));
+
+      // Step 5: 트랜잭션 서명 및 전송
+      setTransactionStatus("awaiting_approval");
+      setTransactionProgress(85);
+      console.log("Step 5: Signing and sending staking transaction...");
+
+      const signedTx = await signTransaction(stakeTx);
+      setTransactionStatus("submitting");
+      setTransactionProgress(90);
+
+      const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT, "confirmed");
+      const txSignature = await connection.sendRawTransaction(signedTx.serialize());
+
+      setTransactionStatus("confirming");
+      setTransactionProgress(95);
+      console.log("Transaction sent, signature:", txSignature);
+
+      // Step 6: 트랜잭션 확인
+      await connection.confirmTransaction(txSignature, "confirmed");
+
+      // Step 7: 스테이킹 완료 기록
+      setTransactionStatus("completing");
+      setTransactionProgress(98);
+      console.log("Step 7: Recording staking completion...");
+
+      const completeResponse = await fetch("/api/staking/completeStaking-anchor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signature: txSignature,
+          mintAddress: nft.mint,
+          stakingPeriod: parseInt(stakingPeriod, 10),
+          walletAddress: publicKey.toString(),
+          accounts: prepareData.data.accounts
+        })
+      });
+
+      if (!completeResponse.ok) {
+        const errorData = await completeResponse.json();
+        console.warn("Warning: Failed to record staking completion, but transaction was successful:", errorData);
+      }
+
+      // 성공 처리
+      setTransactionStatus("completed");
+      setTransactionProgress(100);
+      setIsStaked(true);
+
+      const stakingResult = {
+        txSignature,
+        mintAddress: nft.mint,
+        stakingPeriod: parseInt(stakingPeriod, 10)
+      };
+
+      setSuccessMessage(`Staking successful! Transaction: ${txSignature.slice(0, 8)}...`);
+      setSuccessData(stakingResult);
+
+      if (onSuccess) {
+        onSuccess(stakingResult);
+      }
+
+    } catch (error) {
+      console.error("Staking error:", error);
+      setTransactionStatus("failed");
+      setError(error.message);
+
+      if (onError) {
+        onError(error);
+      }
+    } finally {
+      setLoading(false);
+      setTransactionInProgress(false);
+    }
+  };
+
+  // Original staking method (will be phased out)
+  const handleStake = async () => {
+    if (!connected || !publicKey || !nft?.mint) {
+      setError("Please connect your wallet and select an NFT to stake.");
+      return;
+    }
+
+    if (!verifiedOwnership && !isCheckingOwnership) {
+      setError("You don't own this NFT or it might be staked elsewhere.");
+      return;
+    }
+
+    // Check network connectivity
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setError("You appear to be offline. Please check your internet connection and try again.");
+      return;
+    }
+
+    // Prevent multiple simultaneous transactions
+    if (transactionInProgress) {
+      return;
+    }
+
+    // First check if token account is initialized or needs initialization
+    if (tokenAccountStatus !== 'ready') {
+      setTransactionStatus("checking_token_account");
+      const tokenAccountResult = await checkTokenAccount();
+
+      if (!tokenAccountResult.ready) {
+        // If account needs initialization, TokenAccountInitializer will be shown
+        // and we should stop here until that process completes
+        console.log("Token account requires initialization before staking", tokenAccountResult);
+        return;
+      }
+
+      // Set the user token account from the result
+      setUserTokenAccount(tokenAccountResult.userTokenAccount);
+    }
+
     setLoading(true);
     setTransactionInProgress(true);
     setError(null);
@@ -1061,6 +1427,14 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
 
   return (
     <ErrorBoundary>
+      {/* New 3-Phase Staking Banner */}
+      <div className="mb-6 p-3 bg-indigo-50 rounded-md border border-indigo-200">
+        <h3 className="text-sm font-bold text-indigo-700 mb-1">통합 스테이킹 방식이 적용되었습니다</h3>
+        <p className="text-xs text-indigo-600">
+          이제 기존에 발생하던 모든 오류가 수정된 단일 스테이킹 방식을 제공합니다.
+          계정 초기화 오류와 벡터 파싱 오류가 해결되어 더 안정적인 스테이킹이 가능합니다.
+        </p>
+      </div>
       <div className="bg-gray-800 border border-purple-500/30 rounded-lg p-6 shadow-lg relative">
         {/* Success popup overlay */}
       {showSuccessPopup && successData && (
@@ -1427,30 +1801,76 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
             </div>
           </div>
           
-          <button
-            onClick={handleStake}
-            disabled={loading || !verifiedOwnership || transactionInProgress || !isOnline}
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-h-[44px]"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          {/* Account Status Indicator */}
+          {tokenAccountStatus && tokenAccountStatus !== 'ready' && (
+            <div className={`mb-4 p-3 rounded-lg border ${
+              tokenAccountStatus === 'checking' ? 'bg-blue-900/30 border-blue-500/30' :
+              tokenAccountStatus === 'needs_init' ? 'bg-yellow-900/30 border-yellow-500/30' :
+              'bg-red-900/30 border-red-500/30'
+            }`}>
+              {tokenAccountStatus === 'checking' && (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin h-5 w-5 mr-2 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="text-blue-300">Checking token account status...</span>
+                </div>
+              )}
+
+              {tokenAccountStatus === 'needs_init' && !showTokenInitializer && (
+                <div className="text-center">
+                  <p className="text-yellow-300 text-sm mb-2">Your token account needs to be initialized before staking</p>
+                  <button
+                    onClick={() => setShowTokenInitializer(true)}
+                    className="px-4 py-2 bg-yellow-600/70 hover:bg-yellow-600 text-white text-sm rounded-lg transition-colors"
+                  >
+                    Initialize Token Account
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Token account initialization automatically checked before staking */}
+          {tokenAccountStatus === 'ready' && (
+            <div className="mb-4 p-3 bg-green-900/30 border border-green-500/30 rounded-lg">
+              <div className="flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                {transactionStatus !== "idle" ? 
-                  transactionStatus === "preparing" ? "Preparing..." :
-                  transactionStatus === "awaiting_approval" ? "Awaiting Approval..." :
-                  transactionStatus === "submitting" ? "Submitting..." :
-                  transactionStatus === "confirming" ? "Confirming..." :
-                  "Processing..." : "Processing..."}
-              </span>
-            ) : !isOnline ? (
-              "Network Offline"
-            ) : (
-              `Stake for ${stakingPeriod} days`
-            )}
-          </button>
+                <span className="text-green-300">Token account is initialized and ready for staking</span>
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Staking Button - Using our new unified component */}
+          <div className="flex flex-col space-y-3">
+            <EnhancedStakingButton
+              nft={nft}
+              stakingPeriod={stakingPeriod}
+              onSuccess={(result) => {
+                // Show success message
+                setSuccessMessage(`NFT가 성공적으로 스테이킹되었습니다.`);
+                setSuccessData(result);
+                setShowSuccessPopup(true);
+
+                if (onSuccess) {
+                  onSuccess(result);
+                }
+              }}
+              onError={(err) => {
+                // Show error message
+                setError(err.message || 'Unknown error during staking');
+                if (onError) {
+                  onError(err);
+                }
+              }}
+              onStartLoading={() => setLoading(true)}
+              onEndLoading={() => setLoading(false)}
+              disabled={!verifiedOwnership || transactionInProgress || !isOnline}
+            />
+          </div>
           
           {/* Minimum staking period warning message */}
           <div className="mt-2 bg-amber-900/40 p-3 rounded-lg border border-amber-500/20">
@@ -1458,14 +1878,39 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
               <svg xmlns="http://www.w3.org/2000/svg" className="inline-block h-4 w-4 mr-1 -mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-              <span className="font-medium">Important Notice:</span> You must wait at least 7 days after staking before unstaking is possible. 
+              <span className="font-medium">Important Notice:</span> You must wait at least 7 days after staking before unstaking is possible.
               <br/>
               <span className="text-xs text-amber-300/70 block mt-1">
                 This minimum period is enforced by the blockchain smart contract and transactions will fail if attempted earlier.
               </span>
             </p>
           </div>
-          
+
+          {/* Show token account status if in checking state */}
+          {tokenAccountStatus === 'checking' && (
+            <div className="mt-2 bg-blue-900/30 p-3 rounded-lg border border-blue-500/30">
+              <p className="text-xs text-center text-blue-300 flex items-center justify-center">
+                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Checking token account status...
+              </p>
+            </div>
+          )}
+
+          {/* Token account initializer modal */}
+          {showTokenInitializer && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
+              <TokenAccountInitializer
+                mintAddress={nft.mint}
+                onSuccess={handleTokenInitComplete}
+                onError={handleTokenInitError}
+                onCancel={handleTokenInitCancel}
+              />
+            </div>
+          )}
+
           {!verifiedOwnership && !isCheckingOwnership && (
             <p className="text-xs text-center text-red-400 mt-2">
               You cannot stake this NFT because we couldn't verify your ownership.

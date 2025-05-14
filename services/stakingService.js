@@ -69,6 +69,66 @@ export async function completeUnstaking(data) {
 }
 
 /**
+ * Prepare emergency NFT unstaking transaction
+ * 
+ * @param {Object} data - Emergency unstaking data including wallet and NFT mint addresses
+ * @returns {Promise<Object>} - Transaction data for emergency unstaking
+ */
+export async function prepareEmergencyUnstaking(data) {
+  try {
+    return await api.post(endpoints.staking.prepareEmergencyUnstaking, data);
+  } catch (error) {
+    console.error('Failed to prepare emergency unstaking:', error);
+    throw error;
+  }
+}
+
+/**
+ * Complete emergency NFT unstaking process
+ * 
+ * @param {Object} data - Transaction signature and data
+ * @returns {Promise<Object>} - Emergency unstaking result
+ */
+export async function completeEmergencyUnstaking(data) {
+  try {
+    return await api.post(endpoints.staking.completeEmergencyUnstaking, data);
+  } catch (error) {
+    console.error('Failed to complete emergency unstaking:', error);
+    throw error;
+  }
+}
+
+/**
+ * Initialize token account for staking rewards
+ * 
+ * @param {Object} data - Wallet data for token account initialization
+ * @returns {Promise<Object>} - Token account initialization result
+ */
+export async function initializeTokenAccount(data) {
+  try {
+    return await api.post(endpoints.staking.initializeTokenAccount, data);
+  } catch (error) {
+    console.error('Failed to initialize token account:', error);
+    throw error;
+  }
+}
+
+/**
+ * Directly submit a signed transaction
+ * 
+ * @param {Object} data - Signed transaction data
+ * @returns {Promise<Object>} - Transaction submission result
+ */
+export async function submitTransaction(data) {
+  try {
+    return await api.post(endpoints.transaction.submitTransaction, data);
+  } catch (error) {
+    console.error('Failed to submit transaction:', error);
+    throw error;
+  }
+}
+
+/**
  * Get staking information for a wallet
  * 
  * @param {string} wallet - Wallet address
@@ -199,6 +259,8 @@ export async function getStakingStats(wallet, options = {}) {
           progress_percentage: stake.progress_percentage || 0,
           earned_so_far: stake.earned_so_far || 0,
           total_rewards: stake.total_rewards || 0,
+          auto_compound: stake.auto_compound || false,
+          accumulated_compound: stake.accumulated_compound || 0,
           
           // Add image fields with IPFS priority
           ...imageFields,
@@ -212,7 +274,9 @@ export async function getStakingStats(wallet, options = {}) {
     const normalizedStats = responseData.stats || {
       totalStaked: normalizedActiveStakes.length,
       projectedRewards: normalizedActiveStakes.reduce((sum, stake) => sum + (stake.total_rewards || 0), 0),
-      earnedToDate: normalizedActiveStakes.reduce((sum, stake) => sum + (stake.earned_so_far || 0), 0)
+      earnedToDate: normalizedActiveStakes.reduce((sum, stake) => sum + (stake.earned_so_far || 0), 0),
+      collectionBonus: responseData.collectionBonus || 0,
+      timeMultiplier: responseData.timeMultiplier || 1
     };
     
     return {
@@ -315,8 +379,38 @@ export async function getRewards(wallet) {
 }
 
 /**
- * Claim available rewards
- * 
+ * Prepare a transaction for claiming rewards on-chain
+ *
+ * @param {Object} data - Data object with wallet and mintAddress
+ * @returns {Promise<Object>} - Transaction data for claiming rewards
+ */
+export async function prepareClaimRewards(data) {
+  try {
+    return await api.post(endpoints.rewards.prepareClaimRewards, data);
+  } catch (error) {
+    console.error('Failed to prepare claim rewards transaction:', error);
+    throw error;
+  }
+}
+
+/**
+ * Complete the claim rewards process after on-chain transaction
+ *
+ * @param {Object} data - Transaction signature and related data
+ * @returns {Promise<Object>} - Claim result
+ */
+export async function completeClaimRewards(data) {
+  try {
+    return await api.post(endpoints.rewards.completeClaimRewards, data);
+  } catch (error) {
+    console.error('Failed to complete claim rewards process:', error);
+    throw error;
+  }
+}
+
+/**
+ * Claim available rewards (deprecated - use prepareClaimRewards and completeClaimRewards for on-chain claims)
+ *
  * @param {Object} data - Claim data including wallet
  * @returns {Promise<Object>} - Claim result
  */
@@ -344,11 +438,105 @@ export async function recordSocialShare(data) {
   }
 }
 
+/**
+ * Generate referral code
+ * 
+ * @param {Object} data - User wallet data
+ * @returns {Promise<Object>} - Referral code result
+ */
+export async function generateReferralCode(data) {
+  try {
+    return await api.post(endpoints.referral.generateCode, data);
+  } catch (error) {
+    console.error('Failed to generate referral code:', error);
+    throw error;
+  }
+}
+
+/**
+ * Register using a referral code
+ * 
+ * @param {Object} data - Referral data including code and user wallet
+ * @returns {Promise<Object>} - Registration result
+ */
+export async function registerReferral(data) {
+  try {
+    return await api.post(endpoints.referral.registerReferral, data);
+  } catch (error) {
+    console.error('Failed to register referral:', error);
+    throw error;
+  }
+}
+
+/**
+ * Claim referral rewards
+ * 
+ * @param {Object} data - Claim data including user wallet
+ * @returns {Promise<Object>} - Claim result
+ */
+export async function claimReferralRewards(data) {
+  try {
+    return await api.post(endpoints.referral.claimReferralRewards, data);
+  } catch (error) {
+    console.error('Failed to claim referral rewards:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get referral statistics for a wallet
+ * 
+ * @param {string} wallet - Wallet address
+ * @returns {Promise<Object>} - Referral statistics
+ */
+export async function getReferralStats(wallet) {
+  try {
+    return await api.get(`${endpoints.referral.getReferralStats}?wallet=${wallet}`);
+  } catch (error) {
+    console.error('Failed to get referral stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Initialize user social activity account
+ * 
+ * @param {Object} data - Social profile data
+ * @returns {Promise<Object>} - Initialization result
+ */
+export async function initSocialActivity(data) {
+  try {
+    return await api.post(endpoints.social.initSocialActivity, data);
+  } catch (error) {
+    console.error('Failed to initialize social activity:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get social activity status for a user
+ * 
+ * @param {string} wallet - Wallet address
+ * @returns {Promise<Object>} - Social activity status
+ */
+export async function getSocialStatus(wallet) {
+  try {
+    return await api.get(`${endpoints.social.getSocialStatus}?wallet=${wallet}`);
+  } catch (error) {
+    console.error('Failed to get social status:', error);
+    throw error;
+  }
+}
+
 export default {
   prepareStaking,
   completeStaking,
   prepareUnstaking,
   completeUnstaking,
+  prepareEmergencyUnstaking,
+  completeEmergencyUnstaking,
+  initializeTokenAccount,
+  submitTransaction,
   getStakingInfo,
   getStakingStats,
   getStakedNFTs,
@@ -356,5 +544,13 @@ export default {
   calculateEstimatedRewards,
   getRewards,
   claimRewards,
-  recordSocialShare
+  prepareClaimRewards,
+  completeClaimRewards,
+  recordSocialShare,
+  generateReferralCode,
+  registerReferral,
+  claimReferralRewards,
+  getReferralStats,
+  initSocialActivity,
+  getSocialStatus
 };

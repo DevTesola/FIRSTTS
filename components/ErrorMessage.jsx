@@ -20,6 +20,7 @@ import React, { useState, useEffect } from "react";
  * @param {string} className - Additional CSS classes
  * @param {React.ReactNode} children - Additional content
  */
+// 기본 내보내기 및 명명된 내보내기 모두 지원
 export default function ErrorMessage({ 
   message, 
   type = "error",

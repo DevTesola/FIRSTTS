@@ -1,24 +1,13 @@
 // pages/api/admin/initialize-pool.js
-import { Connection, PublicKey, Transaction, TransactionInstruction, Keypair, SystemProgram } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+import { INSTRUCTION_DISCRIMINATORS } from '../../../shared/constants/discriminators';
+import { POOL_SEED, SEED_STRINGS } from '../../../shared/constants/seeds';
 
-// 프로그램 ID와 IDL
+// 프로그램 ID
 const PROGRAM_ID = '4SfUyQkbeyz9jeJDsR5XiUf8DATVZJXtGG4JUsYsWzTs';
-// PDA는 사용하지 않습니다. IDL에서 pool_state는 signer여야 함
 
-// IDL에서 initialize 명령 식별자 가져오기 (idl/nft_staking.json 파일에서 추출)
-const INITIALIZE_DISCRIMINATOR = [175, 175, 109, 31, 13, 152, 155, 237]; // IDL에서 "initialize" 명령어 식별자 추출
-
-// Anchor 프로그램은 두 가지 방식으로 discriminator를 생성할 수 있습니다:
-// 1. SHA256("global:<명령어이름>") 앞 8바이트
-// 2. SHA256("<명령어이름>") 앞 8바이트
-
-const crypto = require('crypto');
-const initializeHash = crypto.createHash('sha256').update('initialize').digest().slice(0, 8);
-const globalInitializeHash = crypto.createHash('sha256').update('global:initialize').digest().slice(0, 8);
-
-console.log('IDL initialize discriminator (hex):', Buffer.from(INITIALIZE_DISCRIMINATOR).toString('hex'));
-console.log('SHA256("initialize") 첫 8바이트:', [...initializeHash], Buffer.from(initializeHash).toString('hex'));
-console.log('SHA256("global:initialize") 첫 8바이트:', [...globalInitializeHash], Buffer.from(globalInitializeHash).toString('hex'));
+// IDL에서 initialize 명령 식별자 사용
+const INITIALIZE_DISCRIMINATOR = INSTRUCTION_DISCRIMINATORS.INITIALIZE;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -51,26 +40,34 @@ export default async function handler(req, res) {
     // 프로그램 ID
     const programId = new PublicKey(PROGRAM_ID);
 
-    // Pool State 계정 생성 (Keypair) - IDL에 따르면 signer여야 함
-    const poolStateKeypair = Keypair.generate();
-    console.log('Pool state keypair:', poolStateKeypair.publicKey.toString());
-    
+    // Pool State PDA 계산 - IDL에서는 PDA를 사용합니다
+    const [poolStatePDA, poolStateBump] = PublicKey.findProgramAddressSync(
+      [POOL_SEED],
+      new PublicKey(PROGRAM_ID)
+    );
+    console.log('Pool state PDA:', poolStatePDA.toString());
+    console.log('Pool state bump:', poolStateBump);
+    console.log('Pool seed used:', SEED_STRINGS.POOL_SEED_STR);
+
+    // PDA 계정이 이미 존재하는지 확인 (정보 표시용)
+    const existingAccount = await connection.getAccountInfo(poolStatePDA);
+    if (existingAccount) {
+      console.log('풀 상태 계정이 이미 존재합니다:');
+      console.log(' - 주소:', poolStatePDA.toString());
+      console.log(' - 소유자:', existingAccount.owner.toString());
+      console.log(' - 데이터 크기:', existingAccount.data.length);
+
+      if (existingAccount.owner.equals(new PublicKey(PROGRAM_ID))) {
+        console.log(' - 상태: 이미 초기화되어 있음 (재초기화 진행)');
+      } else {
+        console.log(' - 상태: 다른 프로그램이 소유 중');
+      }
+    }
+
     // PoolState 계정 크기 계산 - IDL의 구조 기반 (실제 데이터 크기 + 8바이트 discriminator)
-    // PoolState 데이터 구조:
-    // - discriminator: 8 bytes
-    // - admin: 32 bytes (PublicKey)
-    // - reward_rate: 8 bytes (u64)
-    // - emergency_fee_percent: 1 byte (u8)
-    // - paused: 1 byte (bool)
-    // - total_staked: 8 bytes (u64)
-    // - common_multiplier: 8 bytes (u64)
-    // - rare_multiplier: 8 bytes (u64) 
-    // - epic_multiplier: 8 bytes (u64)
-    // - legendary_multiplier: 8 bytes (u64)
-    // - long_staking_bonus: 8 bytes (u64)
-    // - max_nfts_per_user: 1 byte (u8)
-    // 총: 95 bytes + 추가 공간 여유를 위해 100으로 설정
-    const POOL_STATE_SIZE = 100;
+    // 참고: Anchor 프로그램은 PDA 공간을 자동으로 할당하므로 우리는 크기를 계산할 필요가 없습니다.
+    // 하지만 로깅을 위해 계산해 둡니다.
+    const POOL_STATE_SIZE = 200; // 실제 크기보다 충분히 여유를 두고 설정
 
     // 명령 데이터 구성
     // initialize 명령은 reward_rate(u64)와 emergency_fee(u8) 매개변수가 필요합니다
@@ -82,24 +79,23 @@ export default async function handler(req, res) {
     // 디버깅을 위해 값을 출력
     console.log('Initializing with reward rate:', rewardRate);
     console.log('Initializing with emergency fee:', emergencyFee);
-    
-    // 두 가지 가능한 discriminator를 모두 출력하여 비교
+
+    // IDL discriminator 사용
     console.log('IDL Discriminator (hex):', Buffer.from(INITIALIZE_DISCRIMINATOR).toString('hex'));
-    console.log('SHA256 Discriminator (hex):', Buffer.from(initializeHash).toString('hex'));
-    
-    // IDL에서 확인한 discriminator 값 사용 (가장 신뢰할 수 있음)
+
+    // 명령어 데이터 구성
     const instructionData = Buffer.concat([
-      Buffer.from(INITIALIZE_DISCRIMINATOR), // 8바이트 명령어 식별자 (IDL에서 직접 추출한 값)
-      rewardRateBuf,                        // 8바이트 reward_rate (u64)
-      emergencyFeeBuf                       // 1바이트 emergency_fee (u8)
+      INITIALIZE_DISCRIMINATOR, // 8바이트 명령어 식별자 (IDL에서 직접 가져온 값)
+      rewardRateBuf,           // 8바이트 reward_rate (u64)
+      emergencyFeeBuf          // 1바이트 emergency_fee (u8)
     ]);
 
     // 계정 배열 구성 - 정확한 순서와 속성으로 구성
     // IDL(idl/nft_staking.json)에서 initialize 지시에 필요한 계정 목록과 정확히 일치해야 함
     const accounts = [
-      { pubkey: adminPubkey, isSigner: true, isWritable: true },        // admin (payer)
-      { pubkey: poolStateKeypair.publicKey, isSigner: true, isWritable: true }, // pool_state (Keypair로 서명 가능)
-      { pubkey: new PublicKey('11111111111111111111111111111111'), isSigner: false, isWritable: false } // system_program
+      { pubkey: adminPubkey, isSigner: true, isWritable: true },     // admin (payer)
+      { pubkey: poolStatePDA, isSigner: false, isWritable: true },   // pool_state (PDA 방식)
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false } // system_program
     ];
 
     // 디버깅: 계정 정보 출력
@@ -108,9 +104,13 @@ export default async function handler(req, res) {
     accounts.forEach((acc, idx) => {
       console.log(`${idx}. ${accountNames[idx]}: ${acc.pubkey.toString()} (isSigner: ${acc.isSigner}, isWritable: ${acc.isWritable})`);
     });
-    
+
     // 파일 상단에서 선언한 discriminator 사용 (중복 선언 제거)
     console.log('인스트럭션 데이터에 사용된 discriminator:', Buffer.from(INITIALIZE_DISCRIMINATOR).toString('hex'));
+    console.log('인스트럭션 데이터 길이:', instructionData.length, '바이트');
+    console.log('초기화 매개변수:');
+    console.log(' - 보상률:', rewardRate);
+    console.log(' - 긴급 출금 수수료:', emergencyFee + '%');
     
     // 트랜잭션 명령 생성
     const initializeIx = new TransactionInstruction({
@@ -143,55 +143,69 @@ export default async function handler(req, res) {
     try {
       console.log('시뮬레이션 정보:', {
         programId: programId.toString(),
-        poolStateAccount: poolStateKeypair.publicKey.toString(),
+        poolStateAccount: poolStatePDA.toString(),
         adminAccount: adminPubkey.toString(),
         data: Buffer.from(instructionData).toString('hex'),
         dataLength: instructionData.length
       });
-      
+
+      // 시뮬레이션 실행
       const simulation = await connection.simulateTransaction(tx);
       console.log('시뮬레이션 결과:', JSON.stringify(simulation.value, null, 2));
-      
+
+      // 오류 확인 및 분석
       if (simulation.value.err) {
         console.error('시뮬레이션 오류:', simulation.value.err);
         // 자세한 오류 분석
-        const errorInfo = typeof simulation.value.err === 'object' ? 
+        const errorInfo = typeof simulation.value.err === 'object' ?
           JSON.stringify(simulation.value.err) : simulation.value.err.toString();
         console.error('오류 상세 정보:', errorInfo);
       }
-      
+
+      // 로그 확인
       if (simulation.value.logs) {
         console.log('시뮬레이션 로그:');
         simulation.value.logs.forEach(log => console.log(log));
-        
+
         // 로그에서 풀 초기화 관련 성공/실패 정보 찾기
-        const initLogs = simulation.value.logs.filter(log => 
-          log.includes('initialize') || 
-          log.includes('PoolState') || 
+        const initLogs = simulation.value.logs.filter(log =>
+          log.includes('initialize') ||
+          log.includes('PoolState') ||
           log.includes('pool_state'));
-        
+
         if (initLogs.length > 0) {
           console.log('풀 초기화 관련 로그:', initLogs);
+        } else {
+          console.log('풀 초기화 관련 로그가 없습니다.');
+        }
+
+        // 필요한 계정이 생성되었는지 확인
+        const accountCreationLogs = simulation.value.logs.filter(log =>
+          log.includes('created') || log.includes('system') || log.includes('space'));
+
+        if (accountCreationLogs.length > 0) {
+          console.log('계정 생성 관련 로그:', accountCreationLogs);
         }
       }
     } catch (simError) {
       console.error('시뮬레이션 실행 오류:', simError);
     }
     
-    // 부분 서명 (pool_state 키페어로 서명)
-    tx.partialSign(poolStateKeypair);
-
-    // 트랜잭션 직렬화
-    const serializedTransaction = tx.serialize({ 
+    // 트랜잭션 직렬화 - 관리자 지갑 서명만 필요함
+    const serializedTransaction = tx.serialize({
       requireAllSignatures: false,
-      verifySignatures: false 
+      verifySignatures: false
     });
 
-    // 응답 반환
+    // 응답 반환 - poolStateSecretKey 제거하고 PDA 정보만 포함
     return res.status(200).json({
       transactionBase64: serializedTransaction.toString('base64'),
-      poolStateAccount: poolStateKeypair.publicKey.toString(),
-      poolStateSecretKey: Array.from(poolStateKeypair.secretKey), // 클라이언트가 서명 가능하도록 비밀키도 전송
+      poolStateAccount: poolStatePDA.toString(),
+      poolStateSeed: SEED_STRINGS.POOL_SEED_STR,
+      poolStateBump,
+      programId: PROGRAM_ID,
+      rewardRate: rewardRate,
+      emergencyFee: emergencyFee,
       message: '풀 초기화 트랜잭션이 생성되었습니다. 관리자 지갑으로 서명하여 실행하세요.',
       expiresAt: new Date(Date.now() + 120000).toISOString()
     });

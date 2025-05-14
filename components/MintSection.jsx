@@ -167,9 +167,31 @@ export default function MintSection({
       // 5단계: 트랜잭션 확인 대기
       console.log("Waiting for transaction confirmation...");
       await connection.confirmTransaction(signature, 'confirmed');
-      
+
       // 애널리틱스 이벤트 - 트랜잭션 확인됨
       trackEvent('mint_transaction_confirmed', { signature: signature });
+
+      // 5.5단계: 락 타임스탬프 갱신
+      try {
+        console.log("Refreshing lock to prevent timeout...");
+        const refreshRes = await fetch("/api/refreshLock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            wallet: publicKey.toBase58(),
+            mintIndex,
+            lockId
+          }),
+        });
+
+        if (!refreshRes.ok) {
+          console.warn("Failed to refresh lock, continuing with minting...");
+        } else {
+          console.log("Lock refreshed successfully");
+        }
+      } catch (refreshErr) {
+        console.warn("Lock refresh error, continuing with minting:", refreshErr);
+      }
 
       // 6단계: 민팅 완료 처리
       console.log("Completing minting process...");

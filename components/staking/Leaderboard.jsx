@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { GlassButton, SecondaryButton } from "../Buttons";
-import EnhancedImageWithFallback from "../EnhancedImageWithFallback";
+import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
 import { createPlaceholder, getNftPreviewImage } from "../../utils/mediaUtils";
 import { getNFTImageUrl } from "../../utils/nftImageUtils";
 
@@ -519,36 +519,52 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                           
                           {/* NFT Image Preview */}
                           <div className="w-full aspect-square mb-4 rounded-lg overflow-hidden border border-gray-700">
-                            <EnhancedImageWithFallback
+                            <EnhancedProgressiveImage
                               src={(() => {
-                                // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
-                                // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
-                                
-                                let nftId = entry.rank; // 리더보드에서는 rank를 ID로 사용
-                                
-                                // 모든 상황에서 항상 직접 IPFS URL 생성
-                                const formattedId = String(nftId).padStart(4, '0');
-                                // 최신 환경 변수 사용 (하드코딩 제거)
-                                const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
-                                const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                                const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-                                
-                                // 로그로 생성된 URL 확인
-                                console.log(`❗❗❗ Leaderboard Top: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                                console.log(`❗❗❗ Leaderboard Top: 사용된 CID: ${IMAGES_CID}`);
-                                
-                                return gatewayUrl;
+                                // API에서 이미지 URL을 제공하면 우선 사용
+                                if (entry.nft_image) {
+                                  console.log(`🔥 Leaderboard Top: API에서 제공한 nft_image 사용: ${entry.nft_image}`);
+
+                                  // URL이 http:// 또는 https://로 시작하는지 확인
+                                  if (entry.nft_image.startsWith('http://') || entry.nft_image.startsWith('https://')) {
+                                    // 캐시 버스팅 추가
+                                    try {
+                                      const url = new URL(entry.nft_image);
+                                      url.searchParams.set('_t', Date.now().toString());
+                                      console.log(`🔍 Leaderboard Top: 캐시 버스팅 URL 생성: ${url.toString()}`);
+                                      return url.toString();
+                                    } catch (e) {
+                                      // URL 생성 실패 시 원본 URL에 쿼리 매개변수 추가
+                                      console.log(`⚠️ Leaderboard Top: URL 파싱 실패, 원본 URL 사용: ${entry.nft_image}`);
+                                      return `${entry.nft_image}?_t=${Date.now()}`;
+                                    }
+                                  } else {
+                                    console.log(`⚠️ Leaderboard Top: API URL이 http/https로 시작하지 않음: ${entry.nft_image}`);
+                                  }
+                                }
+
+                                // 직접 URL 생성: getNFTImageUrl 함수 사용
+                                const imageUrl = getNFTImageUrl({
+                                  id: entry.rank,
+                                  mint: entry.walletAddress,
+                                  name: `Top ${position}`,
+                                  __source: 'Leaderboard-top',
+                                  _cacheBust: Date.now() // 강제 캐시 버스팅
+                                });
+
+                                console.log(`✅ Leaderboard Top: getNFTImageUrl으로 생성된 URL: ${imageUrl}`);
+                                return imageUrl;
                               })()}
                               alt={`Top ${position} NFT`}
                               placeholder={createPlaceholder(`Top ${position}`)}
                               className="w-full h-full object-cover"
-                              id={entry.rank}
-                              placeholderText="Diamond hands, paper images"
                               lazyLoad={false}
                               priority={true}
                               highQuality={true}
-                              maxRetries={1}
-                              retryInterval={1000}
+                              blur={true}
+                              preferRemote={true}
+                              useCache={false}
+                              __source="Leaderboard-top"
                             />
                           </div>
                           
@@ -620,37 +636,58 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                       </td>
                       <td className="py-3 px-4">
                         <div className="w-10 h-10 rounded overflow-hidden border border-gray-700">
-                          <EnhancedImageWithFallback
+                          <EnhancedProgressiveImage
                             src={(() => {
+                              // 중요: 이미 entry.nft_image가 있는 경우 우선 사용
+                              if (entry.nft_image) {
+                                console.log(`🔥 Leaderboard Table: API에서 제공한 nft_image 사용: ${entry.nft_image}`);
+
+                                // URL이 http:// 또는 https://로 시작하는지 확인
+                                if (entry.nft_image.startsWith('http://') || entry.nft_image.startsWith('https://')) {
+                                  // 캐시 버스팅 추가
+                                  try {
+                                    const url = new URL(entry.nft_image);
+                                    url.searchParams.set('_t', Date.now().toString());
+                                    console.log(`🔍 Leaderboard Table: 캐시 버스팅 URL 생성: ${url.toString()}`);
+                                    return url.toString();
+                                  } catch (e) {
+                                    // URL 생성 실패 시 원본 URL에 쿼리 매개변수 추가
+                                    console.log(`⚠️ Leaderboard Table: URL 파싱 실패, 원본 URL 사용: ${entry.nft_image}`);
+                                    return `${entry.nft_image}?_t=${Date.now()}`;
+                                  }
+                                } else {
+                                  console.log(`⚠️ Leaderboard Table: API URL이 http/https로 시작하지 않음: ${entry.nft_image}`);
+                                }
+                              }
+
                               // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
                               // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
-                              
+
                               let nftId = entry.rank; // 리더보드에서는 rank를 ID로 사용
-                              
+
                               // 모든 상황에서 항상 직접 IPFS URL 생성
                               const formattedId = String(nftId).padStart(4, '0');
                               // 최신 환경 변수 사용 (하드코딩 제거)
                               const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                               const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                              const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-                              
+                              const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_t=${Date.now()}`;
+
                               // 로그로 생성된 URL 확인
-                              console.log(`❗❗❗ Leaderboard Table: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                              console.log(`❗❗❗ Leaderboard Table: 사용된 CID: ${IMAGES_CID}`);
-                              
+                              console.log(`✅ Leaderboard Table: 강제 생성된 IPFS URL: ${gatewayUrl}`);
+
                               return gatewayUrl;
                             })()}
                             alt={`Rank #${entry.rank} NFT`}
                             placeholder={createPlaceholder(`#${entry.rank}`)}
                             className="w-full h-full object-cover"
                             id={entry.rank}
-                            placeholderText="Right-click this instead"
                             lazyLoad={true}
                             priority={true}
                             highQuality={true}
+                            blur={true}
+                            preferRemote={true}
                             useCache={false}
-                            maxRetries={1}
-                            retryInterval={1000}
+                            __source="Leaderboard-table"
                           />
                         </div>
                       </td>
@@ -809,36 +846,34 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
             <div className="bg-black/30 p-3 rounded">
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 rounded-lg overflow-hidden border border-yellow-500/30 mb-2">
-                  <EnhancedImageWithFallback
+                  <EnhancedProgressiveImage
                     src={(() => {
                       // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
-                      // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
-                      
                       let nftId = 1; // 레전더리 랭크는 1번
-                      
+
                       // 모든 상황에서 항상 직접 IPFS URL 생성
                       const formattedId = String(nftId).padStart(4, '0');
                       // 최신 환경 변수 사용 (하드코딩 제거)
                       const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                       const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-                      
-                      // 로그로 생성된 URL 확인
-                      console.log(`❗❗❗ Leaderboard Legendary: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                      console.log(`❗❗❗ Leaderboard Legendary: 사용된 CID: ${IMAGES_CID}`);
-                      
+
+                      // 간단한 캐시 버스팅 추가
+                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_t=${Date.now()}`;
+                      console.log(`✅ Leaderboard Legendary: 생성된 IPFS URL: ${gatewayUrl}`);
+
                       return gatewayUrl;
                     })()}
                     alt="Legendary NFT"
                     placeholder={createPlaceholder("Legendary")}
                     className="w-full h-full object-cover"
                     id="1"
-                    placeholderText="Image.exe has stopped working"
                     lazyLoad={true}
                     priority={true}
                     highQuality={true}
-                    maxRetries={1}
-                    retryInterval={1000}
+                    blur={true}
+                    preferRemote={true}
+                    useCache={false}
+                    __source="Leaderboard-legendary"
                   />
                 </div>
                 <div className="text-yellow-400 font-medium mb-1">Top 10</div>
@@ -849,36 +884,34 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
             <div className="bg-black/30 p-3 rounded">
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 rounded-lg overflow-hidden border border-blue-500/30 mb-2">
-                  <EnhancedImageWithFallback
+                  <EnhancedProgressiveImage
                     src={(() => {
                       // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
-                      // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
-                      
                       let nftId = 20; // 에픽 등급 샘플 NFT
-                      
+
                       // 모든 상황에서 항상 직접 IPFS URL 생성
                       const formattedId = String(nftId).padStart(4, '0');
                       // 최신 환경 변수 사용 (하드코딩 제거)
                       const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                       const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-                      
-                      // 로그로 생성된 URL 확인
-                      console.log(`❗❗❗ Leaderboard Epic: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                      console.log(`❗❗❗ Leaderboard Epic: 사용된 CID: ${IMAGES_CID}`);
-                      
+
+                      // 간단한 캐시 버스팅 추가
+                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_t=${Date.now()}`;
+                      console.log(`✅ Leaderboard Epic: 생성된 IPFS URL: ${gatewayUrl}`);
+
                       return gatewayUrl;
                     })()}
                     alt="Epic NFT"
                     placeholder={createPlaceholder("Epic")}
                     className="w-full h-full object-cover"
                     id="20"
-                    placeholderText="NFT is experiencing FOMO"
                     lazyLoad={true}
                     priority={true}
                     highQuality={true}
-                    maxRetries={1}
-                    retryInterval={1000}
+                    blur={true}
+                    preferRemote={true}
+                    useCache={false}
+                    __source="Leaderboard-epic"
                   />
                 </div>
                 <div className="text-blue-400 font-medium mb-1">Top 11-50</div>
@@ -889,36 +922,34 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
             <div className="bg-black/30 p-3 rounded">
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 rounded-lg overflow-hidden border border-green-500/30 mb-2">
-                  <EnhancedImageWithFallback
+                  <EnhancedProgressiveImage
                     src={(() => {
                       // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
-                      // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
-                      
                       let nftId = 75; // 레어 등급 샘플 NFT
-                      
+
                       // 모든 상황에서 항상 직접 IPFS URL 생성
                       const formattedId = String(nftId).padStart(4, '0');
                       // 최신 환경 변수 사용 (하드코딩 제거)
                       const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                       const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-                      
-                      // 로그로 생성된 URL 확인
-                      console.log(`❗❗❗ Leaderboard Rare: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                      console.log(`❗❗❗ Leaderboard Rare: 사용된 CID: ${IMAGES_CID}`);
-                      
+
+                      // 간단한 캐시 버스팅 추가
+                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_t=${Date.now()}`;
+                      console.log(`✅ Leaderboard Rare: 생성된 IPFS URL: ${gatewayUrl}`);
+
                       return gatewayUrl;
                     })()}
                     alt="Rare NFT"
                     placeholder={createPlaceholder("Rare")}
                     className="w-full h-full object-cover"
                     id="75"
-                    placeholderText="Schrödinger's JPEG"
                     lazyLoad={true}
                     priority={true}
                     highQuality={true}
-                    maxRetries={1}
-                    retryInterval={1000}
+                    blur={true}
+                    preferRemote={true}
+                    useCache={false}
+                    __source="Leaderboard-rare"
                   />
                 </div>
                 <div className="text-green-400 font-medium mb-1">Top 51-100</div>

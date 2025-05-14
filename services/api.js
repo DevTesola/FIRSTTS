@@ -172,22 +172,51 @@ export const endpoints = {
 
   // Staking Endpoints
   staking: {
-    prepare: '/api/prepareStaking_v3',
-    complete: '/api/completeStaking',
-    prepareUnstaking: '/api/prepareUnstaking_v3',
-    completeUnstaking: '/api/completeUnstaking',
-    getInfo: '/api/getStakingInfo',
-    getStats: '/api/getStakingStats',
+    prepare: '/api/staking/prepareStaking',
+    complete: '/api/staking/completeStaking',
+    prepareUnstaking: '/api/staking/prepareUnstaking',
+    completeUnstaking: '/api/staking/completeUnstaking',
+    prepareEmergencyUnstaking: '/api/staking/prepareEmergencyUnstaking',
+    completeEmergencyUnstaking: '/api/staking/completeEmergencyUnstaking',
+    getInfo: '/api/staking/getStakingInfo',
+    getStats: '/api/staking/getStakingStats',
     getNFTs: '/api/staking/getStakingNFTs',
     getUserNFTs: '/api/staking/getUserNFTs',
+    initializeTokenAccount: '/api/staking/initializeTokenAccount',
   },
 
   // Rewards Endpoints
   rewards: {
-    getRewards: '/api/getRewards',
-    claimRewards: '/api/claimRewards',
+    getRewards: '/api/staking/getRewards',
+    claimRewards: '/api/staking/claimRewards',
+    prepareClaimRewards: '/api/staking/prepareClaimRewards',
+    completeClaimRewards: '/api/staking/completeClaimRewards',
     recordTweet: '/api/recordTweetReward',
     recordShare: '/api/recordSocialShare',
+  },
+  
+  // Referral Endpoints
+  referral: {
+    generateCode: '/api/referral/generateCode',
+    registerReferral: '/api/referral/registerReferral',
+    claimReferralRewards: '/api/referral/claimRewards',
+    getReferralStats: '/api/referral/getStats',
+  },
+  
+  // Social Verification Endpoints
+  social: {
+    initSocialActivity: '/api/social/initUserActivity',
+    verifySocialActivity: '/api/social/verifyActivity',
+    claimSocialReward: '/api/social/claimReward',
+    getSocialStatus: '/api/social/getUserSocialStatus',
+  },
+
+  // Governance Endpoints
+  governance: {
+    getProposals: '/api/governance/getProposals',
+    getUserVotingPower: '/api/governance/getUserVotingPower',
+    prepareCreateProposal: '/api/governance/prepareCreateProposal',
+    prepareVote: '/api/governance/prepareVote',
   },
 
   // Presale Endpoints
@@ -203,12 +232,16 @@ export const endpoints = {
     logs: '/api/admin/logs',
     getPendingClaims: '/api/admin/getPendingClaims',
     processClaim: '/api/admin/processClaim',
+    rewardSettings: '/api/admin/reward-settings',
+    updateTierMultipliers: '/api/admin/update-tier-multipliers',
+    checkPoolInfo: '/api/check-pool-info',
   },
 
   // Transaction Endpoints
   transaction: {
     getAll: '/api/getTransactions',
     requestRefund: '/api/requestRefund',
+    submitTransaction: '/api/staking/submitTransaction',
   },
 
   // IPFS Endpoints

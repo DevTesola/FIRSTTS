@@ -328,27 +328,18 @@ export default async function handler(req, res) {
     projectedRewards = parseFloat(projectedRewards.toFixed(2));
     earnedToDate = parseFloat(earnedToDate.toFixed(2));
     
-    // If no stakes are found, try to generate mock data for testing
-    // 항상 개발 및 테스트용 데이터 생성 (스테이킹 표시 테스트 위해)
+    // 모의 데이터 생성 비활성화 - 실제 데이터만 반환
     if (activeStakes.length === 0) {
-      console.log('No staking data found, generating mock data for testing');
-      
-      // This code runs in any environment for testing UI
-      const mockStats = generateMockStakingData(wallet);
-      
-      console.log('Returning mock data with image fields:', 
-        mockStats.activeStakes.length > 0 ? {
-          image: mockStats.activeStakes[0].image,
-          image_url: mockStats.activeStakes[0].image_url,
-          nft_image: mockStats.activeStakes[0].nft_image,
-          ipfs_hash: mockStats.activeStakes[0].ipfs_hash
-        } : 'No mock stakes'
-      );
-      
+      console.log('스테이킹된 NFT가 없습니다');
+
+      // 빈 데이터 반환
       return sendSuccess(res, {
-        activeStakes: mockStats.activeStakes,
-        stats: mockStats.stats,
-        isMockData: true, // Flag to indicate this is mock data
+        activeStakes: [],
+        stats: {
+          totalStaked: 0,
+          projectedRewards: 0,
+          earnedToDate: 0
+        },
         fetchTime: new Date().toISOString()
       });
     }

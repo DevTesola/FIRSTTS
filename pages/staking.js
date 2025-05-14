@@ -6,7 +6,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Layout from "../components/Layout";
 import StakingDashboard from "../components/staking/StakingDashboard";
 import StakingAnalytics from "../components/staking/StakingAnalytics";
-import StakingRewards from "../components/staking/StakingRewards";
+import StakingRewards from "../components/staking/StakingRewards-enhanced";
 import NFTGallery from "../components/staking/NFTGallery";
 import Leaderboard from "../components/staking/Leaderboard";
 import GovernanceTab from "../components/staking/GovernanceTab";
@@ -19,6 +19,7 @@ import { createPlaceholder } from "../utils/mediaUtils";
 import { getNFTImageUrl } from "../utils/nftImageUtils";
 import { fetchAPI, getErrorMessage } from "../utils/apiClient";
 import { getStakingStats as fetchEnhancedStakingStats } from "../services/stakingService";
+import EnhancedStakingButton from "../components/staking/EnhancedStakingButton";
 
 export default function StakingPage() {
   const { publicKey, connected } = useWallet();
@@ -32,6 +33,7 @@ export default function StakingPage() {
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
   const [governanceData, setGovernanceData] = useState(null);
   const [isLoadingGovernance, setIsLoadingGovernance] = useState(false);
+  const [stakingPeriod, setStakingPeriod] = useState(30);
   
   // Load staking stats when wallet connects
   useEffect(() => {
@@ -497,13 +499,44 @@ export default function StakingPage() {
                     </button>
                   </div>
                   
-                  {/* This imports the StakingComponent */}
+                  {/* This uses the new ThreePhaseStakingButton */}
                   <div className="mt-4">
-                    <StakingComponent 
-                      nft={selectedNFT} 
+                    <div className="px-4 py-3 bg-indigo-900/30 rounded-lg border border-indigo-500/30 mb-4">
+                      <p className="text-sm text-indigo-300 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>새로운 스테이킹 방식이 적용되었습니다! 이제 계정 초기화 문제 없이 NFT를 스테이킹 할 수 있습니다.</span>
+                      </p>
+                    </div>
+
+                    <div className="mb-4">
+                      <label htmlFor="stakingPeriod" className="block text-sm font-medium text-gray-300 mb-1">
+                        스테이킹 기간
+                      </label>
+                      <select
+                        id="stakingPeriod"
+                        value={stakingPeriod}
+                        onChange={(e) => setStakingPeriod(parseInt(e.target.value, 10))}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-white"
+                      >
+                        <option value="7">7일</option>
+                        <option value="30">30일</option>
+                        <option value="90">90일</option>
+                        <option value="180">180일</option>
+                        <option value="365">365일</option>
+                      </select>
+                    </div>
+
+                    {/* Use EnhancedStakingButton for unified staking */}
+                    <EnhancedStakingButton
+                      nft={selectedNFT}
+                      stakingPeriod={stakingPeriod}
                       onSuccess={handleStakingSuccess}
                       onError={(err) => setError(err.message)}
                     />
+
+                    {/* No legacy fallback needed anymore */}
                   </div>
                 </div>
               ) : (

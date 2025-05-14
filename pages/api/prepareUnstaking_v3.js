@@ -87,24 +87,53 @@ export default async function handler(req, res) {
     }
     
     console.log(`Fetching staking record ID: ${stakingId}`);
-    const { data: stakingRecord, error: stakingError } = await supabase
-      .from('nft_staking')
-      .select('*')
-      .eq('id', stakingId)
-      .eq('wallet_address', wallet)
-      .eq('mint_address', mintAddress)
-      .eq('status', 'staked')
-      .single();
+
+    // Check if the stakingId starts with "onchain_" and handle differently
+    let stakingQuery;
+    if (stakingId && stakingId.toString().startsWith('onchain_')) {
+      console.log('Detected onchain ID format, querying by wallet and mint address only');
+      stakingQuery = supabase
+        .from('nft_staking')
+        .select('*')
+        .eq('wallet_address', wallet)
+        .eq('mint_address', mintAddress)
+        .eq('status', 'staked')
+        .single();
+    } else {
+      // Regular query with ID
+      stakingQuery = supabase
+        .from('nft_staking')
+        .select('*')
+        .eq('id', stakingId)
+        .eq('wallet_address', wallet)
+        .eq('mint_address', mintAddress)
+        .eq('status', 'staked')
+        .single();
+    }
+
+    const { data: stakingRecord, error: stakingError } = await stakingQuery;
     
     if (stakingError || !stakingRecord) {
       console.error('Error fetching staking record:', stakingError || 'No record found');
-      return res.status(404).json({ 
+      console.log('Query parameters:', {
+        wallet,
+        mintAddress,
+        stakingId,
+        isOnchainFormat: stakingId && stakingId.toString().startsWith('onchain_')
+      });
+      return res.status(404).json({
         error: stakingError ? stakingError.message : 'Staking record not found',
-        success: false 
+        success: false
       });
     }
-    
-    console.log('Found staking record:', stakingRecord);
+
+    console.log('Found staking record:', {
+      id: stakingRecord.id,
+      wallet: stakingRecord.wallet_address,
+      mint: stakingRecord.mint_address,
+      status: stakingRecord.status,
+      staked_at: stakingRecord.staked_at
+    });
     
     // Calculate unstaking penalty
     const currentDate = new Date();

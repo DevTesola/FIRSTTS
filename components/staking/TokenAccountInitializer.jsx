@@ -1,0 +1,497 @@
+import React, { useState, useEffect } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Transaction } from "@solana/web3.js";
+import { GlassButton, SecondaryButton } from "../Buttons";
+
+/**
+ * Enhanced Token Account Initializer Component
+ * This component handles the token account initialization process
+ * before staking an NFT to ensure the token account is properly initialized.
+ * Includes additional user staking info initialization and diagnostics.
+ */
+const TokenAccountInitializer = ({ 
+  mintAddress, 
+  onSuccess, 
+  onError,
+  onCancel,
+  showDetails = false
+}) => {
+  const { publicKey, signTransaction, connected } = useWallet();
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle, checking, initializing, success, error
+  const [diagnosticInfo, setDiagnosticInfo] = useState(null);
+  const [initPhase, setInitPhase] = useState(0); // 0: not started, 1: token accounts, 2: user staking info
+
+  useEffect(() => {
+    // Clear previous errors when component rerenders with new mintAddress
+    setError(null);
+    setStatus("idle");
+    setDiagnosticInfo(null);
+    setInitPhase(0);
+  }, [mintAddress]);
+
+  // Initialize all required accounts
+  const handleInitializeAccounts = async () => {
+    if (!connected || !publicKey || !mintAddress) {
+      setError("Wallet not connected or NFT not selected");
+      return;
+    }
+
+    try {
+      setIsInitializing(true);
+      setStatus("checking");
+      setError(null);
+
+      // Step 1: First, perform comprehensive account diagnostics
+      const diagnosticResponse = await fetch("/api/staking/diagnose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+          mintAddress: mintAddress
+        }),
+      });
+
+      if (!diagnosticResponse.ok) {
+        const errorData = await diagnosticResponse.json();
+        throw new Error(errorData.error || "Failed to check account status");
+      }
+
+      const diagData = await diagnosticResponse.json();
+      setDiagnosticInfo(diagData.data);
+
+      console.log("Account diagnostic results:", diagData.data);
+
+      // If all accounts are already properly initialized, we can proceed to staking
+      if (diagData.data.accountReadiness.readyForStaking) {
+        console.log("All accounts are already initialized and ready for staking");
+        setStatus("success");
+
+        // Call the success callback to continue with staking
+        if (onSuccess) {
+          onSuccess({
+            userTokenAccount: diagData.data.userTokenAccount,
+            userStakingInfo: diagData.data.userStakingInfo,
+            message: "All accounts are already initialized",
+            diagnosticInfo: diagData.data
+          });
+        }
+        return;
+      }
+
+      // Step 2: Initialize token accounts if needed
+      if (!diagData.data.accountReadiness.userTokenAccount.isValid || 
+          !diagData.data.accountReadiness.escrowTokenAccount.exists) {
+        setStatus("initializing-token");
+        setInitPhase(1);
+
+        // Call the token account initialization endpoint
+        const tokenInitResponse = await fetch("/api/staking/initializeTokenAccount", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            wallet: publicKey.toString(),
+            mintAddress: mintAddress,
+            includeValidation: true,
+            forceRecreate: !diagData.data.accountExists
+          }),
+        });
+
+        if (!tokenInitResponse.ok) {
+          const errorData = await tokenInitResponse.json();
+          throw new Error(errorData.error || "Failed to prepare token account initialization");
+        }
+
+        const tokenInitData = await tokenInitResponse.json();
+        
+        // If token accounts need initialization, process the transaction
+        if (tokenInitData.data.needsInitialization) {
+          // Get the transaction from the response
+          const txBase64 = tokenInitData.data.transactionBase64;
+          const txBuffer = Buffer.from(txBase64, "base64");
+
+          // Deserialize and sign the transaction
+          const transaction = Transaction.from(txBuffer);
+          const signedTx = await signTransaction(transaction);
+
+          // Serialize the signed transaction
+          const serializedTx = signedTx.serialize();
+
+          // Submit the signed transaction to initialize the token account
+          const submitResponse = await fetch("/api/staking/submitTransaction", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              transaction: Buffer.from(serializedTx).toString("base64"),
+              type: "token_account_initialization"
+            }),
+          });
+
+          let submitData;
+          let initializationSuccess = false;
+
+          if (!submitResponse.ok) {
+            console.warn("Standard initialization failed, trying direct initialization method");
+
+            // If standard initialization fails, try the direct initialization method
+            setStatus("alternate-token-init");
+
+            // Call the direct initialization endpoint
+            const directInitResponse = await fetch("/api/staking/directTokenInitialize", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                wallet: publicKey.toString(),
+                mintAddress: mintAddress,
+                forceRecreate: true
+              }),
+            });
+
+            if (!directInitResponse.ok) {
+              const errorData = await directInitResponse.json();
+              throw new Error(errorData.error || "Failed to prepare direct token account initialization");
+            }
+
+            const directInitData = await directInitResponse.json();
+
+            // Sign the direct initialization transaction
+            const directTxBuffer = Buffer.from(directInitData.data.transactionBase64, "base64");
+            const directTransaction = Transaction.from(directTxBuffer);
+            const signedDirectTx = await signTransaction(directTransaction);
+
+            // Submit the direct initialization transaction
+            const directSubmitResponse = await fetch("/api/staking/submitTransaction", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                transaction: Buffer.from(signedDirectTx.serialize()).toString("base64"),
+                type: "direct_token_initialization"
+              }),
+            });
+
+            if (!directSubmitResponse.ok) {
+              const errorData = await directSubmitResponse.json();
+              throw new Error(errorData.error || "Failed to submit direct token account initialization");
+            }
+
+            submitData = await directSubmitResponse.json();
+            initializationSuccess = true;
+          } else {
+            submitData = await submitResponse.json();
+            initializationSuccess = true;
+          }
+
+          if (!initializationSuccess) {
+            throw new Error("Both standard and direct token account initialization methods failed");
+          }
+
+          // Wait a moment for the transaction to be confirmed
+          setStatus("waiting-token-confirm");
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
+
+      // Step 3: Initialize user staking info if needed
+      if (!diagData.data.accountReadiness.userStakingInfo.exists) {
+        setStatus("initializing-staking-info");
+        setInitPhase(2);
+
+        // Call the user staking info initialization endpoint
+        const stakingInfoResponse = await fetch("/api/staking/initializeUserStakingInfo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            wallet: publicKey.toString()
+          }),
+        });
+
+        if (!stakingInfoResponse.ok) {
+          const errorData = await stakingInfoResponse.json();
+          throw new Error(errorData.error || "Failed to prepare user staking info initialization");
+        }
+
+        const stakingInfoData = await stakingInfoResponse.json();
+        
+        // If user staking info needs initialization, process the transaction
+        if (stakingInfoData.data.needsInitialization) {
+          // Get the transaction from the response
+          const txBase64 = stakingInfoData.data.transactionBase64;
+          const txBuffer = Buffer.from(txBase64, "base64");
+
+          // Deserialize and sign the transaction
+          const transaction = Transaction.from(txBuffer);
+          const signedTx = await signTransaction(transaction);
+
+          // Serialize the signed transaction
+          const serializedTx = signedTx.serialize();
+
+          // Submit the signed transaction to initialize the user staking info
+          const submitResponse = await fetch("/api/staking/submitTransaction", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              transaction: Buffer.from(serializedTx).toString("base64"),
+              type: "user_staking_info_initialization"
+            }),
+          });
+
+          if (!submitResponse.ok) {
+            const errorData = await submitResponse.json();
+            throw new Error(errorData.error || "Failed to submit user staking info initialization");
+          }
+
+          const submitData = await submitResponse.json();
+
+          // Wait a moment for the transaction to be confirmed
+          setStatus("waiting-staking-info-confirm");
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
+
+      // Step 4: Perform final verification by checking account status again
+      setStatus("verifying");
+      const verifyResponse = await fetch("/api/staking/diagnose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+          mintAddress: mintAddress
+        }),
+      });
+
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json();
+        throw new Error(errorData.error || "Failed to verify account initialization");
+      }
+
+      const verifyData = await verifyResponse.json();
+      setDiagnosticInfo(verifyData.data);
+
+      if (!verifyData.data.accountReadiness.readyForStaking) {
+        throw new Error("Account initialization failed verification. Some accounts could not be initialized.");
+      }
+
+      // Step 5: All initialization complete, ready for staking
+      setStatus("success");
+
+      // Call the success callback to continue with staking
+      if (onSuccess) {
+        onSuccess({
+          userTokenAccount: verifyData.data.userTokenAccount,
+          userStakingInfo: verifyData.data.userStakingInfo,
+          message: "All accounts successfully initialized",
+          diagnosticInfo: verifyData.data
+        });
+      }
+
+    } catch (err) {
+      console.error("Account initialization error:", err);
+      setError(err.message || "Failed to initialize accounts");
+      setStatus("error");
+
+      // Call the error callback
+      if (onError) {
+        onError(err);
+      }
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  // Render loading states with appropriate messaging
+  const renderStatus = () => {
+    switch(status) {
+      case "checking":
+        return (
+          <div className="animate-pulse flex items-center">
+            <svg className="animate-spin h-5 w-5 mr-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Checking account status...
+          </div>
+        );
+      case "initializing-token":
+        return (
+          <div className="animate-pulse flex items-center">
+            <svg className="animate-spin h-5 w-5 mr-2 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Initializing token accounts (Step 1/2)...
+          </div>
+        );
+      case "alternate-token-init":
+        return (
+          <div className="animate-pulse flex items-center">
+            <svg className="animate-spin h-5 w-5 mr-2 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Trying alternative token initialization method...
+          </div>
+        );
+      case "waiting-token-confirm":
+        return (
+          <div className="animate-pulse flex items-center">
+            <svg className="animate-spin h-5 w-5 mr-2 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Waiting for token account confirmation...
+          </div>
+        );
+      case "initializing-staking-info":
+        return (
+          <div className="animate-pulse flex items-center">
+            <svg className="animate-spin h-5 w-5 mr-2 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Initializing staking info account (Step 2/2)...
+          </div>
+        );
+      case "waiting-staking-info-confirm":
+        return (
+          <div className="animate-pulse flex items-center">
+            <svg className="animate-spin h-5 w-5 mr-2 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Waiting for staking info confirmation...
+          </div>
+        );
+      case "verifying":
+        return (
+          <div className="animate-pulse flex items-center">
+            <svg className="animate-spin h-5 w-5 mr-2 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Verifying account initialization...
+          </div>
+        );
+      case "success":
+        return (
+          <div className="flex items-center text-green-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            All accounts are ready for staking
+          </div>
+        );
+      case "error":
+        return (
+          <div className="flex items-center text-red-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            Account initialization failed
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Render diagnostic information when showDetails is true
+  const renderDiagnostics = () => {
+    if (!showDetails || !diagnosticInfo) return null;
+
+    return (
+      <div className="mt-4 p-3 bg-gray-800/50 rounded-lg text-xs font-mono overflow-auto max-h-32">
+        <h4 className="text-xs font-semibold text-gray-300 mb-1">Diagnostic Information</h4>
+        <div className="text-gray-400">
+          <div>Token Account: {diagnosticInfo.userTokenAccount}</div>
+          <div>Token Valid: {diagnosticInfo.accountReadiness?.userTokenAccount?.isValid ? "Yes" : "No"}</div>
+          <div>User Staking Info: {diagnosticInfo.accountReadiness?.userStakingInfo?.exists ? "Exists" : "Missing"}</div>
+          <div>Escrow Token Account: {diagnosticInfo.accountReadiness?.escrowTokenAccount?.exists ? "Exists" : "Missing"}</div>
+          <div>Ready for Staking: {diagnosticInfo.accountReadiness?.readyForStaking ? "Yes" : "No"}</div>
+          
+          {diagnosticInfo.reason && (
+            <div className="text-yellow-400 mt-1">Issue: {diagnosticInfo.reason} - {diagnosticInfo.message}</div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render progress steps
+  const renderProgressSteps = () => {
+    if (status === "idle" || status === "success" || status === "error") return null;
+    
+    return (
+      <div className="mt-3 mb-2">
+        <div className="flex items-center space-x-1">
+          <div className={`h-1 flex-1 rounded-full ${initPhase >= 1 ? 'bg-blue-500' : 'bg-gray-700'}`}></div>
+          <div className={`h-1 flex-1 rounded-full ${initPhase >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`}></div>
+          <div className={`h-1 flex-1 rounded-full ${status === 'success' ? 'bg-blue-500' : 'bg-gray-700'}`}></div>
+        </div>
+        <div className="flex text-xs text-gray-400 mt-1 justify-between">
+          <span>Check</span>
+          <span>Token Accounts</span>
+          <span>Staking Info</span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-gray-800/70 backdrop-blur-sm border border-purple-500/20 rounded-xl p-6 max-w-lg mx-auto">
+      <div className="flex items-center mb-4">
+        <div className="bg-purple-500/20 p-2 rounded-full mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold text-white">Prepare Staking Accounts</h3>
+      </div>
+      
+      <div className="mb-4 text-gray-300">
+        <p className="mb-2">
+          Before staking your NFT, we need to ensure all required accounts are properly initialized on the blockchain.
+          This is a one-time setup for each NFT and wallet combination.
+        </p>
+        <p>
+          This process requires small transactions to be signed by your wallet.
+          The transactions have minimal network fees and ensure your staking process will work correctly.
+        </p>
+      </div>
+      
+      {renderProgressSteps()}
+      
+      {status !== "idle" && (
+        <div className="bg-gray-900/50 rounded-lg p-4 mb-4">
+          {renderStatus()}
+          
+          {error && (
+            <div className="mt-2 text-sm text-red-400">
+              Error: {error}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {renderDiagnostics()}
+      
+      <div className="flex justify-end space-x-3 mt-4">
+        <SecondaryButton
+          onClick={onCancel}
+          disabled={isInitializing}
+        >
+          Cancel
+        </SecondaryButton>
+        
+        <GlassButton
+          onClick={handleInitializeAccounts}
+          disabled={isInitializing || status === "success"}
+        >
+          {status === "success" ? "Ready to Stake" : "Initialize Accounts"}
+        </GlassButton>
+      </div>
+    </div>
+  );
+};
+
+export default TokenAccountInitializer;

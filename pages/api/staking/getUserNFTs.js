@@ -54,7 +54,9 @@ export default async function handler(req, res) {
           id: nft.mint_index || nft.id,
           mint: nft.mint_address,
           name: nft.name || `SOLARA #${nft.mint_index || nft.id}`,
-          image: nft.image_url || "loading:indicator", // Use loading indicator instead of local fallback
+          image: nft.image_url || generateIPFSUrl(nft.mint_index || nft.id), // 우선 IPFS URL 생성
+          image_url: nft.image_url || generateIPFSUrl(nft.mint_index || nft.id), // 중복 필드 추가
+          nft_image: nft.image_url || generateIPFSUrl(nft.mint_index || nft.id), // NFT 이미지 URL 직접 제공
           attributes: nft.metadata?.attributes || []
         }));
       }
@@ -150,47 +152,62 @@ export default async function handler(req, res) {
 }
 
 /**
- * Generate mock NFT data for testing purposes
- * @param {string} wallet - Wallet address
- * @returns {Array} Array of mock NFT objects
+ * IPFS URL을 생성하는 함수
+ * @param {number|string} id - NFT ID
+ * @returns {string} 완전한 IPFS 게이트웨이 URL
+ */
+function generateIPFSUrl(id) {
+  try {
+    // ID가 없으면 기본 이미지 반환
+    if (!id) return "loading:indicator";
+
+    // ID 포맷팅 (4자리 숫자로)
+    const formattedId = String(id).padStart(4, '0');
+
+    // 환경 변수에서 IPFS 설정 가져오기
+    const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+    const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
+
+    // 캐시 버스팅 파라미터 추가
+    const timestamp = Date.now();
+    const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_forcereload=true&_t=${timestamp}`;
+
+    console.log(`🔄 getUserNFTs API: NFT ID ${id}에 대해 IPFS URL 생성: ${gatewayUrl}`);
+    return gatewayUrl;
+  } catch (error) {
+    console.error('IPFS URL 생성 오류:', error);
+    return "error:generating-url";
+  }
+}
+
+/**
+ * 모의 NFT 데이터 생성 함수
+ * 테스트 환경에서만 사용됩니다
  */
 function generateMockNFTs(wallet) {
-  // Hash the wallet address to get a consistent but unique set of NFTs for each wallet
-  const hash = Array.from(wallet).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const nftCount = (hash % 5) + 2; // 2-6 NFTs per wallet
-  
+  // 3-5개의 랜덤 NFT 생성
+  const count = Math.floor(Math.random() * 3) + 3;
   const mockNFTs = [];
-  const tiers = ['Common', 'Rare', 'Epic', 'Legendary'];
-  
-  for (let i = 0; i < nftCount; i++) {
-    // Generate a unique ID based on wallet and index
-    const id = ((hash + i) % 999) + 1;
-    
-    // Select a tier based on rarity
-    const tierIndex = Math.min(Math.floor(Math.random() * 10 / 3), 3); // Weighted towards common
-    const tier = tiers[tierIndex];
-    
+
+  for (let i = 0; i < count; i++) {
+    const id = Math.floor(Math.random() * 1000) + 1;
+    const formattedId = String(id).padStart(4, '0');
+
     mockNFTs.push({
-      id: id.toString().padStart(4, '0'),
-      mint: `mock${id}${wallet.substr(0, 8)}`, // Mock mint address
-      name: `SOLARA #${id}`,
-      image: "loading:indicator", // Use loading indicator instead of local image
+      id: id,
+      mint: `mock_mint_${wallet.slice(0, 6)}_${formattedId}`,
+      name: `SOLARA #${formattedId}`,
+      image: generateIPFSUrl(id),
+      image_url: generateIPFSUrl(id),
+      nft_image: generateIPFSUrl(id),
       attributes: [
         {
           trait_type: "Tier",
-          value: tier
-        },
-        {
-          trait_type: "Background",
-          value: ["Cosmic", "Nebula", "Deep Space", "Starfield", "Galaxy"][id % 5]
-        },
-        {
-          trait_type: "Design",
-          value: ["Circuit", "Geometric", "Holographic", "Digital", "Futuristic"][id % 5]
+          value: i === 0 ? "Legendary" : i === 1 ? "Epic" : i === 2 ? "Rare" : "Common"
         }
       ]
     });
   }
-  
+
   return mockNFTs;
 }

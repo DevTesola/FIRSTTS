@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
 import { calculateEarnedRewards } from '../../utils/staking';
-import idl from '../../idl/nft_staking.json';
+import { initializeStakingProgram } from '../../shared/utils/program-initializer';
 
-const { Program, AnchorProvider } = require('@coral-xyz/anchor');
+const { AnchorProvider } = require('@coral-xyz/anchor');
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -57,54 +57,29 @@ export default async function handler(req, res) {
       });
     }, 30000);
     
-    console.log('Connecting to Solana RPC:', SOLANA_RPC_ENDPOINT);
+    // Connect to Solana
     const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
     
-    // Create Anchor provider and program - Fixed initialization
-    const programId = new PublicKey(STAKING_PROGRAM_ADDRESS);
-    
-    // Create a dummy wallet for provider (since we're only reading)
-    const dummyWallet = {
-      publicKey: new PublicKey("11111111111111111111111111111111"),
-      signTransaction: async (tx) => tx,
-      signAllTransactions: async (txs) => txs,
-    };
-    
+    // Setup provider
     const provider = new AnchorProvider(
       connection, 
-      dummyWallet, 
+      { publicKey: walletPubkey }, // Read-only wallet
       { commitment: 'confirmed' }
     );
     
-    // Initialize the program with the IDL - with error handling
+    // Initialize Anchor program
+    const programId = new PublicKey(STAKING_PROGRAM_ADDRESS);
+    
+    // Initialize the program with the updated IDL using specialized initializer
     let program;
     try {
-      // IDL을 사용하기 전에 먼저 올바른 구조를 가지고 있는지 확인
-      // IDL은 accounts, instructions, types 등의 속성을 가져야 함
-      if (!idl || !idl.accounts) {
-        console.warn('IDL missing required account definitions');
-        throw new Error('Invalid IDL structure');
-      }
-      
-      // StakeInfo 계정 타입이 있는지 확인
-      const stakeInfoAcct = idl.accounts.find(acct => acct.name === 'StakeInfo');
-      if (!stakeInfoAcct) {
-        console.warn('IDL missing StakeInfo account definition');
-        throw new Error('StakeInfo account not found in IDL');
-      }
-      
-      // 수동으로 계정 매핑 정보 조회 - Anchor 프로그램이 내부적으로 이 작업을 수행함
-      const accountDiscriminators = {};
-      idl.accounts.forEach(acct => {
-        // discriminator 값이 있는지 확인
-        if (acct.discriminator) {
-          const discriminatorKey = acct.name;
-          accountDiscriminators[discriminatorKey] = Buffer.from(acct.discriminator);
-        }
+      // 프로그램 초기화 유틸리티 사용
+      program = initializeStakingProgram({
+        connection,
+        provider,
+        useUpdatedIdl: true,
+        enableLogs: true
       });
-      
-      // Anchor 프로그램 초기화
-      program = new Program(idl, programId, provider);
       
       // Log available instructions to diagnose the program
       if (program.instruction) {
@@ -173,220 +148,182 @@ export default async function handler(req, res) {
                 // release_date: 8 bytes (i64)
                 const releaseDate = dataWithoutDiscriminator.readBigInt64LE(72);
                 
-                // 나머지 필드 파싱...
+                // is_staked: 1 byte (bool)
+                const isStaked = dataWithoutDiscriminator[80] === 1;
                 
-                // 수동 파싱된 데이터 구성
+                // tier: 1 byte (u8)
+                const tier = dataWithoutDiscriminator[81];
+                
+                // last_claim_time: 8 bytes (i64)
+                const lastClaimTime = dataWithoutDiscriminator.readBigInt64LE(82);
+                
+                // staking_period: 8 bytes (u64)
+                const stakingPeriod = dataWithoutDiscriminator.readBigUInt64LE(90);
+                
+                // 간소화된 StakeInfo 구조 생성
                 onChainStakeInfo = {
                   owner: ownerPubkey,
                   mint: mintPubkey,
-                  stakedAt: {
-                    toNumber: () => Number(stakedAt)
-                  },
-                  releaseDate: {
-                    toNumber: () => Number(releaseDate)
-                  },
-                  isStaked: dataWithoutDiscriminator[80] === 1, // 1 byte (bool)
-                  // tier: dataWithoutDiscriminator[81], // 1 byte (u8)
-                  stakingPeriod: {
-                    toNumber: () => {
-                      // 출시 날짜 - 스테이킹 시작 날짜를 사용하여 기간 계산
-                      const start = Number(stakedAt);
-                      const end = Number(releaseDate);
-                      return Math.floor((end - start) / (24 * 60 * 60)); // 초 단위를 일 단위로 변환
-                    }
-                  }
+                  stakedAt: stakedAt,
+                  releaseDate: releaseDate,
+                  isStaked: isStaked,
+                  tier: tier,
+                  lastClaimTime: lastClaimTime,
+                  stakingPeriod: stakingPeriod,
                 };
                 
                 console.log('Manually parsed stake info:', onChainStakeInfo);
-              } catch (manualParseError) {
-                console.error('Failed manual parsing:', manualParseError.message);
+              } catch (parseError) {
+                console.error('Failed to manually parse account data:', parseError);
               }
             }
-          } else {
-            console.log('Anchor program not available, using raw account data');
-            // Anchor 프로그램 없이 기본적인 상태만 설정
-            isStakedOnChain = true;
           }
-        } else {
-          console.log('Account exists but is owned by a different program:', 
-            accountInfo.owner.toString(), 'instead of', programId.toString());
         }
       } else {
         console.log('No account found at', stakeInfoPDA.toString());
       }
-    } catch (error) {
-      console.log('Error fetching stake info:', error.message);
+    } catch (err) {
+      console.error('Error fetching on-chain stake info:', err);
     }
     
-    // Verify NFT ownership
+    // Check if user owns this NFT
     console.log('[getStakingInfo] Verifying NFT ownership...');
-    let isOwner = false;
+    let ownsNFT = false;
     
     try {
-      if (isStakedOnChain) {
-        isOwner = true;
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+        walletPubkey,
+        { mint: mintPubkey }
+      );
+      
+      ownsNFT = tokenAccounts.value.length > 0 && 
+                tokenAccounts.value.some(account => 
+                  account.account.data.parsed.info.tokenAmount.uiAmount === 1);
+                  
+      if (ownsNFT) {
+        console.log(`[getStakingInfo] NFT ownership verified through token accounts for wallet: ${wallet}`);
       } else {
-        // Safer token account verification with error handling
-        try {
-          const tokenAccounts = await connection.getTokenAccountsByOwner(walletPubkey, {
-            mint: mintPubkey
-          });
-          
-          // Safely access the value property
-          if (tokenAccounts && tokenAccounts.value && tokenAccounts.value.length > 0) {
-            console.log('[getStakingInfo] NFT ownership verified through token accounts for wallet:', wallet);
-            isOwner = true;
-          } else {
-            console.log('[getStakingInfo] No token accounts found for this mint and wallet');
-          }
-        } catch (tokenError) {
-          console.error('[getStakingInfo] Error getting token accounts:', tokenError.message);
-          // Fallback to getParsedTokenAccountsByOwner which might be more reliable
-          try {
-            const parsedTokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPubkey, {
-              mint: mintPubkey
-            });
-            
-            if (parsedTokenAccounts && parsedTokenAccounts.value && parsedTokenAccounts.value.length > 0) {
-              console.log('[getStakingInfo] NFT ownership verified through parsed token accounts');
-              isOwner = true;
-            }
-          } catch (parsedTokenError) {
-            console.error('[getStakingInfo] Error getting parsed token accounts:', parsedTokenError.message);
-          }
-        }
+        console.log(`[getStakingInfo] User does not directly own this NFT in their wallet: ${wallet}`);
       }
-    } catch (ownershipError) {
-      console.warn('[getStakingInfo] Ownership verification error:', ownershipError);
+    } catch (err) {
+      console.error('Error verifying NFT ownership:', err);
     }
     
-    // Get staking info from database
-    const { data, error } = await supabase
-      .from('nft_staking')
-      .select('*')
-      .eq('wallet_address', wallet)
-      .eq('mint_address', mintAddress)
-      .eq('status', 'staked')
-      .single();
+    // Check Supabase for stake info
+    let supabaseStakeInfo = null;
     
-    if (error && error.code !== 'PGRST116') {
-      console.error('[getStakingInfo] Database query error:', error);
-      return res.status(500).json({ 
-        error: 'Failed to fetch staking info', 
-        details: error.message,
-        success: false 
-      });
-    }
-    
-    // If no staking record found
-    if (!data && !isStakedOnChain) {
-      return res.status(200).json({ 
-        isStaked: false,
-        isOwner,
-        success: true
-      });
-    }
-    
-    // Merge on-chain and off-chain data
-    let stakingInfo;
-    
-    if (isStakedOnChain && onChainStakeInfo) {
-      const stakingStartDate = new Date(onChainStakeInfo.stakedAt.toNumber() * 1000);
-      const stakingPeriod = onChainStakeInfo.stakingPeriod.toNumber();
-      const releaseDate = new Date(stakingStartDate);
-      releaseDate.setDate(releaseDate.getDate() + stakingPeriod);
+    try {
+      const { data, error } = await supabase
+        .from('staking')
+        .select('*')
+        .eq('wallet_address', wallet)
+        .eq('mint_address', mintAddress)
+        .single();
+        
+      if (error) {
+        console.error('Supabase query error:', error);
+      }
       
-      const currentDate = new Date();
-      const nftTier = data?.nft_tier || 'COMMON';
+      if (data) {
+        supabaseStakeInfo = data;
+        console.log('Supabase stake info found:', data);
+      }
+    } catch (err) {
+      console.error('Error querying Supabase:', err);
+    }
+    
+    // Determine if NFT is staked
+    const isStaked = isStakedOnChain || (supabaseStakeInfo && supabaseStakeInfo.is_staked);
+    
+    // Prepare response data
+    let responseData = {
+      isStaked: isStaked,
+      ownsNFT: ownsNFT,
+      mintAddress: mintAddress
+    };
+    
+    // If staked, include staking info
+    if (isStaked) {
+      // Combine on-chain and off-chain data, prioritizing on-chain data
+      let stakedAt, releaseDate, stakingPeriod, tier;
       
-      const rewardInfo = calculateEarnedRewards(
-        nftTier, 
-        stakingStartDate, 
-        currentDate, 
-        stakingPeriod
+      if (onChainStakeInfo) {
+        // Convert BigInt to Number for JSON serialization
+        stakedAt = Number(onChainStakeInfo.stakedAt);
+        releaseDate = Number(onChainStakeInfo.releaseDate);
+        stakingPeriod = Number(onChainStakeInfo.stakingPeriod);
+        tier = onChainStakeInfo.tier;
+      } else if (supabaseStakeInfo) {
+        stakedAt = new Date(supabaseStakeInfo.staked_at).getTime();
+        releaseDate = new Date(supabaseStakeInfo.release_date).getTime();
+        stakingPeriod = supabaseStakeInfo.staking_period;
+        tier = supabaseStakeInfo.tier;
+      }
+      
+      // Calculate progress and earned rewards
+      const now = Date.now();
+      const totalDuration = releaseDate - stakedAt;
+      const elapsed = Math.max(0, now - stakedAt);
+      const progressPercentage = (elapsed / totalDuration) * 100;
+      
+      // Get tier multiplier based on tier value
+      let tierMultiplier = 1; // Default
+      switch (tier) {
+        case 3: // LEGENDARY
+          tierMultiplier = 8;
+          break;
+        case 2: // EPIC
+          tierMultiplier = 4;
+          break;
+        case 1: // RARE
+          tierMultiplier = 2;
+          break;
+        case 0: // COMMON
+        default:
+          tierMultiplier = 1;
+          break;
+      }
+      
+      // Calculate rewards based on tier, staking period and elapsed time
+      const baseRewardRate = 25; // 25 TESOLA per day for common tier
+      const dailyReward = baseRewardRate * tierMultiplier;
+      const totalRewards = dailyReward * (stakingPeriod / 86400000); // Convert ms to days
+      const earnedSoFar = calculateEarnedRewards(
+        stakedAt,
+        now,
+        releaseDate,
+        totalRewards
       );
       
-      stakingInfo = {
-        wallet_address: onChainStakeInfo.owner.toString(),
-        mint_address: onChainStakeInfo.mint.toString(),
-        staked_at: stakingStartDate.toISOString(),
-        release_date: releaseDate.toISOString(),
+      // Add staking info to response
+      responseData.stakingInfo = {
+        staked_at: new Date(stakedAt).toISOString(),
+        release_date: new Date(releaseDate).toISOString(),
         staking_period: stakingPeriod,
-        status: 'staked',
-        nft_tier: data?.nft_tier || 'COMMON',
-        nft_name: data?.nft_name || `SOLARA NFT`,
-        total_rewards: data?.total_rewards || rewardInfo.totalRewards,
-        daily_reward_rate: data?.daily_reward_rate || rewardInfo.baseRate,
-        progress_percentage: rewardInfo.progressPercentage,
-        earned_so_far: rewardInfo.earnedRewards,
-        remaining_rewards: rewardInfo.remainingRewards,
-        days_remaining: Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24))),
-        is_unlocked: currentDate >= releaseDate,
-        lockup_complete: currentDate >= releaseDate,
-        elapsed_days: rewardInfo.elapsedDays,
-        onChainData: {
-          stakeInfoPDA: stakeInfoPDA.toString(),
-          stakedAt: onChainStakeInfo.stakedAt.toNumber(),
-          stakingPeriod: stakingPeriod
-        }
-      };
-    } else if (data) {
-      const stakingStartDate = new Date(data.staked_at);
-      const releaseDate = new Date(data.release_date);
-      const currentDate = new Date();
-      const stakingPeriod = data.staking_period;
-      const nftTier = data.nft_tier || 'COMMON';
-      
-      const rewardInfo = calculateEarnedRewards(
-        nftTier, 
-        stakingStartDate, 
-        currentDate, 
-        stakingPeriod
-      );
-      
-      stakingInfo = {
-        ...data,
-        progress_percentage: rewardInfo.progressPercentage,
-        earned_so_far: rewardInfo.earnedRewards,
-        remaining_rewards: rewardInfo.remainingRewards,
-        days_remaining: Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24))),
-        is_unlocked: currentDate >= releaseDate,
-        lockup_complete: currentDate >= releaseDate,
-        elapsed_days: rewardInfo.elapsedDays,
+        tier: tier,
+        tier_multiplier: tierMultiplier,
+        progress_percentage: progressPercentage,
+        earned_so_far: Math.floor(earnedSoFar), // Round down to integer
+        total_rewards: totalRewards,
+        is_unlocked: now >= releaseDate
       };
     }
     
-    // Clean up timeout
+    // Clear timeout
     clearTimeout(requestTimeout);
     
+    // Return response
     return res.status(200).json({
-      isStaked: true,
-      stakingInfo,
-      isOwner,
       success: true,
-      isOnChain: isStakedOnChain
+      ...responseData
     });
+    
   } catch (error) {
-    console.error('[getStakingInfo] Error in getStakingInfo API:', error);
-    
-    // Provide a more specific error message for the "Cannot read properties of undefined (reading 'size')" error
-    if (error.message && error.message.includes("Cannot read properties of undefined (reading 'size')")) {
-      return res.status(500).json({ 
-        error: 'Error processing token accounts. Please try again.',
-        details: 'Token account data structure error',
-        success: false
-      });
-    }
-    
-    return res.status(500).json({ 
+    console.error('Error in getStakingInfo:', error);
+    return res.status(500).json({
       error: 'Internal server error',
-      details: error.message,
+      message: error.message,
       success: false
     });
-  } finally {
-    // Ensure cleanup even in error cases
-    if (typeof requestTimeout !== 'undefined') {
-      clearTimeout(requestTimeout);
-    }
   }
 }

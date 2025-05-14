@@ -1,0 +1,609 @@
+/**
+ * NFT 스테이킹 준비 API 엔드포인트 (Anchor 통합 버전)
+ * 개선된 계정 초기화 로직으로 AccountNotInitialized 오류 해결
+ */
+
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { createClient } from '@supabase/supabase-js';
+import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
+import { Program, AnchorProvider, utils, web3, BN } from '@project-serum/anchor';
+import { validateTokenAccount } from '../../../shared/utils/token-validator';
+
+// NFT 스테이킹 IDL 가져오기
+import nftStakingIdl from '../../../idl/nft_staking.json';
+
+// 공통 모듈에서 필요한 유틸리티 가져오기
+import {
+  PROGRAM_ID,
+  NFT_TIERS,
+  findPoolStatePDA,
+  findStakeInfoPDA,
+  findEscrowAuthorityPDA,
+  findUserStakingInfoPDA,
+  getErrorMessage,
+  createApiResponse,
+  serializeTransaction
+} from '../../../shared';
+
+// 환경 변수 가져오기
+const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
+
+/**
+ * NFT 티어 값을 표준화하는 헬퍼 함수
+ * 
+ * @param {string} tierValue - 원시 티어 값
+ * @returns {string} 표준화된 티어 값
+ */
+function standardizeTier(tierValue) {
+  if (!tierValue) return 'COMMON';
+  
+  const tier = tierValue.trim().toUpperCase();
+  if (tier.includes('LEGEND')) return 'LEGENDARY';
+  if (tier.includes('EPIC')) return 'EPIC';
+  if (tier.includes('RARE')) return 'RARE';
+  return 'COMMON';
+}
+
+/**
+ * 예상 보상 계산 함수
+ * 
+ * @param {string} nftTier - NFT 등급
+ * @param {number} stakingPeriod - 스테이킹 기간(일)
+ * @returns {Object} 보상 관련 정보
+ */
+function calculateEstimatedRewards(nftTier, stakingPeriod) {
+  // 티어별 일일 기본 보상률
+  const dailyRewardsByTier = {
+    'LEGENDARY': 200,  // 200 TESOLA per day
+    'EPIC': 100,       // 100 TESOLA per day
+    'RARE': 50,        // 50 TESOLA per day
+    'COMMON': 25       // 25 TESOLA per day
+  };
+  
+  // 일일 기본 보상률 계산
+  const baseRate = dailyRewardsByTier[nftTier] || dailyRewardsByTier.COMMON;
+  
+  // 장기 스테이킹 승수 계산
+  let multiplier = 1.0;
+  
+  // 장기 스테이킹 보너스
+  if (stakingPeriod >= 365) multiplier = 2.0;      // 365+ days: 2x
+  else if (stakingPeriod >= 180) multiplier = 1.7; // 180+ days: 1.7x
+  else if (stakingPeriod >= 90) multiplier = 1.4;  // 90+ days: 1.4x
+  else if (stakingPeriod >= 30) multiplier = 1.2;  // 30+ days: 1.2x
+  
+  // 총 예상 보상 계산
+  const totalRewards = Math.floor(baseRate * stakingPeriod * multiplier);
+  
+  // 일별 보상 배열 생성 (최대 7일까지만)
+  const dailyRewards = [];
+  for (let day = 0; day < Math.min(stakingPeriod, 7); day++) {
+    dailyRewards.push(Math.floor(baseRate * multiplier));
+  }
+  
+  // 평균 일일 보상 계산
+  const averageDailyReward = totalRewards / stakingPeriod;
+  
+  // 장기 보너스 백분율
+  const longTermBonus = Math.floor((multiplier - 1.0) * 100);
+  
+  return {
+    baseRate,
+    totalRewards,
+    dailyRewards,
+    averageDailyReward,
+    longTermBonus
+  };
+}
+
+/**
+ * 스테이킹 준비 API 핸들러 (Anchor 통합 버전)
+ * 개선된 계정 초기화 로직으로 AccountNotInitialized 오류 해결
+ */
+export default async function handler(req, res) {
+  // POST 메서드 확인
+  if (req.method !== 'POST') {
+    return res.status(405).json(
+      createApiResponse(false, 'Method Not Allowed', null, 'Only POST method is allowed')
+    );
+  }
+
+  // API 버전 파라미터 확인
+  const apiVersion = req.query.version || 'anchor';
+  console.log(`스테이킹 준비 API 버전: ${apiVersion} (Anchor 통합, 계정 초기화 개선)`);
+
+  try {
+    // 요청 파라미터 가져오기
+    const { 
+      wallet, 
+      mintAddress, 
+      stakingPeriod, 
+      nftTier: requestedTier, 
+      rawTierValue, 
+      nftName 
+    } = req.body;
+    
+    // 필수 파라미터 검증
+    if (!wallet || !mintAddress || !stakingPeriod) {
+      return res.status(400).json(
+        createApiResponse(false, '지갑 주소, 민트 주소, 스테이킹 기간은 필수 항목입니다', null, 'MissingParameters')
+      );
+    }
+    
+    // PublicKey 변환 및 검증
+    let walletPubkey, mintPubkey;
+    try {
+      walletPubkey = new PublicKey(wallet);
+      mintPubkey = new PublicKey(mintAddress);
+    } catch (err) {
+      return res.status(400).json(
+        createApiResponse(false, '유효하지 않은 주소 형식', null, err)
+      );
+    }
+    
+    // 스테이킹 기간 검증
+    const stakingPeriodNum = parseInt(stakingPeriod, 10);
+    if (isNaN(stakingPeriodNum) || stakingPeriodNum < 7 || stakingPeriodNum > 365) {
+      return res.status(400).json(
+        createApiResponse(false, '스테이킹 기간은 7일에서 365일 사이여야 합니다', null, 'InvalidStakingPeriod')
+      );
+    }
+    
+    console.log('스테이킹 요청 받음:', { wallet, mintAddress, stakingPeriod: stakingPeriodNum });
+    
+    // 이미 스테이킹되었는지 확인
+    const { data: existingStake, error: existingError } = await supabase
+      .from('nft_staking')
+      .select('*')
+      .eq('wallet_address', wallet)
+      .eq('mint_address', mintAddress)
+      .eq('status', 'staked')
+      .maybeSingle();
+    
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('기존 스테이킹 확인 중 오류:', existingError);
+      return res.status(500).json(
+        createApiResponse(false, '스테이킹 상태 확인 실패', null, existingError)
+      );
+    }
+    
+    if (existingStake) {
+      console.log('NFT 이미 스테이킹됨:', existingStake);
+      return res.status(400).json(
+        createApiResponse(
+          false, 
+          `이 NFT는 이미 ${new Date(existingStake.release_date).toLocaleDateString()}까지 스테이킹되어 있습니다`, 
+          null, 
+          { errorCode: 'AlreadyStaked', existingStake }
+        )
+      );
+    }
+    
+    // Solana 연결 설정
+    console.log('Solana RPC에 연결 중:', SOLANA_RPC_ENDPOINT);
+    const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+    
+    // NFT 소유권 및 토큰 계정 검증
+    console.log('NFT 소유권 확인 중...');
+    try {
+      // 토큰 계정을 통한 NFT 소유권 확인
+      const tokenAccounts = await connection.getTokenAccountsByOwner(walletPubkey, {
+        mint: mintPubkey
+      });
+      
+      if (tokenAccounts.value.length === 0) {
+        return res.status(400).json(
+          createApiResponse(false, '이 NFT를 소유하고 있지 않습니다', null, 'NotOwner')
+        );
+      }
+      
+      console.log('토큰 계정을 통해 NFT 소유권 확인됨');
+    } catch (err) {
+      console.error('NFT 소유권 확인 중 오류:', err);
+      return res.status(500).json(
+        createApiResponse(false, 'NFT 소유권 확인 실패', null, err)
+      );
+    }
+    
+    // NFT 등급 결정 (요청에서 제공된 등급 또는 DB에서 조회)
+    let nftTier = requestedTier || "COMMON";
+    
+    // 등급 정보가 없으면 데이터베이스에서 조회
+    if (!nftTier || nftTier === "COMMON") {
+      try {
+        console.log('NFT 메타데이터 가져오는 중:', mintAddress);
+        const { data: nftData } = await supabase
+          .from('minted_nfts')
+          .select('metadata, name')
+          .eq('mint_address', mintAddress)
+          .maybeSingle();
+        
+        if (nftData && nftData.metadata) {
+          let metadata;
+          
+          try {
+            metadata = typeof nftData.metadata === 'string' 
+              ? JSON.parse(nftData.metadata) 
+              : nftData.metadata;
+              
+            const tierAttr = metadata.attributes?.find(attr => 
+              attr.trait_type?.toLowerCase() === "tier"
+            );
+            
+            if (tierAttr && tierAttr.value) {
+              const rawValue = tierAttr.value;
+              nftTier = standardizeTier(rawValue);
+              console.log('NFT 등급 찾음:', nftTier, '원본 값:', rawValue);
+            }
+          } catch (parseError) {
+            console.error('메타데이터 파싱 오류:', parseError);
+          }
+        }
+      } catch (tierError) {
+        console.error('NFT 등급 조회 오류:', tierError);
+      }
+    }
+    
+    // NFT 등급 -> 인덱스 변환
+    const nftTierIndex = NFT_TIERS[nftTier] || NFT_TIERS.COMMON;
+    
+    // PDA 주소 생성
+    const [poolStatePDA] = findPoolStatePDA();
+    const [stakeInfoPDA] = findStakeInfoPDA(mintPubkey);
+    const [escrowAuthorityPDA] = findEscrowAuthorityPDA(mintPubkey);
+    const [userStakingInfoPDA] = findUserStakingInfoPDA(walletPubkey);
+    
+    console.log('Pool State PDA:', poolStatePDA.toString());
+    console.log('Stake Info PDA:', stakeInfoPDA.toString());
+    console.log('Escrow Authority PDA:', escrowAuthorityPDA.toString());
+    console.log('User Staking Info PDA:', userStakingInfoPDA.toString());
+    
+    // Pool 상태 계정 확인
+    const poolStateInfo = await connection.getAccountInfo(poolStatePDA);
+    if (!poolStateInfo) {
+      console.log('WARNING: Pool state 계정이 존재하지 않습니다!');
+      return res.status(400).json(
+        createApiResponse(false, "Pool이 초기화되지 않았습니다. 관리자에게 연락하세요.", null, {
+          poolStateAccount: poolStatePDA.toString()
+        })
+      );
+    }
+    
+    // -----------------------------------------
+    // 계정 초기화 상태 확인 및 초기화 명령어 준비
+    // -----------------------------------------
+    
+    // Anchor 프로그램 객체 생성을 위한 더미 지갑
+    const dummyWallet = {
+      publicKey: walletPubkey,
+      signTransaction: () => Promise.reject("시뮬레이션용 지갑은 서명할 수 없습니다"),
+      signAllTransactions: () => Promise.reject("시뮬레이션용 지갑은 서명할 수 없습니다"),
+    };
+    
+    // AnchorProvider 생성
+    const provider = new AnchorProvider(
+      connection,
+      dummyWallet,
+      AnchorProvider.defaultOptions()
+    );
+    
+    // 프로그램 ID
+    const programId = new PublicKey(PROGRAM_ID);
+    
+    // Anchor 프로그램 객체 생성 (IDL 벡터 타입 처리 문제 해결을 위해 useUpdatedIdl: true 설정)
+    const program = new Program(nftStakingIdl, programId, provider, { useUpdatedIdl: true });
+    
+    // 1. 사용자 토큰 계정 확인 및 초기화
+    const userTokenAccount = await getAssociatedTokenAddress(
+      mintPubkey,
+      walletPubkey
+    );
+    console.log('사용자 토큰 계정:', userTokenAccount.toString());
+    
+    const userTokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
+    let userTokenAccountNeedsInit = false;
+    
+    if (!userTokenAccountInfo || userTokenAccountInfo.data.length < 165) {
+      console.log('사용자 토큰 계정 초기화 필요');
+      userTokenAccountNeedsInit = true;
+    } else {
+      console.log('사용자 토큰 계정이 초기화되어 있음');
+    }
+    
+    // 2. Escrow 토큰 계정 확인 및 초기화
+    const escrowTokenAccount = await getAssociatedTokenAddress(
+      mintPubkey,
+      escrowAuthorityPDA,
+      true // allowOwnerOffCurve
+    );
+    console.log('Escrow 토큰 계정:', escrowTokenAccount.toString());
+    
+    const escrowTokenAccountInfo = await connection.getAccountInfo(escrowTokenAccount);
+    let escrowTokenAccountNeedsInit = false;
+    
+    if (!escrowTokenAccountInfo) {
+      console.log('Escrow 토큰 계정 초기화 필요');
+      escrowTokenAccountNeedsInit = true;
+    } else {
+      console.log('Escrow 토큰 계정이 초기화되어 있음');
+    }
+    
+    // 3. 사용자 스테이킹 정보 계정 확인 및 초기화
+    const userStakingInfoAccount = await connection.getAccountInfo(userStakingInfoPDA);
+    let userStakingInfoNeedsInit = false;
+    
+    if (!userStakingInfoAccount) {
+      console.log('사용자 스테이킹 정보 계정 초기화 필요');
+      userStakingInfoNeedsInit = true;
+    } else {
+      console.log('사용자 스테이킹 정보 계정이 초기화되어 있음');
+    }
+    
+    // -----------------------------------------
+    // 트랜잭션 생성 및 최적화
+    // -----------------------------------------
+    
+    // 최근 블록해시 가져오기
+    console.log('최근 블록해시 가져오는 중...');
+    const blockHashData = await connection.getLatestBlockhash('confirmed');
+    const blockhash = blockHashData.blockhash;
+    const lastValidBlockHeight = blockHashData.lastValidBlockHeight;
+    
+    // 초기화 명령어 배열 생성
+    const initInstructions = [];
+    
+    // 1. 필요한 경우 사용자 토큰 계정 초기화 명령어 추가
+    if (userTokenAccountNeedsInit) {
+      console.log('사용자 토큰 계정 초기화 명령어 추가');
+      initInstructions.push(
+        createAssociatedTokenAccountInstruction(
+          walletPubkey,
+          userTokenAccount,
+          walletPubkey,
+          mintPubkey
+        )
+      );
+    }
+    
+    // 2. 필요한 경우 Escrow 토큰 계정 초기화 명령어 추가
+    if (escrowTokenAccountNeedsInit) {
+      console.log('Escrow 토큰 계정 초기화 명령어 추가');
+      initInstructions.push(
+        createAssociatedTokenAccountInstruction(
+          walletPubkey,
+          escrowTokenAccount,
+          escrowAuthorityPDA,
+          mintPubkey
+        )
+      );
+    }
+    
+    // 3. 필요한 경우 사용자 스테이킹 정보 초기화 명령어 추가
+    if (userStakingInfoNeedsInit) {
+      console.log('사용자 스테이킹 정보 초기화 명령어 추가');
+      const initUserStakingTx = await program.methods
+        .initUserStakingInfo()
+        .accounts({
+          user: walletPubkey,
+          userStakingInfo: userStakingInfoPDA,
+          systemProgram: web3.SystemProgram.programId
+        })
+        .instruction();
+      
+      initInstructions.push(initUserStakingTx);
+    }
+    
+    // 4. 스테이킹 명령어 생성
+    console.log('스테이킹 명령어 생성 중...');
+    console.log('계정 구조:');
+    console.log(`0. owner: ${walletPubkey.toString()} (isSigner: true, isWritable: true)`);
+    console.log(`1. nft_mint: ${mintPubkey.toString()} (isSigner: false, isWritable: false)`);
+    console.log(`2. user_nft_account: ${userTokenAccount.toString()} (isSigner: false, isWritable: true)`);
+    console.log(`3. escrow_nft_account: ${escrowTokenAccount.toString()} (isSigner: false, isWritable: true)`);
+    console.log(`4. escrow_authority: ${escrowAuthorityPDA.toString()} (isSigner: false, isWritable: false)`);
+    console.log(`5. stake_info: ${stakeInfoPDA.toString()} (isSigner: false, isWritable: true)`);
+    console.log(`6. pool_state: ${poolStatePDA.toString()} (isSigner: false, isWritable: true)`);
+    console.log(`7. user_staking_info: ${userStakingInfoPDA.toString()} (isSigner: false, isWritable: true)`);
+    
+    const stakeInstruction = await program.methods
+      .stakeNft(
+        new BN(stakingPeriodNum),
+        nftTierIndex,
+        false // auto_compound
+      )
+      .accounts({
+        owner: walletPubkey,
+        nftMint: mintPubkey,
+        stakeInfo: stakeInfoPDA,
+        escrowNftAccount: escrowTokenAccount,
+        escrowAuthority: escrowAuthorityPDA,
+        userNftAccount: userTokenAccount,
+        userStakingInfo: userStakingInfoPDA,
+        poolState: poolStatePDA,
+        systemProgram: web3.SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rent: web3.SYSVAR_RENT_PUBKEY
+      })
+      .instruction();
+    
+    // -----------------------------------------
+    // 최적화된 트랜잭션 구성 (계정 초기화를 먼저, 스테이킹은 나중에)
+    // -----------------------------------------
+    const allInstructions = [...initInstructions, stakeInstruction];
+    
+    // 단일 트랜잭션 생성 (작은 초기화 작업들은 단일 트랜잭션으로 가능)
+    const transaction = new Transaction();
+    allInstructions.forEach(ix => transaction.add(ix));
+    
+    // 트랜잭션 메타데이터 설정
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = walletPubkey;
+    
+    // 트랜잭션 직렬화
+    const serializedTx = transaction.serialize({ requireAllSignatures: false }).toString('base64');
+    
+    // 트랜잭션 크기가 너무 큰 경우, 두 개의 트랜잭션으로 분리
+    const needsSeparateTransactions = transaction.signatures.length >= 10 || serializedTx.length > 1000;
+    
+    let phase1Tx = null;
+    let phase2Tx = null;
+    
+    if (needsSeparateTransactions) {
+      // 초기화 트랜잭션과 스테이킹 트랜잭션 분리
+      if (initInstructions.length > 0) {
+        const initTx = new Transaction();
+        initInstructions.forEach(ix => initTx.add(ix));
+        initTx.recentBlockhash = blockhash;
+        initTx.feePayer = walletPubkey;
+        phase1Tx = initTx.serialize({ requireAllSignatures: false }).toString('base64');
+      }
+      
+      const stakeTx = new Transaction();
+      stakeTx.add(stakeInstruction);
+      stakeTx.recentBlockhash = blockhash;
+      stakeTx.feePayer = walletPubkey;
+      phase2Tx = stakeTx.serialize({ requireAllSignatures: false }).toString('base64');
+    }
+    
+    // -----------------------------------------
+    // 트랜잭션 시뮬레이션
+    // -----------------------------------------
+    console.log('트랜잭션 시뮬레이션 중...');
+    
+    try {
+      const simulationTx = new Transaction();
+      allInstructions.forEach(ix => simulationTx.add(ix));
+      simulationTx.recentBlockhash = blockhash;
+      simulationTx.feePayer = walletPubkey;
+      
+      // 계정 키 출력
+      simulationTx.instructions[simulationTx.instructions.length-1].keys.forEach((key, i) => {
+        console.log(`${i}. ${key.pubkey.toString()} (isSigner: ${key.isSigner}, isWritable: ${key.isWritable})`);
+      });
+      
+      const simulation = await connection.simulateTransaction(simulationTx);
+      
+      if (simulation.value.err) {
+        console.error('시뮬레이션 오류:', simulation.value.err);
+        console.log('오류 내용:', JSON.stringify(simulation.value.err));
+      }
+      
+      if (simulation.value.logs) {
+        console.log('시뮬레이션 로그:');
+        simulation.value.logs.forEach(log => console.log(log));
+        
+        // AccountNotInitialized 오류 확인
+        const hasAccountNotInitializedError = simulation.value.logs.some(log => 
+          log.includes('AccountNotInitialized') || 
+          log.includes('Error Code: 3012')
+        );
+        
+        if (hasAccountNotInitializedError) {
+          console.warn('⚠️ 시뮬레이션에서 AccountNotInitialized 오류 발생!');
+          console.warn('계정 초기화 명령어와 스테이킹 명령어를 분리해야 함');
+          
+          // 트랜잭션 강제 분리
+          if (!needsSeparateTransactions) {
+            needsSeparateTransactions = true;
+            
+            if (initInstructions.length > 0) {
+              const initTx = new Transaction();
+              initInstructions.forEach(ix => initTx.add(ix));
+              initTx.recentBlockhash = blockhash;
+              initTx.feePayer = walletPubkey;
+              phase1Tx = initTx.serialize({ requireAllSignatures: false }).toString('base64');
+            }
+            
+            const stakeTx = new Transaction();
+            stakeTx.add(stakeInstruction);
+            stakeTx.recentBlockhash = blockhash;
+            stakeTx.feePayer = walletPubkey;
+            phase2Tx = stakeTx.serialize({ requireAllSignatures: false }).toString('base64');
+          }
+        }
+      }
+    } catch (simError) {
+      console.error('시뮬레이션 실행 오류:', simError);
+    }
+    
+    // -----------------------------------------
+    // API 응답 구성
+    // -----------------------------------------
+    
+    // 보상 계산
+    const rewardCalculation = calculateEstimatedRewards(nftTier, stakingPeriodNum);
+    
+    // 응답 객체 구성
+    const response = {
+      // 지갑 및 NFT 정보
+      wallet,
+      mintAddress,
+      nftName: nftName || `NFT #${mintAddress.slice(0, 6)}`,
+      
+      // 스테이킹 정보
+      stakingPeriod: stakingPeriodNum,
+      nftTier,
+      nftTierIndex,
+      
+      // 계정 초기화 상태
+      accountInitialization: {
+        userTokenAccount: userTokenAccountNeedsInit ? 'needs_init' : 'ready',
+        escrowTokenAccount: escrowTokenAccountNeedsInit ? 'needs_init' : 'ready',
+        userStakingInfo: userStakingInfoNeedsInit ? 'needs_init' : 'ready',
+        allReady: !userTokenAccountNeedsInit && !escrowTokenAccountNeedsInit && !userStakingInfoNeedsInit
+      },
+      
+      // 트랜잭션 데이터
+      separateTransactions: needsSeparateTransactions,
+      transactions: needsSeparateTransactions
+        ? {
+            phase1: phase1Tx,
+            phase2: phase2Tx
+          }
+        : {
+            combined: serializedTx
+          },
+      
+      // 계정 주소
+      accounts: {
+        poolState: poolStatePDA.toString(),
+        stakeInfo: stakeInfoPDA.toString(),
+        escrowAuthority: escrowAuthorityPDA.toString(),
+        userStakingInfo: userStakingInfoPDA.toString(),
+        escrowTokenAccount: escrowTokenAccount.toString(),
+        userTokenAccount: userTokenAccount.toString()
+      },
+      
+      // 보상 정보
+      rewardDetails: {
+        ...rewardCalculation,
+        nftTier,
+        rawTierValue
+      },
+      
+      // 트랜잭션 만료 정보
+      expiresAt: new Date(Date.now() + 120000).toISOString(),
+      expiryHeight: lastValidBlockHeight,
+      
+      // Anchor 방식 플래그
+      useAnchor: true,
+      
+      // API 버전
+      apiVersion: 'anchor-optimized'
+    };
+    
+    // 응답 반환
+    return res.status(200).json(
+      createApiResponse(true, 'Anchor 방식으로 스테이킹 트랜잭션이 준비되었습니다', response)
+    );
+  } catch (error) {
+    console.error('스테이킹 트랜잭션 준비 중 오류:', error);
+    return res.status(500).json(
+      createApiResponse(false, '스테이킹 트랜잭션 준비 실패', null, error)
+    );
+  }
+}

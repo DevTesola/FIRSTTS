@@ -20,7 +20,7 @@ export default function InitializePool() {
   const [detailedPoolInfo, setDetailedPoolInfo] = useState(null);
   
   const PROGRAM_ID = '4SfUyQkbeyz9jeJDsR5XiUf8DATVZJXtGG4JUsYsWzTs';
-  const POOL_SEED = Buffer.from([112, 111, 111, 108]); // "pool"
+  const POOL_SEED = Buffer.from("pool_state"); // 수정: 올바른 시드 값 사용
 
   // 무한 루프 방지
   const [loadedOnce, setLoadedOnce] = useState(false);
@@ -107,22 +107,27 @@ export default function InitializePool() {
       
       toast.info('초기화 트랜잭션 생성 중...');
       
-      // 이미 초기화되었는지 확인
+      // 풀 상태 확인 (이미 초기화되었어도 재초기화 가능하도록 수정)
       const programId = new PublicKey(PROGRAM_ID);
       const [poolStatePDA] = PublicKey.findProgramAddressSync(
         [POOL_SEED],
         programId
       );
-      
+
       const poolStateAccount = await connection.getAccountInfo(poolStatePDA);
       if (poolStateAccount) {
         if (poolStateAccount.owner.equals(new PublicKey(PROGRAM_ID))) {
-          toast.info('풀이 이미 초기화되어 있습니다');
-          setIsLoading(false);
-          return;
+          // 풀이 이미 초기화되어 있음을 알림만 제공하고 계속 진행
+          toast.info('기존 풀 상태를 재초기화합니다');
+          console.log('기존 풀 상태 정보:', {
+            address: poolStatePDA.toString(),
+            owner: poolStateAccount.owner.toString(),
+            dataSize: poolStateAccount.data.length
+          });
+        } else {
+          console.log('Pool state account exists but is owned by:', poolStateAccount.owner.toString());
+          console.log('Expected owner:', PROGRAM_ID);
         }
-        console.log('Pool state account exists but is owned by:', poolStateAccount.owner.toString());
-        console.log('Expected owner:', PROGRAM_ID);
       }
 
       // API에 초기화 트랜잭션 요청
@@ -144,19 +149,17 @@ export default function InitializePool() {
         throw new Error(errorData.error || '초기화 트랜잭션 생성 실패');
       }
       
-      const { transactionBase64, poolStateAccount: poolStatePubkey, poolStateSecretKey } = await response.json();
-      
+      const { transactionBase64, poolStateAccount: poolStatePubkey, poolStateBump } = await response.json();
+
       // 트랜잭션 직렬화 버퍼로 변환
       const transactionBuffer = Buffer.from(transactionBase64, 'base64');
-      
+
       // 트랜잭션 객체로 변환
       const transaction = Transaction.from(transactionBuffer);
-      
-      // 풀 상태 키페어 복원 (프론트엔드에서 서명하기 위해)
-      console.log('Pool state public key:', poolStatePubkey);
-      const poolStateKeypair = Keypair.fromSecretKey(
-        Uint8Array.from(poolStateSecretKey)
-      );
+
+      // 풀 상태 PDA 정보 로깅 (키페어가 아닌 PDA 사용으로 변경)
+      console.log('Pool state PDA:', poolStatePubkey);
+      console.log('Pool state bump:', poolStateBump);
       
       toast.info('트랜잭션 서명 중...');
       console.log('트랜잭션 정보:', {
@@ -215,8 +218,8 @@ export default function InitializePool() {
       <div className="bg-gray-800 rounded-lg p-6 mb-6">
         <div className="flex justify-between items-start mb-4">
           <h2 className="text-xl font-semibold">풀 상태</h2>
-          <button 
-            onClick={checkPoolState} 
+          <button
+            onClick={checkPoolState}
             disabled={checkLoading}
             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
           >
@@ -240,10 +243,13 @@ export default function InitializePool() {
                 <p><span className="font-semibold text-gray-400">소유자:</span> {poolState.owner}</p>
                 <p><span className="font-semibold text-gray-400">예상 소유자:</span> {PROGRAM_ID}</p>
                 <p><span className="font-semibold text-gray-400">소유자 일치:</span> {
-                  poolState.owner === PROGRAM_ID ? 
-                    <span className="text-green-400">✓ 일치</span> : 
+                  poolState.owner === PROGRAM_ID ?
+                    <span className="text-green-400">✓ 일치</span> :
                     <span className="text-red-400">✗ 불일치 (초기화 필요)</span>
                 }</p>
+                {detailedPoolInfo && detailedPoolInfo.poolData && detailedPoolInfo.poolData.admin && (
+                  <p><span className="font-semibold text-gray-400">풀 관리자:</span> {detailedPoolInfo.poolData.admin}</p>
+                )}
                 
                 {/* 풀 상태 계정 확인 정보 */}
                 {detailedPoolInfo && (
@@ -294,66 +300,85 @@ export default function InitializePool() {
       
       <div className="bg-gray-800 rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">풀 초기화</h2>
-        
+
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-gray-400 text-sm font-semibold mb-2">
+              보상 비율 (Reward Rate)
+            </label>
+            <input
+              type="number"
+              value={rewardRate}
+              onChange={(e) => setRewardRate(parseInt(e.target.value))}
+              className="bg-gray-700 text-white px-3 py-2 rounded w-full"
+              min="1"
+              max="1000"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              1초당 획득하는 토큰 양 (기본값: 100)
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-gray-400 text-sm font-semibold mb-2">
+              긴급 인출 수수료 (%)
+            </label>
+            <input
+              type="number"
+              value={emergencyFee}
+              onChange={(e) => setEmergencyFee(parseInt(e.target.value))}
+              className="bg-gray-700 text-white px-3 py-2 rounded w-full"
+              min="0"
+              max="100"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              스테이킹 기간 중 조기 인출 시 수수료 비율 (0-100%, 기본값: 5%)
+            </p>
+          </div>
+        </div>
+
         {poolState && poolState.exists && poolState.owner === new PublicKey(PROGRAM_ID).toString() ? (
-          <p className="text-green-400 mb-4">✓ 풀이 이미 초기화되어 있습니다.</p>
-        ) : (
-          <>
-            <p className="text-yellow-400 mb-4">✗ 풀이 초기화되지 않았습니다. 아래 옵션을 설정하고 초기화하세요.</p>
-            
-            <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2">
-                  보상 비율 (Reward Rate)
-                </label>
-                <input 
-                  type="number" 
-                  value={rewardRate}
-                  onChange={(e) => setRewardRate(parseInt(e.target.value))}
-                  className="bg-gray-700 text-white px-3 py-2 rounded w-full"
-                  min="1"
-                  max="1000"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  1초당 획득하는 토큰 양 (기본값: 100)
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2">
-                  긴급 인출 수수료 (%)
-                </label>
-                <input 
-                  type="number" 
-                  value={emergencyFee}
-                  onChange={(e) => setEmergencyFee(parseInt(e.target.value))}
-                  className="bg-gray-700 text-white px-3 py-2 rounded w-full"
-                  min="0"
-                  max="100"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  스테이킹 기간 중 조기 인출 시 수수료 비율 (0-100%, 기본값: 5%)
-                </p>
-              </div>
+          <div className="mb-4">
+            <p className="text-green-400 mb-2">✓ 풀이 이미 초기화되어 있습니다.</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleInitializePool}
+                disabled={isLoading}
+                className={`px-4 py-2 rounded font-semibold ${
+                  isLoading
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-orange-600 hover:bg-orange-700'
+                } transition-colors`}
+              >
+                {isLoading ? '초기화 중...' : '풀 재초기화'}
+              </button>
+              <p className="text-xs text-yellow-400 mt-2">
+                * 풀 재초기화는 기존 설정을 덮어씁니다. 필요한 경우에만 사용하세요.
+              </p>
             </div>
-          </>
+          </div>
+        ) : (
+          <div className="mb-4">
+            <p className="text-yellow-400 mb-2">✗ 풀이 초기화되지 않았습니다. 위 옵션을 설정하고 초기화하세요.</p>
+            <button
+              onClick={handleInitializePool}
+              disabled={isLoading}
+              className={`px-4 py-2 rounded font-semibold ${
+                isLoading
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } transition-colors`}
+            >
+              {isLoading ? '초기화 중...' : '풀 초기화'}
+            </button>
+          </div>
         )}
-        
-        <button
-          onClick={handleInitializePool}
-          disabled={isLoading || (poolState && poolState.exists && poolState.owner === new PublicKey(PROGRAM_ID).toString())}
-          className={`px-4 py-2 rounded font-semibold ${
-            isLoading || (poolState && poolState.exists && poolState.owner === new PublicKey(PROGRAM_ID).toString())
-              ? 'bg-gray-600 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
-          } transition-colors`}
-        >
-          {isLoading ? '초기화 중...' : '풀 초기화'}
-        </button>
         
         {isLoading && (
           <p className="text-sm text-gray-400 mt-2">
-            초기화 중입니다. 지갑을 통해 트랜잭션에 서명해주세요.
+            처리 중입니다. 지갑을 통해 트랜잭션에 서명해주세요.
           </p>
         )}
       </div>

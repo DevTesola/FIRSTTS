@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import Head from "next/head";
 import NFTDetailSkeleton from "../../components/NFTDetailSkeleton";
 import ErrorMessage from "../../components/ErrorMessage";
-import ProgressiveImage from "../../components/ProgressiveImage";
+import EnhancedProgressiveImage from "../../components/EnhancedProgressiveImage";
+import { createPlaceholder } from "../../utils/mediaUtils";
 
 // Layout 컴포넌트를 동적으로 로드
 const Layout = dynamic(() => import("../../components/Layout"), {
@@ -18,6 +19,7 @@ export default function NFTViewer() {
   const { id } = router.query;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [errorDetails, setErrorDetails] = useState(null);
   
@@ -28,8 +30,7 @@ export default function NFTViewer() {
   const [tweetLoading, setTweetLoading] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
   
-  // 이미지 로딩 상태
-  const [imageLoaded, setImageLoaded] = useState(false);
+  // 중복 상태 정의 제거
 
   // NFT 데이터 가져오기
   useEffect(() => {
@@ -555,12 +556,20 @@ export default function NFTViewer() {
               {/* Image column */}
               <div className="md:w-1/2">
                 {imageUrl && (
-                  <ProgressiveImage
+                  <EnhancedProgressiveImage
                     src={imageUrl}
                     alt={nftName}
                     className="w-full rounded-lg border-2 border-purple-500 shadow-lg"
                     onLoad={() => setImageLoaded(true)}
                     onError={() => setImageLoaded(true)}
+                    placeholder={createPlaceholder(nftName)}
+                    lazyLoad={false}
+                    priority={true}
+                    highQuality={true}
+                    blur={true}
+                    preferRemote={true}
+                    useCache={false}
+                    __source="solara-nft-detail"
                   />
                 )}
               </div>

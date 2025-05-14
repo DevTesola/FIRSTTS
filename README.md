@@ -1,5 +1,17 @@
 # TESOLA 프로젝트
 
+## 최근 주요 수정사항
+
+### NFT 이미지 로딩 문제 해결
+- 스테이킹 대시보드에서 NFT 이미지 로딩 문제 해결
+- 모든 이미지 컴포넌트를 `EnhancedProgressiveImage`로 통일
+- IPFS URL 처리 개선 및 캐시 버스팅 적용
+
+### 온체인 NFT 언스테이킹 수정
+- 온체인에서만 감지된 NFT 언스테이킹 오류 해결
+- `onchain_XXXXX` 형식의 ID를 가진 스테이킹 레코드 처리 개선
+- 자세한 내용은 [ONCHAIN_UNSTAKING_FIX.md](./ONCHAIN_UNSTAKING_FIX.md) 참조
+
 ## 폰트 문제 해결하기
 
 이 프로젝트에서는 Orbitron 폰트를 전체적으로 적용하기 위해 다음과 같은 방법을 사용합니다:

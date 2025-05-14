@@ -110,7 +110,7 @@ async function handleTransaction(transactionPromise, successMessage) {
   }
 }
 
-export {
+module.exports = {
   getErrorMessage,
   handleTransaction,
   ERROR_CODES

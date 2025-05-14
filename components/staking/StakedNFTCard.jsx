@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, Transaction } from "@solana/web3.js";
 import { PrimaryButton, SecondaryButton } from "../Buttons";
-import EnhancedImageWithFallback from "../EnhancedImageWithFallback";
+import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
 import { createPlaceholder, processImageUrl } from "../../utils/mediaUtils";
 import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from "../../utils/nftImageUtils";
+import { EmergencyUnstakeButton } from "./EmergencyUnstakeButton";
+import { EmergencyUnstakeResultModal } from "./EmergencyUnstakeResultModal";
 
 /**
  * StakedNFTCard Component - 개선된 UI/UX
@@ -19,50 +21,77 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
   const [showUnstakeConfirm, setShowUnstakeConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [animation, setAnimation] = useState(false);
+  const [showEmergencyUnstakeResult, setShowEmergencyUnstakeResult] = useState(false);
+  const [emergencyUnstakeResult, setEmergencyUnstakeResult] = useState(null);
+  const [emergencyUnstakeSignature, setEmergencyUnstakeSignature] = useState(null);
   
   // 디버깅용: 활성화하여 데이터 문제 파악
   useEffect(() => {
     // 실제 NFT 이름 미리 계산
     const localNftName = getNFTName(stake, 'SOLARA');
-    
+
     // 모든 이미지 관련 필드 로깅
-    console.log(`DEBUG - StakedNFTCard NFT 데이터:`, {
+    console.log(`⚡ StakedNFTCard 마운트됨 (${stake.mint_address}):`, {
       id: stake.id,
       mint_address: stake.mint_address,
       name: stake.nft_name || 'Unknown',
       tier: stake.nft_tier || 'Unknown',
-      
+
       // 이미지 필드 로깅
-      image: stake.image,
-      image_url: stake.image_url,
-      nft_image: stake.nft_image,
-      ipfs_hash: stake.ipfs_hash,
-      original_local_image: stake.original_local_image,
-      metadata_image: stake.metadata?.image,
-      
-      // 이미지 URL 타입 분석
-      image_type: stake.image?.startsWith('/') ? 'local' : 
-                  stake.image?.startsWith('ipfs://') ? 'ipfs' : 
-                  stake.image?.includes('://') ? 'url' : 'unknown',
-      
+      image_exists: !!stake.image,
+      image_url_exists: !!stake.image_url,
+      nft_image_exists: !!stake.nft_image,
+      ipfs_hash_exists: !!stake.ipfs_hash,
+      metadata_exists: !!stake.metadata,
+
+      // 자세한 이미지 정보
+      nft_image_type: stake.nft_image?.startsWith('http') ? 'http-url' :
+                      stake.nft_image?.startsWith('ipfs://') ? 'ipfs-url' :
+                      stake.nft_image?.startsWith('/') ? 'local-path' : 'unknown',
+
+      nft_image_length: stake.nft_image?.length || 0,
+      nft_image_preview: stake.nft_image ? stake.nft_image.substring(0, 40) + '...' : 'none',
+
       // 추가 메타데이터
       using_actual_nft_data: stake.using_actual_nft_data
     });
-    
-    // 통합 유틸리티 함수를 사용한 이미지 URL 선택 로깅
+
+    // 실제 URL 확인하기 위한 테스트
+    if (stake.nft_image) {
+      console.log(`🌐 직접 NFT 이미지 URL 사용 가능: ${stake.nft_image}`);
+      try {
+        // 직접 URL을 생성하여 캐시 버스팅 테스트
+        if (stake.nft_image.startsWith('http')) {
+          const url = new URL(stake.nft_image);
+          url.searchParams.set('_test', Date.now().toString());
+          console.log(`✅ 유효한 URL 확인됨. 캐시 버스팅 URL: ${url.toString()}`);
+        } else {
+          console.log(`❓ HTTP URL이 아님: ${stake.nft_image}`);
+        }
+      } catch (err) {
+        console.error(`❌ URL 파싱 오류: ${err.message}`);
+      }
+    } else {
+      console.log(`⚠️ nft_image 필드 없음. 대체 URL 생성 필요`);
+    }
+
+    // 통합 유틸리티 함수를 사용한 이미지 URL 생성 테스트
     const nftData = {
-      ...stake, 
+      ...stake,
       id: stake.id || stake.mint_address,
       mint: stake.mint_address,
       name: localNftName,
-      __source: 'StakedNFTCard-debug'
+      __source: 'StakedNFTCard-debug',
+      _cacheBust: Date.now() // Force cache busting
     };
-    
+
     const processedImageUrl = getNFTImageUrl(nftData);
-    
-    console.log(`DEBUG - getNFTImageUrl 처리 결과:`, {
-      input: nftData,
-      output: processedImageUrl
+
+    console.log(`📡 getNFTImageUrl 결과 (이미지 URL 생성 테스트):`, {
+      source: 'StakedNFTCard',
+      url: processedImageUrl?.substring(0, 80) + '...',
+      url_length: processedImageUrl?.length || 0,
+      starts_with_http: processedImageUrl?.startsWith('http')
     });
   }, [stake]);
   
@@ -179,7 +208,6 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
       const signature = await connection.sendRawTransaction(
         signedTransaction.serialize(),
         {
-          skipPreflight: false,
           preflightCommitment: 'confirmed'
         }
       );
@@ -235,7 +263,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
     if (lowerTier.includes("rare")) return "bg-blue-900/30 border-blue-500/30 text-blue-300";
     return "bg-green-900/30 border-green-500/30 text-green-300"; // Common default
   };
-  
+
   // Get the appropriate tier badge color
   const getTierBadge = (tier) => {
     const lowerTier = (tier || "").toLowerCase();
@@ -244,7 +272,46 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
     if (lowerTier.includes("rare")) return "bg-blue-900 text-blue-300";
     return "bg-green-900 text-green-300"; // Common default
   };
-  
+
+  // 클레임 보상 함수
+  const handleClaimRewards = async () => {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 클레임 API 요청
+      const res = await fetch("/api/staking/claimRewards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+          mintAddress: stake.mint_address
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "보상 청구 준비 실패");
+      }
+
+      const data = await res.json();
+      setSuccessMessage(`${data.amount || "0"} TESOLA 토큰을 성공적으로 청구했습니다!`);
+
+      // 데이터 갱신
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (err) {
+      console.error("보상 청구 오류:", err);
+      setError(err.message || "보상 청구 실패");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Use NFT utilities to extract name and info
   const nftName = getNFTName(stake, 'SOLARA');
   
@@ -314,83 +381,47 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
         <div className="w-16 h-16 rounded-lg overflow-hidden mr-3 border border-white/10 flex-shrink-0">
           {/* NFT 이미지 표시 - 개선된 이미지 로딩으로 실제 NFT 이미지 표시 */}
           {/* 유틸리티 함수를 사용한 이미지 로딩 - /my-collection 페이지와 동일한 패턴 */}
-          <EnhancedImageWithFallback 
+          <EnhancedProgressiveImage
             src={(() => {
-              console.log(`StakedNFTCard - NFT 이미지 필드 정보:`, {
-                id: stake.id,
+              // API에서 직접 제공한 이미지 URL 사용
+              let imageUrl = stake.nft_image || stake.image;
+
+              // 캐시 버스팅 파라미터 추가
+              if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+                try {
+                  // URL이 유효한지 확인
+                  const url = new URL(imageUrl);
+                  // 캐시 버스팅 파라미터 추가
+                  url.searchParams.set('_t', Date.now().toString());
+                  console.log(`캐시 버스팅 URL 생성: ${url.toString()}`);
+                  return url.toString();
+                } catch (err) {
+                  console.log(`URL 파싱 실패, 원본 URL 사용: ${imageUrl}`);
+                  return imageUrl;
+                }
+              }
+
+              // 기본 URL 생성 로직 사용
+              return getNFTImageUrl({
+                ...stake,
+                id: stake.id || (stake.nft_name?.match(/#(\d+)/) ? stake.nft_name?.match(/#(\d+)/)[1] : null),
                 mint: stake.mint_address,
-                image: stake.image,
-                image_url: stake.image_url,
-                nft_image: stake.nft_image,
-                ipfs_hash: stake.ipfs_hash,
-                metadata_image: stake.metadata?.image,
-                has_metadata: !!stake.metadata
+                name: stake.nft_name,
+                __source: 'StakedNFTCard-thumbnail',
+                _cacheBust: Date.now() // Force cache busting
               });
-              
-              // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
-              // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
-              
-              let nftId = null;
-              
-              // 1. stake.id에서 숫자 추출 시도 (가장 높은 우선순위)
-              if (stake.id) {
-                const match = String(stake.id).match(/(\d+)/);
-                if (match && match[1]) {
-                  nftId = match[1];
-                  console.log(`ID에서 숫자 추출: ${nftId}`);
-                }
-              }
-              
-              // 2. stake.nft_name에서 숫자 추출 시도
-              if (!nftId && stake.nft_name) {
-                const match = stake.nft_name.match(/#(\d+)/);
-                if (match && match[1]) {
-                  nftId = match[1];
-                  console.log(`이름에서 숫자 추출: ${nftId}`);
-                }
-              }
-              
-              // 3. mint_address 해시로 숫자 생성
-              if (!nftId && stake.mint_address) {
-                let hash = 0;
-                for (let i = 0; i < stake.mint_address.length; i++) {
-                  hash = ((hash << 5) - hash) + stake.mint_address.charCodeAt(i);
-                  hash = hash & hash;
-                }
-                nftId = Math.abs(hash) % 999 + 1;
-                console.log(`mint 주소 해시로 ID 생성: ${nftId}`);
-              }
-              
-              // 최후의 수단: 임의의 숫자 생성
-              if (!nftId) {
-                nftId = Math.floor(Math.random() * 999) + 1;
-                console.log(`임의의 ID 생성: ${nftId}`);
-              }
-              
-              // 모든 상황에서 항상 직접 IPFS URL 생성
-              const formattedId = String(nftId).padStart(4, '0');
-              // 최신 환경 변수 사용 (하드코딩 제거)
-              const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
-              const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-              const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-              
-              // 로그로 생성된 URL 확인
-              console.log(`❗❗❗ 강제 생성된 IPFS URL: ${gatewayUrl}`);
-              console.log(`❗❗❗ 사용된 CID: ${IMAGES_CID}`);
-              
-              return gatewayUrl;
             })()}
             alt={getNFTName(stake, 'SOLARA')}
-            className="w-full h-full"
+            className="w-full h-full object-cover"
             id={stake.id || stake.mint_address}
-            placeholderText="NFT went on vacation"
-            preferRemote={true}
+            lazyLoad={true}
+            priority={true} // 우선적으로 로드하도록 변경
             highQuality={true}
-            priority={true}
+            preferRemote={true}
             useCache={false}
-            maxRetries={1}
-            retryInterval={1000}
+            blur={true}
             placeholder={createPlaceholder(nftName || "SOLARA NFT")}
+            __source="StakedNFTCard-thumbnail"
           />
         </div>
         
@@ -490,91 +521,56 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
           {/* Enlarged NFT Image - EnhancedProgressiveImage로 개선 */}
           <div className="aspect-square w-full max-w-[180px] mx-auto rounded-lg overflow-hidden border border-white/10 mb-4 relative">
             {/* 확대 이미지도 EnhancedProgressiveImage 사용 */}
-            <EnhancedImageWithFallback
+            <EnhancedProgressiveImage
               src={(() => {
-                console.log(`StakedNFTCard (enlarged) - NFT 이미지 필드 정보:`, {
-                  id: stake.id,
+                // API에서 직접 제공한 이미지 URL 사용
+                let imageUrl = stake.nft_image || stake.image;
+
+                // 캐시 버스팅 파라미터 추가
+                if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+                  try {
+                    // URL이 유효한지 확인
+                    const url = new URL(imageUrl);
+                    // 캐시 버스팅 파라미터 추가
+                    url.searchParams.set('_t', Date.now().toString());
+                    console.log(`[확대 이미지] 캐시 버스팅 URL 생성: ${url.toString()}`);
+                    return url.toString();
+                  } catch (err) {
+                    console.log(`[확대 이미지] URL 파싱 실패, 원본 URL 사용: ${imageUrl}`);
+                    return imageUrl;
+                  }
+                }
+
+                // 기본 URL 생성 로직 사용
+                return getNFTImageUrl({
+                  ...stake,
+                  id: stake.id || (stake.nft_name?.match(/#(\d+)/) ? stake.nft_name?.match(/#(\d+)/)[1] : null),
                   mint: stake.mint_address,
-                  image: stake.image,
-                  image_url: stake.image_url,
-                  nft_image: stake.nft_image,
-                  ipfs_hash: stake.ipfs_hash,
-                  metadata_image: stake.metadata?.image,
-                  has_metadata: !!stake.metadata
+                  name: stake.nft_name,
+                  __source: 'StakedNFTCard-enlarged',
+                  _cacheBust: Date.now() // Force cache busting
                 });
-                
-                // 무조건 NFT ID 기반으로 IPFS URL 직접 생성
-                // 단순화된 강력한 로직: 항상 ID를 추출하여 직접 IPFS URL을 생성하는 방식으로 변경
-                
-                let nftId = null;
-                
-                // 1. stake.id에서 숫자 추출 시도 (가장 높은 우선순위)
-                if (stake.id) {
-                  const match = String(stake.id).match(/(\d+)/);
-                  if (match && match[1]) {
-                    nftId = match[1];
-                    console.log(`확대 이미지: ID에서 숫자 추출: ${nftId}`);
-                  }
-                }
-                
-                // 2. stake.nft_name에서 숫자 추출 시도
-                if (!nftId && stake.nft_name) {
-                  const match = stake.nft_name.match(/#(\d+)/);
-                  if (match && match[1]) {
-                    nftId = match[1];
-                    console.log(`확대 이미지: 이름에서 숫자 추출: ${nftId}`);
-                  }
-                }
-                
-                // 3. mint_address 해시로 숫자 생성
-                if (!nftId && stake.mint_address) {
-                  let hash = 0;
-                  for (let i = 0; i < stake.mint_address.length; i++) {
-                    hash = ((hash << 5) - hash) + stake.mint_address.charCodeAt(i);
-                    hash = hash & hash;
-                  }
-                  nftId = Math.abs(hash) % 999 + 1;
-                  console.log(`확대 이미지: mint 주소 해시로 ID 생성: ${nftId}`);
-                }
-                
-                // 최후의 수단: 임의의 숫자 생성
-                if (!nftId) {
-                  nftId = Math.floor(Math.random() * 999) + 1;
-                  console.log(`확대 이미지: 임의의 ID 생성: ${nftId}`);
-                }
-                
-                // 모든 상황에서 항상 직접 IPFS URL 생성
-                const formattedId = String(nftId).padStart(4, '0');
-                // 최신 환경 변수 사용 (하드코딩 제거)
-                const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
-                const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
-                
-                // 로그로 생성된 URL 확인
-                console.log(`❗❗❗ 확대 이미지: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                console.log(`❗❗❗ 확대 이미지: 사용된 CID: ${IMAGES_CID}`);
-                
-                return gatewayUrl;
               })()}
               alt={getNFTName(stake, 'SOLARA')}
-              className="w-full h-full"
-              id={stake.id || stake.mint_address}
-              placeholderText="Pixels on coffee break"
-              highQuality={true}
-              preferRemote={true}
+              className="w-full h-full object-cover"
+              id={`enlarged-${stake.id || stake.mint_address}`}
+              lazyLoad={false} // Load immediately when expanded view is shown
               priority={true}
+              highQuality={true} // Use high quality for enlarged view
+              preferRemote={true}
               useCache={false}
-              maxRetries={1}
-              retryInterval={1000}
+              blur={true}
               placeholder={createPlaceholder(nftName || "SOLARA NFT")}
+              __source="StakedNFTCard-enlarged"
             />
-            
+
             {/* 디버깅 정보 표시 */}
             <div className="absolute bottom-0 right-0 bg-black/80 p-1 text-[6px] text-white max-w-full overflow-hidden z-10">
               {JSON.stringify({
-                img: stake.image?.substring(0, 12) + '...',
-                type: stake.image?.startsWith('/') ? 'local' : 
-                      stake.image?.startsWith('ipfs://') ? 'ipfs' : 'other'
+                id: stake.id || 'unknown',
+                mint: stake.mint_address ? stake.mint_address.substring(0, 5) + '...' : 'none',
+                has_img: !!stake.nft_image,
+                img_len: stake.nft_image ? stake.nft_image.length : 0
               })}
             </div>
           </div>
@@ -636,16 +632,56 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
         </div>
       )}
       
-      {/* Unstake button */}
-      <div className="mt-3">
-        <PrimaryButton
-          onClick={() => setShowUnstakeConfirm(true)}
-          loading={loading}
-          fullWidth
-          className={isUnlocked ? 'bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500' : ''}
-        >
-          {isUnlocked ? 'Claim & Unstake' : 'Unstake NFT'}
-        </PrimaryButton>
+      {/* 버튼 영역 */}
+      <div className="mt-3 flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-1">
+          <PrimaryButton
+            onClick={() => setShowUnstakeConfirm(true)}
+            loading={loading && !successMessage}
+            fullWidth
+            className={isUnlocked ? 'bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500' : ''}
+          >
+            {isUnlocked ? 'Claim & Unstake' : 'Unstake NFT'}
+          </PrimaryButton>
+
+          {/* 클레임 버튼 추가 */}
+          <SecondaryButton
+            onClick={handleClaimRewards}
+            loading={loading && successMessage}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500"
+          >
+            Claim
+          </SecondaryButton>
+        </div>
+
+        {/* 비상 언스테이킹 버튼 - 스테이킹 기간이 끝나지 않았을 때만 표시 */}
+        {!isUnlocked && (
+          <EmergencyUnstakeButton
+            nftMint={stake.mint_address}
+            stakeInfo={stake}
+            onSuccess={(signature, result) => {
+              setEmergencyUnstakeSignature(signature);
+              setEmergencyUnstakeResult(result);
+              setShowEmergencyUnstakeResult(true);
+
+              // 데이터 갱신
+              if (onRefresh) {
+                onRefresh();
+              }
+            }}
+            disabled={loading}
+          />
+        )}
+
+        {/* 비상 언스테이킹 결과 모달 */}
+        {showEmergencyUnstakeResult && emergencyUnstakeResult && (
+          <EmergencyUnstakeResultModal
+            isOpen={showEmergencyUnstakeResult}
+            onClose={() => setShowEmergencyUnstakeResult(false)}
+            result={emergencyUnstakeResult}
+            signature={emergencyUnstakeSignature}
+          />
+        )}
       </div>
       
       {/* Custom animation styles */}

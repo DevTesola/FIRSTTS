@@ -7,12 +7,12 @@ const path = require('path');
 // 환경 설정
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 const PROGRAM_ID = '4SfUyQkbeyz9jeJDsR5XiUf8DATVZJXtGG4JUsYsWzTs';
-const POOL_SEED = Buffer.from([112, 111, 111, 108]); // "pool"
+const POOL_SEED = Buffer.from("pool_state"); // 수정: "pool_state" 시드 사용
 
-// Anchor 초기화 명령 식별자
-// 표준 Anchor "initialize" 명령 식별자는 보통 명령어 이름의 해시입니다
-// 실제 프로그램에 맞게 수정해야 합니다
-const INITIALIZE_DISCRIMINATOR = Buffer.from([105, 110, 105, 116, 105, 97, 108, 105]); // "initiali"의 8바이트
+// Anchor 초기화 명령 식별자 - shared/constants/discriminators.js에서 임포트하는 것이 이상적
+// Anchor 표준 8바이트 discriminator는 sighash("global:initialize")
+// 실제 프로그램과 일치하는지 확인 필요
+const INITIALIZE_DISCRIMINATOR = Buffer.from([175, 175, 109, 31, 13, 152, 155, 237]); // 실제 프로그램의 initialize 메서드 식별자
 
 async function main() {
   try {
@@ -77,18 +77,24 @@ async function main() {
     // 계정 임대 면제를 위한 SOL 계산
     const rentExemption = await connection.getMinimumBalanceForRentExemption(POOL_STATE_SIZE);
     
-    // 풀 상태 계정 생성 명령
-    // 이 방법은 PDA를 직접 생성하지 않기 때문에 작동하지 않을 수 있습니다
-    // 초기화 명령을 통해 PDA를 생성하는 것이 더 안전합니다
-    const createAccountIx = SystemProgram.createAccount({
-      fromPubkey: adminKeypair.publicKey,
-      newAccountPubkey: poolStatePDA, // PDA는 이 방식으로 생성할 수 없습니다
-      lamports: rentExemption,
-      space: POOL_STATE_SIZE,
-      programId: programId
-    });
-    
-    // 대안: 명시적인 초기화 명령 (프로그램에서 지원하는 경우)
+    // 초기화 명령 데이터 준비
+    // initialize 명령은 reward_rate(u64)와 emergency_fee(u8) 매개변수가 필요합니다
+    const rewardRate = 100; // 기본 보상률
+    const emergencyFee = 5; // 긴급 출금 수수료 5%
+
+    const rewardRateBuf = Buffer.alloc(8); // u64
+    rewardRateBuf.writeBigUInt64LE(BigInt(rewardRate));
+
+    const emergencyFeeBuf = Buffer.from([emergencyFee]); // u8
+
+    // 명령어 데이터 구성
+    const instructionData = Buffer.concat([
+      INITIALIZE_DISCRIMINATOR, // 8바이트 명령어 식별자
+      rewardRateBuf,           // 8바이트 reward_rate (u64)
+      emergencyFeeBuf          // 1바이트 emergency_fee (u8)
+    ]);
+
+    // 풀 초기화 명령 생성 - PDA 방식 사용
     const initPoolIx = new TransactionInstruction({
       keys: [
         { pubkey: adminKeypair.publicKey, isSigner: true, isWritable: true },
@@ -96,12 +102,15 @@ async function main() {
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
       ],
       programId: programId,
-      data: INITIALIZE_DISCRIMINATOR
+      data: instructionData
     });
-    
+
+    console.log('초기화 매개변수:');
+    console.log(' - 보상률:', rewardRate);
+    console.log(' - 긴급 출금 수수료:', emergencyFee + '%');
+    console.log(' - PDA:', poolStatePDA.toString());
+
     // 트랜잭션에 명령 추가
-    // 참고: createAccount는 PDA에 대해 작동하지 않을 수 있습니다
-    // tx.add(createAccountIx);
     tx.add(initPoolIx);
     
     // 트랜잭션 전송

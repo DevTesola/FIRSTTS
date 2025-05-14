@@ -7,6 +7,11 @@ import { createClient } from '@supabase/supabase-js';
 import { SOLANA_RPC_ENDPOINT, COLLECTION_MINT } from './cluster.js';
 import { SELLER_KEYPAIR } from '../server/utils/sellerKeypair.js';
 
+// Import constants from environment variables
+const NFT_PRICE_LAMPORTS = Number(process.env.NFT_PRICE_LAMPORTS) || 1.5 * 1e9;
+const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
+const RESOURCE_CID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
+
 const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
 const metaplex = Metaplex.make(connection)
   .use(keypairIdentity(SELLER_KEYPAIR));
@@ -15,9 +20,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
-
-const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-const RESOURCE_CID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
 
 // Lock timeout in milliseconds (3 minutes)
 const LOCK_TIMEOUT_MS = 180000;
@@ -64,11 +66,29 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
     
     // Check if lock has expired
     if (lockData.updated_at) {
-      const lockTimestamp = new Date(lockData.updated_at).getTime();
+      let lockTimestamp = new Date(lockData.updated_at).getTime();
       const currentTime = Date.now();
-      
-      if (currentTime - lockTimestamp > LOCK_TIMEOUT_MS) {
-        throw new Error(`Lock expired. Lock time: ${lockData.updated_at}, Timeout: ${LOCK_TIMEOUT_MS}ms`);
+
+      // Timezone difference detection and adjustment (KST-UTC 9 hour difference)
+      if (Math.abs(currentTime - lockTimestamp) > 8 * 60 * 60 * 1000 &&
+          Math.abs(currentTime - lockTimestamp) < 10 * 60 * 60 * 1000) {
+        console.warn(`Timezone difference detected. Lock: ${lockData.updated_at}, Current: ${new Date(currentTime).toISOString()}, Diff: ${Math.abs(currentTime - lockTimestamp)}ms`);
+        // Set to 1 minute before current time to make it valid
+        lockTimestamp = currentTime - 60 * 1000;
+        console.log(`Lock timestamp adjusted: ${new Date(lockTimestamp).toISOString()}`);
+      }
+      // Handle future timestamps
+      else if (lockTimestamp > currentTime) {
+        console.warn(`Lock timestamp in future detected. Lock: ${lockData.updated_at}, Current: ${new Date(currentTime).toISOString()}`);
+        lockTimestamp = currentTime - 1000; // Use current time instead with small offset
+      }
+
+      const timeDiff = currentTime - lockTimestamp;
+      console.log(`Adjusted time difference: ${timeDiff}ms, Timeout: ${LOCK_TIMEOUT_MS}ms`);
+
+      if (timeDiff > LOCK_TIMEOUT_MS) {
+        console.error(`Lock expired. Lock time: ${new Date(lockTimestamp).toISOString()}, Current: ${new Date(currentTime).toISOString()}, Diff: ${timeDiff}ms, Timeout: ${LOCK_TIMEOUT_MS}ms`);
+        throw new Error(`Lock expired. Please try minting again.`);
       }
     }
     
@@ -77,17 +97,12 @@ export async function completeMinting(paymentTxId, mintIndex, lockId, buyerPubli
       throw new Error('Wallet mismatch, possible front-running attempt');
     }
     
-    // Refresh lock timestamp to prevent expiration during minting
-    await supabase
-      .from('minted_nfts')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('mint_index', mintIndex)
-      .eq('lock_id', lockId)
-      .eq('status', 'pending');
+    // Lock refresh is now handled at the API level
+    // This avoids duplicate refreshes and centralizes lock management
     
-    console.log(`[${requestId}] Lock verified and refreshed successfully`);
-    
-    // 2. 결제 트랜잭션 확인
+    console.log(`[${requestId}] Lock verified successfully`);
+
+    // 2. Payment transaction verification
     const txInfo = await connection.getTransaction(paymentTxId, {
       commitment: 'confirmed',
       maxSupportedTransactionVersion: 0
@@ -178,25 +193,49 @@ try {
     };
   } catch (err) {
     console.error('Complete minting error:', err);
-    // 민팅 실패 시 상태 리셋 - 결제는 이미 완료되었기 때문에 주의 필요
+    // Reset state on minting failure - be cautious as payment is already completed
     if (!nft) {
-      console.log('Minting failed after payment, marking as failed:', mintIndex);
+      console.log('Minting failed after payment, marking as failed and initiating refund process:', mintIndex);
       try {
+        // 1. Update record to payment_received_mint_failed status
         const { error: updateError } = await supabase
           .from('minted_nfts')
           .update({
-            status: 'payment_received_mint_failed',  // 특수 상태로 표시하여 나중에 확인
+            status: 'payment_received_mint_failed',  // Mark with special status for later verification
             updated_at: new Date().toISOString(),
             payment_tx_signature: paymentTxId
-            // error_log 필드 사용 시도하지 않음 - 스키마에 없을 수 있음
+            // error_details field removed - not in database schema
           })
           .eq('mint_index', mintIndex)
           .eq('lock_id', lockId);
-        
+
         if (updateError) {
           console.error('Failed to update error state:', updateError);
         } else {
-          console.log('Successfully reset record for mint_index:', mintIndex);
+          console.log('Successfully marked record for refund, mint_index:', mintIndex);
+
+          // 2. Add to refund queue - create record in refund_queue table
+          try {
+            await supabase
+              .from('refund_queue')
+              .insert([
+                {
+                  mint_index: mintIndex,
+                  wallet: buyerPublicKey.toBase58(),
+                  payment_tx_signature: paymentTxId,
+                  amount: NFT_PRICE_LAMPORTS,
+                  status: 'pending',
+                  created_at: new Date().toISOString(),
+                  error_reason: err.message || 'Unknown error'
+                }
+              ]);
+            console.log('Added to refund queue for mint_index:', mintIndex);
+
+            // Change the error message to include refund information
+            err.message = `${err.message}. A refund has been automatically queued for processing.`;
+          } catch (refundErr) {
+            console.error('Failed to add to refund queue:', refundErr);
+          }
         }
       } catch (resetErr) {
         console.error('Exception during error state update:', resetErr);

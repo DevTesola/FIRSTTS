@@ -2,17 +2,20 @@
  * NFT 스테이킹 프로그램의 상수 정의
  */
 
+const { Buffer } = require('buffer');
+
 // Program ID
 const PROGRAM_ID = '4SfUyQkbeyz9jeJDsR5XiUf8DATVZJXtGG4JUsYsWzTs';
 
 // Seeds for PDAs
-const POOL_SEED = Buffer.from([112, 111, 111, 108]); // "pool"
+const POOL_SEED = Buffer.from([112, 111, 111, 108, 95, 115, 116, 97, 116, 101]); // "pool_state"
 const STAKE_SEED = Buffer.from([115, 116, 97, 107, 101]); // "stake"
 const ESCROW_SEED = Buffer.from([101, 115, 99, 114, 111, 119]); // "escrow"
 const USER_STAKING_SEED = Buffer.from([117, 115, 101, 114, 95, 115, 116, 97, 107, 105, 110, 103]); // "user_staking"
 const SOCIAL_SEED = Buffer.from([115, 111, 99, 105, 97, 108]); // "social"
 const PROOF_SEED = Buffer.from([112, 114, 111, 111, 102]); // "proof"
 const VOTE_SEED = Buffer.from([118, 111, 116, 101]); // "vote"
+const REWARD_VAULT_AUTHORITY_SEED = Buffer.from([114, 101, 119, 97, 114, 100, 95, 118, 97, 117, 108, 116, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]); // "reward_vault_authority"
 
 // NFT Tiers
 const NFT_TIERS = {
@@ -40,17 +43,17 @@ const SOCIAL_ACTIVITY_TYPES = {
 // Discriminators (first 8 bytes of SHA256 hash of the instruction name)
 // These are used to identify the account type when parsing account data
 const DISCRIMINATORS = {
-  POOL_STATE: Buffer.from([4, 146, 216, 218, 165, 66, 244, 30]),
-  STAKE_INFO: Buffer.from([91, 4, 83, 117, 169, 120, 168, 119]),
-  USER_STAKING_INFO: Buffer.from([200, 93, 190, 77, 226, 132, 111, 181]),
+  // 실제 온체인 계정에서 확인된 정확한 디스크리미네이터 값
+  POOL_STATE: Buffer.from([247, 237, 227, 245, 215, 195, 222, 70]), // "f7ede3f5d7c3de46"
+  STAKE_INFO: Buffer.from([66, 62, 68, 70, 108, 179, 183, 235]), // "423e44466cb3b7eb"
+  USER_STAKING_INFO: Buffer.from([171, 19, 114, 117, 157, 103, 21, 106]), // "ab1372759d67156a"
+  // 기타 계정 타입은 유지
   PROPOSAL: Buffer.from([28, 110, 127, 144, 48, 40, 151, 174]),
   VOTE: Buffer.from([213, 157, 193, 142, 228, 56, 248, 150]),
   GOVERNANCE_SETTINGS: Buffer.from([10, 231, 7, 225, 242, 111, 48, 79]),
   SOCIAL_VERIFIER: Buffer.from([175, 119, 64, 163, 18, 112, 201, 161]),
   USER_SOCIAL_ACTIVITY: Buffer.from([198, 23, 155, 219, 173, 188, 238, 173]),
-  SOCIAL_ACTIVITY_PROOF: Buffer.from([211, 16, 96, 201, 152, 47, 97, 219]),
-  MEME_ACCOUNT: Buffer.from([120, 82, 76, 134, 93, 115, 244, 62]),
-  MEME_VOTE: Buffer.from([49, 132, 89, 223, 111, 47, 218, 156])
+  SOCIAL_ACTIVITY_PROOF: Buffer.from([211, 16, 96, 201, 152, 47, 97, 219])
 };
 
 // Reward multipliers and bonuses
@@ -82,8 +85,19 @@ const SOCIAL_CONSTANTS = {
   DEFAULT_MAX_REWARDS_PER_DAY: 3  // Maximum rewards claimable per day
 };
 
-// For CommonJS compatibility
-export {
+// 시드 문자열 (디버깅 및 참조용)
+const SEED_STRINGS = {
+  POOL_SEED_STR: "pool_state",
+  STAKE_SEED_STR: "stake",
+  ESCROW_SEED_STR: "escrow",
+  USER_STAKING_SEED_STR: "user_staking",
+  SOCIAL_SEED_STR: "social",
+  PROOF_SEED_STR: "proof",
+  VOTE_SEED_STR: "vote",
+  REWARD_VAULT_AUTHORITY_SEED_STR: "reward_vault_authority"
+};
+
+module.exports = {
   PROGRAM_ID,
   POOL_SEED,
   STAKE_SEED,
@@ -92,6 +106,7 @@ export {
   SOCIAL_SEED,
   PROOF_SEED,
   VOTE_SEED,
+  REWARD_VAULT_AUTHORITY_SEED,
   NFT_TIERS,
   STAKING_PERIODS,
   SOCIAL_ACTIVITY_TYPES,
@@ -99,5 +114,6 @@ export {
   REWARD_MULTIPLIERS,
   STAKING_PERIOD_BONUS,
   GOVERNANCE_CONSTANTS,
-  SOCIAL_CONSTANTS
+  SOCIAL_CONSTANTS,
+  SEED_STRINGS
 };
