@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Connection, Transaction } from "@solana/web3.js";
@@ -20,14 +21,14 @@ import Roadmap from "./Roadmap";
 import TokenUtility from "./TokenUtility";
 import FAQ from "./FAQ";
 
-// 클라이언트 전용 컴포넌트 래퍼
+// Client-only component wrapper
 const ClientOnly = ({ children }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   return mounted ? children : null;
 };
 
-// Dynamic import for better performance - 수정된 방식
+// Dynamic import for better performance - improved method
 const VideoPlayer = dynamic(
   () => import("../VideoPlayer").then(mod => mod.default), 
   { 
@@ -47,7 +48,23 @@ const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "http
 // Default purchase amount
 const DEFAULT_PURCHASE_AMOUNT = 20000;
 
+// Custom styles for extra small text
+const TEXT_XXS_STYLE = `
+  .text-xxs {
+    font-size: 0.65rem;
+    line-height: 0.9rem;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+`;
+
 export default function PresalePage({ initialSupply = 0 }) {
+  const router = useRouter();
   const { publicKey, connected, signTransaction } = useWallet() || {};
   
   // State management
@@ -240,12 +257,12 @@ export default function PresalePage({ initialSupply = 0 }) {
 
   // Terms modal
   const TermsModal = () => (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
       <div className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-purple-500/30 shadow-[0_0_25px_rgba(147,51,234,0.3)]">
-        <div className="p-6">
-          <h3 className="text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">Terms & Conditions</h3>
+        <div className="p-4 sm:p-6">
+          <h3 className="text-xl sm:text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4 sm:mb-6">Terms & Conditions</h3>
           
-          <div className="space-y-4 text-gray-300">
+          <div className="space-y-3 sm:space-y-4 text-gray-300 text-sm sm:text-base">
             <h4 className="font-bold text-white">1. Acceptance of Terms</h4>
             <p>By participating in the TESOLA token presale, you accept and agree to these terms and conditions.</p>
             
@@ -265,10 +282,10 @@ export default function PresalePage({ initialSupply = 0 }) {
             <p>The TESOLA team shall not be liable for any indirect, incidental, or consequential damages arising out of or in connection with your participation.</p>
           </div>
           
-          <div className="mt-6 flex justify-end">
+          <div className="mt-4 sm:mt-6 flex justify-end">
             <button
               onClick={() => setShowTerms(false)}
-              className="py-3 px-6 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              className="py-2 sm:py-3 px-4 sm:px-6 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm sm:text-base"
             >
               I Understand
             </button>
@@ -278,7 +295,7 @@ export default function PresalePage({ initialSupply = 0 }) {
     </div>
   );
   
-  // NavTabs 컴포넌트를 화살표 함수로 직접 정의하여 스코프 문제 해결
+  // Define NavTabs component as arrow function to solve scope issues
   const NavTabs = () => {
     // Define tabs state
     const tabs = [
@@ -317,148 +334,20 @@ export default function PresalePage({ initialSupply = 0 }) {
     );
   };
 
-  // 표시 전에 VideoPlayer 유효성 확인
+  // Verify VideoPlayer validity before rendering
   const isVideoPlayerValid = typeof VideoPlayer === 'function' || 
                              (typeof VideoPlayer === 'object' && VideoPlayer !== null);
 
-  // Terms 모달을 열기 위한 함수
+  // Function to open Terms modal
   const handleShowTerms = () => {
     setShowTerms(true);
   };
   
-  // Token purchase function
-  const handlePurchase = async () => {
-    try {
-      setLoading(true);
-      setTransactionPending(true);
-      setErrorMessage(null);
-      setErrorDetails(null);
-      
-      if (!connected || !publicKey) {
-        throw new Error("Please connect a wallet");
-      }
-      
-      // Validate minimum purchase amount
-      if (purchaseAmount < 1000) {
-        throw new Error("Minimum purchase amount is 1,000 TESOLA tokens");
-      }
-      
-      // Check balance again
-      await checkBalance();
-      if (!hasSufficientFunds && solBalance !== null) {
-        throw new Error(`Insufficient funds. You need at least ${totalCost.toFixed(6)} SOL plus transaction fees. Current balance: ${solBalance.toFixed(4)} SOL`);
-      }
-
-      // Step 1: Prepare token purchase
-      console.log("Preparing token purchase...");
-      const res = await fetch("/api/presale/purchaseTESOLA", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          wallet: publicKey.toBase58(),
-          amount: purchaseAmount
-        }),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          throw new Error(`Server response error: ${errorText}`);
-        }
-        throw new Error(errorData.error || "Failed to create transaction");
-      }
-
-      const { transaction, paymentId, tokenAmount } = await res.json();
-      console.log("Received transaction data:", { paymentId, tokenAmount });
-
-      // Step 2: Validate transaction size
-      const txBuf = Buffer.from(transaction, "base64");
-      if (txBuf.length > 1232) {
-        throw new Error("Transaction size exceeds Solana limit (1232 bytes)");
-      }
-
-      // Step 3: Request transaction signature
-      console.log("Signing transaction...");
-      const tx = Transaction.from(txBuf);
-      if (!tx.feePayer) tx.feePayer = publicKey;
-
-      let signedTx;
-      try {
-        signedTx = await signTransaction(tx);
-      } catch (signError) {
-        throw new Error('Transaction signing was cancelled or failed');
-      }
-      
-      console.log("Transaction signed:", signedTx);
-
-      // Step 4: Send signed transaction
-      const rawTx = signedTx.serialize();
-      const connection = new Connection(SOLANA_RPC_ENDPOINT, "confirmed");
-      
-      console.log("Sending transaction to blockchain...");
-      const signature = await connection.sendRawTransaction(rawTx, {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed'
-      });
-
-      // Step 5: Wait for transaction confirmation
-      console.log("Waiting for transaction confirmation...");
-      await connection.confirmTransaction(signature, 'confirmed');
-
-      // Step 6: Complete token purchase
-      console.log("Completing token purchase process...");
-      const completeRes = await fetch("/api/presale/completePresale", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          wallet: publicKey.toBase58(),
-          paymentTxId: signature,
-          paymentId
-        }),
-      });
-
-      if (!completeRes.ok) {
-        const completeErrData = await completeRes.json();
-        throw new Error(completeErrData.error || "Failed to complete purchase");
-      }
-
-      const purchaseData = await completeRes.json();
-      console.log("Purchase completed:", purchaseData);
-
-      // Step 7: Update UI and call completion callback
-      handlePurchaseComplete({
-        tokenAmount: tokenAmount,
-        totalCost: totalCost,
-        txSignature: signature
-      });
-      
-      // Reset form after successful purchase
-      setPurchaseAmount(DEFAULT_PURCHASE_AMOUNT);
-      setAgreedToPolicy(false);
-      
-    } catch (err) {
-      console.error("Purchase error:", err);
-      
-      // Create user-friendly error message
-      let userMessage = "Purchase failed. Please try again.";
-      
-      if (err.message.includes("wallet")) userMessage = "Wallet not connected.";
-      else if (err.message.includes("insufficient") || err.message.includes("Insufficient")) userMessage = "Insufficient funds in your wallet.";
-      else if (err.message.includes("rejected")) userMessage = "Transaction rejected by wallet.";
-      else if (err.message.includes("timeout")) userMessage = "Network timeout. Please try again.";
-      else if (err.message.includes("whitelist")) userMessage = "Your wallet is not whitelisted for this presale.";
-      else if (err.message.includes("sold out")) userMessage = "Presale allocation sold out.";
-      else if (err.message.includes("not active")) userMessage = "Presale is not currently active.";
-      
-      setErrorMessage(userMessage);
-      setErrorDetails(err.message || err.toString());
-    } finally {
-      setLoading(false);
-      setTransactionPending(false);
-    }
+  // Token purchase function - redirect version (moves to Coming Soon page)
+  const handlePurchase = () => {
+    // Set current path as returnUrl for easy navigation back
+    const returnUrl = encodeURIComponent(router.asPath);
+    router.push(`/coming-soon-presale?returnUrl=${returnUrl}`);
   };
 
   return (
@@ -489,25 +378,25 @@ export default function PresalePage({ initialSupply = 0 }) {
           Join the future of Solana with TESOLA - the community-driven utility token powering next-generation DeFi solutions
         </p>
         
-        {/* Audited by & KYC badges */}
+        {/* Community & Development badges */}
         <div className="flex justify-center gap-4 mt-4">
           <div className="bg-gray-800 px-4 py-2 rounded-full flex items-center">
-            <span className="text-green-400 mr-2">✓</span>
-            <span className="text-sm text-gray-300">Audited by CertiK</span>
+            <span className="text-blue-400 mr-2">🚀</span>
+            <span className="text-sm text-gray-300">Community Powered</span>
           </div>
           <div className="bg-gray-800 px-4 py-2 rounded-full flex items-center">
-            <span className="text-green-400 mr-2">✓</span>
-            <span className="text-sm text-gray-300">KYC Verified</span>
+            <span className="text-purple-400 mr-2">🔍</span>
+            <span className="text-sm text-gray-300">Open Source Project</span>
           </div>
         </div>
       </div>
       
-      {/* Main Video - 클라이언트 측에서만 렌더링 */}
+      {/* Main Video - rendered only on client-side */}
       <div className="rounded-xl overflow-hidden shadow-2xl mb-8 border border-purple-500/20">
         <ClientOnly>
           {isClient && isVideoPlayerValid && (
             <div className="video-wrapper-square relative mx-auto max-w-2xl mb-4">
-              {/* 중앙 정렬된 1:1 비디오 컨테이너 */}
+              {/* Centered 1:1 video container */}
               <div className="video-container-square relative overflow-hidden rounded-xl shadow-2xl border border-purple-500/30">
                 <iframe 
                   src="https://www.youtube.com/embed/AdkBE0cOxds?autoplay=1&mute=1&controls=1&showinfo=0&rel=0&loop=1&playlist=AdkBE0cOxds&modestbranding=1"
@@ -518,7 +407,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                 ></iframe>
               </div>
               
-              {/* 구독 혜택 강조 & 영문 버튼 */}
+              {/* Subscription benefits highlight & English buttons */}
               <div className="flex flex-col items-center mt-4">
                 <div className="flex flex-wrap justify-center gap-3">
                   <a 
@@ -548,7 +437,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                   </a>
                 </div>
                 
-                {/* 구독 혜택 텍스트 - 간결하고 세련되게 */}
+                {/* Subscription benefit text - concise and elegant */}
                 <p className="text-sm text-gray-300 mt-2 text-center max-w-md">
                   <span className="text-yellow-400">✨</span> Subscribe for exclusive events and early access to TESOLA updates
                 </p>
@@ -557,7 +446,7 @@ export default function PresalePage({ initialSupply = 0 }) {
           )}
           {isClient && !isVideoPlayerValid && (
             <div className="w-full h-64 bg-gray-800 flex items-center justify-center text-gray-500">
-              <div>비디오를 로드할 수 없습니다</div>
+              <div>Unable to load video</div>
             </div>
           )}
         </ClientOnly>
@@ -589,7 +478,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                 
                 {/* Connected wallet info */}
                 {connected && publicKey && (
-                  <div className="bg-gray-800 text-purple-300 font-mono text-sm md:text-base rounded-lg px-4 py-2 shadow-md w-full max-w-sm">
+                  <div className="bg-gray-800 text-purple-300 font-mono text-xs sm:text-sm md:text-base rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 shadow-md w-full max-w-sm">
                     <div className="flex items-center justify-between">
                       <span className="truncate">Wallet: {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
                       
@@ -646,10 +535,10 @@ export default function PresalePage({ initialSupply = 0 }) {
                 
                 {/* Purchase Form */}
                 {connected && (
-                  <div className="w-full max-w-sm mt-4 bg-gray-800 bg-opacity-50 p-4 rounded-lg border border-purple-500 border-opacity-30">
+                  <div className="w-full max-w-sm mt-3 sm:mt-4 bg-gray-800 bg-opacity-50 p-3 sm:p-4 rounded-lg border border-purple-500 border-opacity-30">
                     {/* Token amount selection */}
                     <div className="mb-4">
-                      <label htmlFor="tokenAmount" className="block text-sm font-medium text-gray-300 mb-1">
+                      <label htmlFor="tokenAmount" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
                         TESOLA Token Amount
                       </label>
                       <div className="relative mt-1 rounded-md shadow-sm">
@@ -668,16 +557,16 @@ export default function PresalePage({ initialSupply = 0 }) {
                               setPurchaseAmount(1000); // Minimum 1000 tokens
                             }
                           }}
-                          className="block w-full rounded-md border-gray-700 bg-gray-900 text-white px-4 py-3 pr-24 focus:border-purple-500 focus:ring-purple-500"
+                          className="block w-full rounded-md border-gray-700 bg-gray-900 text-white px-3 sm:px-4 py-2 sm:py-3 pr-20 sm:pr-24 text-sm sm:text-base focus:border-purple-500 focus:ring-purple-500"
                           placeholder="Enter amount"
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center">
-                          <span className="text-gray-400 px-3">TESOLA</span>
+                          <span className="text-gray-400 px-2 sm:px-3 text-xs sm:text-sm">TESOLA</span>
                         </div>
                       </div>
                       
                       {/* Quick amount buttons */}
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
                         {[
                           { label: "5K", value: 5000 },
                           { label: "10K", value: 10000 },
@@ -693,7 +582,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                               key={option.value}
                               type="button"
                               onClick={() => !isDisabled && setPurchaseAmount(option.value)}
-                              className={`px-2 py-1 text-xs rounded-md ${
+                              className={`px-1.5 sm:px-2 py-1 text-xxs sm:text-xs rounded-md ${
                                 purchaseAmount === option.value 
                                   ? 'bg-purple-600 text-white' 
                                   : isDisabled
@@ -712,7 +601,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                           <button
                             type="button"
                             onClick={() => setPurchaseAmount(maxTokens)}
-                            className={`px-2 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700`}
+                            className={`px-1.5 sm:px-2 py-1 text-xxs sm:text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700`}
                           >
                             MAX
                           </button>
@@ -721,27 +610,27 @@ export default function PresalePage({ initialSupply = 0 }) {
                     </div>
                     
                     {/* Total cost display */}
-                    <div className="mb-4 p-3 bg-gray-900 rounded-lg">
+                    <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-900 rounded-lg">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Price per token:</span>
-                        <span className="font-medium text-white">{presalePrice}</span>
+                        <span className="text-gray-300 text-xs sm:text-sm">Price per token:</span>
+                        <span className="font-medium text-white text-xs sm:text-sm">{presalePrice}</span>
                       </div>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-gray-300">Total cost:</span>
-                        <span className="font-bold text-lg text-white">{totalCost.toFixed(6)} SOL</span>
+                      <div className="flex justify-between items-center mt-1.5 sm:mt-2">
+                        <span className="text-gray-300 text-xs sm:text-sm">Total cost:</span>
+                        <span className="font-bold text-base sm:text-lg text-white">{totalCost.toFixed(6)} SOL</span>
                       </div>
                     </div>
                     
                     {/* Policy agreement checkbox */}
-                    <div className="mb-4 flex items-start space-x-2">
+                    <div className="mb-3 sm:mb-4 flex items-start space-x-2">
                       <input
                         type="checkbox"
                         id="agreeToPolicy"
                         checked={agreedToPolicy}
                         onChange={(e) => setAgreedToPolicy(e.target.checked)}
-                        className="mt-1"
+                        className="mt-0.5 sm:mt-1"
                       />
-                      <label htmlFor="agreeToPolicy" className="text-sm">
+                      <label htmlFor="agreeToPolicy" className="text-xs sm:text-sm">
                         I agree to the{" "}
                         <button
                           type="button"
@@ -783,7 +672,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     </button>
                     
                     {/* Additional guidance */}
-                    <p className="text-xs text-gray-400 text-center mt-2">
+                    <p className="text-xxs sm:text-xs text-gray-400 text-center mt-1.5 sm:mt-2">
                       {maxTokens > 0 
                         ? `Minimum purchase: 1,000 tokens. Maximum for your tier: ${maxTokens.toLocaleString()} tokens.`
                         : "Minimum purchase: 1,000 tokens. Maximum: 10,000,000 tokens."
@@ -809,15 +698,15 @@ export default function PresalePage({ initialSupply = 0 }) {
         <div className="p-6">
           {/* Navigation tabs at the top of presale info box */}
           <div className="mb-6">
-            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-2 border border-purple-500/20 shadow-lg presale-tabs">
-              <div className="flex flex-wrap md:flex-nowrap gap-1">
+            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-1.5 sm:p-2 border border-purple-500/20 shadow-lg presale-tabs">
+              <div className="flex flex-wrap gap-1 overflow-x-auto pb-0.5 scrollbar-hide">
                 <button
                   type="button"
                   onClick={() => {
                     console.log('Setting activeTab to: presale');
                     setActiveTab('presale');
                   }}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'presale' 
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
                       : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
@@ -832,7 +721,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     console.log('Setting activeTab to: tokenomics');
                     setActiveTab('tokenomics');
                   }}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'tokenomics' 
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
                       : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
@@ -847,7 +736,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     console.log('Setting activeTab to: roadmap');
                     setActiveTab('roadmap');
                   }}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'roadmap' 
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
                       : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
@@ -862,7 +751,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     console.log('Setting activeTab to: utility');
                     setActiveTab('utility');
                   }}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'utility' 
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
                       : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
@@ -877,7 +766,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     console.log('Setting activeTab to: faq');
                     setActiveTab('faq');
                   }}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'faq' 
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
                       : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
@@ -932,6 +821,9 @@ export default function PresalePage({ initialSupply = 0 }) {
 
       
       {/* Documents section removed as they are now in Layout.jsx */}
+      
+      {/* Add custom styles */}
+      <style jsx global>{TEXT_XXS_STYLE}</style>
     </div>
   );
 }

@@ -62,7 +62,7 @@ export default function LoveStory() {
       </Head>
 
       <Layout>
-        <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-8 sm:py-12">
           {/* Hero Section with Cosmic Background */}
           <div className="relative rounded-3xl overflow-hidden mb-12">
             <div className="absolute inset-0 bg-[url('/stars.jpg')] opacity-70"></div>
@@ -109,14 +109,14 @@ export default function LoveStory() {
                 </div>
               )}
               
-              <div className="inline-block relative mb-6">
-                <div className="absolute -top-12 -left-10 text-xl bg-red-600 text-white font-bold px-3 py-1 rounded-full transform -rotate-12 animate-pulse">
+              <div className="inline-block relative mb-6 px-4 sm:px-0">
+                <div className="absolute -top-8 sm:-top-12 -left-4 sm:-left-10 text-sm sm:text-xl bg-red-600 text-white font-bold px-2 sm:px-3 py-1 rounded-full transform -rotate-12 animate-pulse">
                   VIRAL!
                 </div>
                 
                 <h1 
                   ref={titleRef}
-                  className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text hover-wiggle cursor-pointer"
+                  className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text hover-wiggle cursor-pointer"
                   style={{
                     backgroundImage: 'linear-gradient(to right, #d946ef, #ec4899, #f59e0b)',
                     WebkitBackgroundClip: 'text',
@@ -128,11 +128,11 @@ export default function LoveStory() {
                   A Cosmic Love Story
                 </h1>
                 
-                <div className="absolute -top-6 -right-10 text-4xl animate-bounce-slow">
+                <div className="absolute -top-6 -right-2 sm:-right-10 text-3xl sm:text-4xl animate-bounce-slow">
                   💘
                 </div>
                 
-                <div className="absolute -top-6 right-4 text-sm bg-yellow-400 text-black font-bold px-2 py-1 rounded-lg transform rotate-3 shadow-md">
+                <div className="absolute -top-4 sm:-top-6 right-0 sm:right-4 text-xs sm:text-sm bg-yellow-400 text-black font-bold px-2 py-1 rounded-lg transform rotate-3 shadow-md">
                   10/10 would ship again
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default function LoveStory() {
           </div>
 
           {/* Video Section */}
-          <div className="mb-16 bg-gradient-to-br from-purple-900/40 to-pink-900/40 rounded-2xl p-6 shadow-[0_10px_25px_-5px_rgba(168,85,247,0.4)] relative overflow-hidden">
+          <div className="mb-12 sm:mb-16 bg-gradient-to-br from-purple-900/40 to-pink-900/40 rounded-2xl p-4 sm:p-6 shadow-[0_10px_25px_-5px_rgba(168,85,247,0.4)] relative overflow-hidden">
             {/* Decorative elements */}
             <div className="absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-full blur-xl"></div>
             <div className="absolute top-1/3 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-xl"></div>
@@ -198,8 +198,8 @@ export default function LoveStory() {
               <div className="relative pb-[56.25%] h-0 rounded-xl overflow-hidden shadow-[0_0_25px_rgba(168,85,247,0.5)] mb-6 border border-purple-500/30 z-10 backdrop-blur-sm">
                 {isLoading ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-                    <p className="text-purple-300 animate-pulse">Beaming love across the cosmos...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-2 border-b-2 border-purple-500 mb-3 sm:mb-4"></div>
+                    <p className="text-purple-300 animate-pulse text-sm sm:text-base">Beaming love...</p>
                   </div>
                 ) : null}
                 
@@ -263,25 +263,25 @@ export default function LoveStory() {
               </div>
               
               <div className="text-center text-gray-300">
-                <p className="text-sm italic">
-                  Video credit: "E-LON & SOLARA: A Love Story" © TESOLA Studios 2025
+                <p className="text-xs sm:text-sm italic">
+                  "E-LON & SOLARA: A Love Story" © TESOLA Studios 2025
                 </p>
-                <div className="mt-2 bg-black/20 rounded-lg inline-block px-3 py-1">
-                  <span className="text-xs text-gray-400">#BlockchainLove #ToTheMoon #PowerCouple</span>
+                <div className="mt-2 bg-black/20 rounded-lg inline-block px-2 sm:px-3 py-1">
+                  <span className="text-xs text-gray-400">#BlockchainLove #ToTheMoon</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Story Timeline Section */}
-          <div className="mb-16">
-            <div className="flex justify-center items-center mb-10">
+          <div className="mb-12 sm:mb-16">
+            <div className="flex justify-center items-center mb-6 sm:mb-10">
               <div className="text-4xl mr-4 animate-pulse-slow">✨</div>
               <div className="relative group">
                 <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-gradient-to-r from-yellow-400/70 to-orange-600/70 text-white px-3 py-1 rounded-full backdrop-blur-sm whitespace-nowrap animate-pulse">
                   Epic Blockchain Love Saga!
                 </div>
-                <h2 className="text-3xl font-bold text-center text-transparent bg-clip-text hover-shake cursor-pointer"
+                <h2 className="text-2xl sm:text-3xl font-bold text-center text-transparent bg-clip-text hover-shake cursor-pointer"
                   style={{
                     backgroundImage: 'linear-gradient(to right, #f9a8d4, #f59e0b)',
                     WebkitBackgroundClip: 'text',
@@ -302,17 +302,25 @@ export default function LoveStory() {
               </div>
             </div>
             
-            <div className="relative border-l-2 border-purple-500/50 pl-10 ml-6 space-y-16">
+            <div className="relative border-l-2 border-purple-500/50 pl-6 sm:pl-10 ml-6 sm:ml-10 space-y-12 sm:space-y-16">
               {/* Timeline Item 1 */}
               <div className="relative group">
-                {/* Enhanced badge */}
-                <div className="absolute -left-[3.25rem] top-0 w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300">
-                  <span className="text-2xl group-hover:animate-wiggle">👀</span>
+                {/* Enhanced badge - smaller on mobile and shifted closer */}
+                <div className="absolute -left-[2.5rem] top-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300">
+                  <span className="text-lg sm:text-xl md:text-2xl group-hover:animate-wiggle">👀</span>
                 </div>
                 
-                {/* Date stamp */}
+                {/* Date stamp for larger screens only */}
                 <div className="absolute -left-52 top-2 text-xs text-gray-400 hidden md:block">
                   <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm">
+                    <span className="mr-1">🕒</span>
+                    <span>Block #4206969</span>
+                  </div>
+                </div>
+                
+                {/* Mobile date stamp - shown inline for small screens */}
+                <div className="text-xs text-gray-400 mb-2 block md:hidden">
+                  <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm inline-block">
                     <span className="mr-1">🕒</span>
                     <span>Block #4206969</span>
                   </div>
@@ -355,14 +363,22 @@ export default function LoveStory() {
               
               {/* Timeline Item 2 */}
               <div className="relative group">
-                {/* Enhanced badge */}
-                <div className="absolute -left-[3.25rem] top-0 w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300">
-                  <span className="text-2xl group-hover:animate-pulse">💌</span>
+                {/* Enhanced badge - smaller on mobile and shifted closer */}
+                <div className="absolute -left-[2.5rem] top-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300">
+                  <span className="text-lg sm:text-xl md:text-2xl group-hover:animate-pulse">💌</span>
                 </div>
                 
-                {/* Date stamp */}
+                {/* Date stamp for larger screens only */}
                 <div className="absolute -left-52 top-2 text-xs text-gray-400 hidden md:block">
                   <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm">
+                    <span className="mr-1">🕒</span>
+                    <span>Block #4269420</span>
+                  </div>
+                </div>
+                
+                {/* Mobile date stamp - shown inline for small screens */}
+                <div className="text-xs text-gray-400 mb-2 block md:hidden">
+                  <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm inline-block">
                     <span className="mr-1">🕒</span>
                     <span>Block #4269420</span>
                   </div>
@@ -413,14 +429,22 @@ export default function LoveStory() {
               
               {/* Timeline Item 3 */}
               <div className="relative group">
-                {/* Enhanced badge */}
-                <div className="absolute -left-[3.25rem] top-0 w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300">
-                  <span className="text-2xl group-hover:animate-shake">🔥</span>
+                {/* Enhanced badge - smaller on mobile and shifted closer */}
+                <div className="absolute -left-[2.5rem] top-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300">
+                  <span className="text-lg sm:text-xl md:text-2xl group-hover:animate-shake">🔥</span>
                 </div>
                 
-                {/* Date stamp */}
+                {/* Date stamp for larger screens only */}
                 <div className="absolute -left-52 top-2 text-xs text-gray-400 hidden md:block">
                   <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm">
+                    <span className="mr-1">🕒</span>
+                    <span>Block #4321000</span>
+                  </div>
+                </div>
+                
+                {/* Mobile date stamp - shown inline for small screens */}
+                <div className="text-xs text-gray-400 mb-2 block md:hidden">
+                  <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm inline-block">
                     <span className="mr-1">🕒</span>
                     <span>Block #4321000</span>
                   </div>
@@ -468,14 +492,22 @@ export default function LoveStory() {
               
               {/* Timeline Item 4 */}
               <div className="relative group">
-                {/* Enhanced badge */}
-                <div className="absolute -left-[3.25rem] top-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-green-500 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300 hover-rotate-3d">
-                  <span className="text-2xl group-hover:animate-wiggle">🚀</span>
+                {/* Enhanced badge - smaller on mobile and shifted closer */}
+                <div className="absolute -left-[2.5rem] top-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-600 to-green-500 flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform duration-300 hover-rotate-3d">
+                  <span className="text-lg sm:text-xl md:text-2xl group-hover:animate-wiggle">🚀</span>
                 </div>
                 
-                {/* Date stamp */}
+                {/* Date stamp for larger screens only */}
                 <div className="absolute -left-52 top-2 text-xs text-gray-400 hidden md:block">
                   <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm">
+                    <span className="mr-1">🕒</span>
+                    <span>Block #4500000</span>
+                  </div>
+                </div>
+                
+                {/* Mobile date stamp - shown inline for small screens */}
+                <div className="text-xs text-gray-400 mb-2 block md:hidden">
+                  <div className="bg-gray-800/70 px-2 py-1 rounded shadow backdrop-blur-sm inline-block">
                     <span className="mr-1">🕒</span>
                     <span>Block #4500000</span>
                   </div>
@@ -544,21 +576,21 @@ export default function LoveStory() {
           </div>
 
           {/* NFT Collection Teaser - Simplified */}
-          <div className="mb-20 mt-8 relative">
+          <div className="mb-12 sm:mb-20 mt-6 sm:mt-8 relative">
             {/* Hot collection marker - completely outside and above */}
             <div className="bg-gradient-to-r from-yellow-400 to-red-500 text-white text-xs font-bold px-8 py-2 rounded-lg shadow-lg mx-auto w-max mb-4">
               🔥 HOT COLLECTION 🔥
             </div>
           
-            <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-8 text-center border border-purple-500/30 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-4 sm:p-8 text-center border border-purple-500/30 overflow-hidden">
               {/* Decorative elements */}
               <div className="absolute -bottom-12 left-1/4 w-40 h-40 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
               <div className="absolute top-0 right-1/3 w-32 h-32 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
             
               <div>
-              <div className="inline-block relative mb-4">
-                <h2 className="text-3xl font-extrabold flex justify-center items-center hover-shake cursor-pointer">
-                  <span className="text-4xl mr-3">💎</span>
+              <div className="inline-block relative mb-4 px-4 sm:px-0">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold flex flex-wrap justify-center items-center hover-shake cursor-pointer">
+                  <span className="text-2xl sm:text-3xl md:text-4xl mr-2 sm:mr-3">💎</span>
                   <span className="text-transparent bg-clip-text" style={{
                     backgroundImage: 'linear-gradient(to right, #d8b4fe, #f9a8d4, #f59e0b)',
                     WebkitBackgroundClip: 'text',
@@ -566,7 +598,7 @@ export default function LoveStory() {
                   }}>
                     Own a Piece of Their Story
                   </span>
-                  <span className="text-4xl ml-3">💎</span>
+                  <span className="text-2xl sm:text-3xl md:text-4xl ml-2 sm:ml-3">💎</span>
                 </h2>
               </div>
               
@@ -596,12 +628,12 @@ export default function LoveStory() {
                 </div>
               </div>
               
-              <div className="flex flex-wrap justify-center gap-6">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-6">
                 <Link 
                   href="/nft" 
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-lg transition-all shadow-lg group hover:scale-105"
+                  className="px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-lg transition-all shadow-lg group hover:scale-105 w-full sm:w-auto"
                 >
-                  <span className="flex items-center">
+                  <span className="flex items-center justify-center sm:justify-start">
                     <span className="text-xl mr-2">🖼️</span>
                     <span>Explore NFT Collection</span>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -612,9 +644,9 @@ export default function LoveStory() {
                 
                 <Link 
                   href="/presale" 
-                  className="px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-lg group animate-pulse hover:scale-105"
+                  className="px-4 sm:px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-lg group animate-pulse hover:scale-105 w-full sm:w-auto"
                 >
-                  <span className="flex items-center">
+                  <span className="flex items-center justify-center sm:justify-start">
                     <span className="text-xl mr-2">🚀</span>
                     <span>Join TESOLA Presale</span>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -628,17 +660,17 @@ export default function LoveStory() {
           </div>
 
           {/* Community Quote Section */}
-          <div className="text-center mb-16 relative">
-            {/* Meme style quote decorations */}
-            <div className="absolute -top-6 -left-6 text-7xl text-purple-500/30 font-serif">"</div>
-            <div className="absolute -bottom-6 -right-6 text-7xl text-purple-500/30 font-serif">"</div>
+          <div className="text-center mb-16 relative px-4 sm:px-0">
+            {/* Meme style quote decorations - hidden on smallest screens */}
+            <div className="absolute -top-6 -left-6 text-5xl sm:text-7xl text-purple-500/30 font-serif hidden sm:block">"</div>
+            <div className="absolute -bottom-6 -right-6 text-5xl sm:text-7xl text-purple-500/30 font-serif hidden sm:block">"</div>
             
-            <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 p-8 rounded-xl border border-purple-500/20 transform hover:rotate-1 transition-transform duration-500">
+            <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 p-4 sm:p-8 rounded-xl border border-purple-500/20 transform hover:rotate-1 transition-transform duration-500">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                 COMMUNITY VIBES
               </div>
               
-              <blockquote className="text-2xl italic font-light text-gray-300 max-w-3xl mx-auto">
+              <blockquote className="text-lg sm:text-xl md:text-2xl italic font-light text-gray-300 max-w-3xl mx-auto">
                 "The love between E-LON and SOLARA reminds us that even in the digital realm, connections of profound importance can form and flourish. Their story is our story—a journey toward a more connected, decentralized future."
               </blockquote>
               
@@ -673,7 +705,7 @@ export default function LoveStory() {
           </div>
 
           {/* Back to Home */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 px-4 sm:px-0">
             <div className="relative inline-block group">
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-2 py-1 rounded whitespace-nowrap backdrop-blur-sm">
                 Return to the mothership
@@ -681,7 +713,7 @@ export default function LoveStory() {
               
               <Link 
                 href="/home" 
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-800/80 to-blue-800/80 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-purple-500/30 group-hover:animate-pulse"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-800/80 to-blue-800/80 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-purple-500/30 group-hover:animate-pulse"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />

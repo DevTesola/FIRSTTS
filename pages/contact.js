@@ -65,15 +65,14 @@ export default function Contact() {
                 <div className="flex items-start">
                   <div className="bg-purple-900/30 p-3 rounded-lg mr-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                      <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white mb-1">Email</h3>
+                    <h3 className="font-semibold text-white mb-1">Telegram</h3>
                     <p className="text-gray-300">
-                      <a href="mailto:support@tesola.xyz" className="text-purple-400 hover:text-purple-300 transition-colors">
-                        support@tesola.xyz
+                      <a href="https://t.me/tesolachat" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
+                        @tesolachat
                       </a>
                     </p>
                   </div>
@@ -88,10 +87,11 @@ export default function Contact() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white mb-1">Discord</h3>
-                    <p className="text-gray-300">
-                      <a href="https://discord.gg/tesola" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
-                        discord.gg/tesola
-                      </a>
+                    <p className="text-gray-300 flex items-center">
+                      <span className="text-purple-400">Coming Soon</span>
+                      <span className="ml-2 inline-block bg-gradient-to-r from-blue-400 to-purple-400 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-md animate-pulse">
+                        SOON
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -105,8 +105,8 @@ export default function Contact() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">Twitter</h3>
                     <p className="text-gray-300">
-                      <a href="https://twitter.com/tesolanft" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
-                        @tesolanft
+                      <a href="https://twitter.com/TESLAINSOLANA" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
+                        @TESLAINSOLANA
                       </a>
                     </p>
                   </div>
@@ -129,83 +129,47 @@ export default function Contact() {
             </div>
 
             <div>
-              <form onSubmit={handleSubmit} className="bg-gray-900/50 rounded-lg p-6 border border-purple-500/20">
-                <h2 className="text-xl font-bold text-purple-400 mb-4">Send a Message</h2>
-                
-                <div className="mb-4">
-                  <label htmlFor="name" className="block text-gray-300 mb-2">Name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 bg-gray-800/80 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <div className="mb-4">
-                  <label htmlFor="email" className="block text-gray-300 mb-2">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 bg-gray-800/80 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <div className="mb-4">
-                  <label htmlFor="subject" className="block text-gray-300 mb-2">Subject</label>
-                  <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 bg-gray-800/80 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
+              <div className="bg-gray-900/50 rounded-lg p-6 border border-purple-500/20">
+                <h2 className="text-xl font-bold text-purple-400 mb-4">Contact Us Directly</h2>
                 
                 <div className="mb-6">
-                  <label htmlFor="message" className="block text-gray-300 mb-2">Message</label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
-                    rows="5"
-                    className="w-full px-4 py-2 bg-gray-800/80 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  ></textarea>
+                  <p className="text-gray-300 mb-4">
+                    We've simplified our contact process! For the fastest response and best support experience, please contact us directly on Telegram.
+                  </p>
+                  
+                  <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 rounded-lg p-4 mb-6 border border-blue-500/20">
+                    <h3 className="text-lg font-semibold text-blue-400 mb-2 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                      </svg>
+                      Why Telegram?
+                    </h3>
+                    <ul className="list-disc pl-5 text-gray-300 space-y-1">
+                      <li>24/7 support from our dedicated team</li>
+                      <li>Faster response times than email</li>
+                      <li>Direct access to our community managers</li>
+                      <li>Ability to share screenshots and videos easily</li>
+                      <li>Join our growing community of TESOLA enthusiasts</li>
+                    </ul>
+                  </div>
                 </div>
                 
-                <button
-                  type="submit"
-                  disabled={status === 'submitting'}
-                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:from-purple-500 hover:to-blue-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                <a
+                  href="https://t.me/tesolachat"
+                  target="_blank"
+                  rel="noopener noreferrer" 
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-blue-500/20"
                 >
-                  {status === 'submitting' ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Sending...
-                    </span>
-                  ) : 'Send Message'}
-                </button>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5 mr-2 fill-current">
+                    <path d="M12 0c-6.626 0-12 5.372-12 12 0 6.627 5.374 12 12 12 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12zm3.224 17.871c.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-6.895c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-3.592c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953zm-.649-5.443c.654-1.561 2.067-3.182 3.425-3.182s2.771 1.621 3.425 3.182c.146.35.681.336.682-.071 0-2.235-1.836-4.046-4.107-4.046s-4.107 1.811-4.107 4.046c0 .407.536.421.682.071z"/>
+                  </svg>
+                  Contact Us on Telegram
+                </a>
                 
-                {status === 'success' && (
-                  <div className="mt-4 bg-green-900/30 border border-green-500/20 rounded-lg p-3 text-green-400">
-                    Thank you for your message! We'll get back to you as soon as possible.
-                  </div>
-                )}
-              </form>
+                <div className="mt-6 text-center text-sm text-gray-400">
+                  Our team typically responds within 1-2 hours during business hours.
+                </div>
+              </div>
             </div>
           </div>
 
@@ -224,7 +188,7 @@ export default function Contact() {
               
               <div className="bg-gray-900/40 rounded-lg p-4">
                 <h3 className="font-semibold text-white mb-2">How do I report a technical issue?</h3>
-                <p className="text-gray-300">For technical issues, please email us at <a href="mailto:support@tesola.xyz" className="text-purple-400 hover:text-purple-300">support@tesola.xyz</a> or join our Discord server where our support team is available to help.</p>
+                <p className="text-gray-300">For technical issues, please contact us on <a href="https://t.me/tesolachat" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">Telegram (@tesolachat)</a> where our support team is available 24/7 to help you.</p>
               </div>
             </div>
           </div>

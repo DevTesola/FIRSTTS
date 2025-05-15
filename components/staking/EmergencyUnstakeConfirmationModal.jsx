@@ -105,10 +105,14 @@ export const EmergencyUnstakeConfirmationModal = ({
   };
 
   // 스테이킹 완료율 계산 (0-100%)
-  const completionPercentage = Math.round(penaltyInfo.rewards.completionRatio * 100);
+  const completionPercentage = penaltyInfo?.rewards?.completionRatio 
+    ? Math.round(penaltyInfo.rewards.completionRatio * 100)
+    : 0;
 
   // 보상 금액 (천 단위 구분기호 포함)
-  const formattedRewards = penaltyInfo.rewards.amount.toLocaleString();
+  const formattedRewards = penaltyInfo?.rewards?.amount 
+    ? penaltyInfo.rewards.amount.toLocaleString()
+    : "0";
 
   return (
     <div style={modalOverlayStyle} onClick={onCancel}>
@@ -126,7 +130,7 @@ export const EmergencyUnstakeConfirmationModal = ({
         <div style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
             <span>페널티 요율:</span>
-            <span style={{ fontWeight: 'bold', color: '#ff4d4d' }}>{penaltyInfo.percent.toFixed(2)}%</span>
+            <span style={{ fontWeight: 'bold', color: '#ff4d4d' }}>{penaltyInfo?.percent ? penaltyInfo.percent.toFixed(2) : "0.00"}%</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
             <span>스테이킹 완료율:</span>

@@ -1,408 +1,135 @@
-"use client";
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Connection, Transaction } from "@solana/web3.js";
+import { useRouter } from "next/router";
 import Image from "next/image";
-import ErrorMessage from "./ErrorMessage";
-import WalletGuide from "./WalletGuide";
-import { useAnalytics } from "./AnalyticsProvider";
-
-// 환경 변수와 기본값
-const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
-const MINT_PRICE = process.env.NEXT_PUBLIC_MINT_PRICE || "1.5 SOL";
 
 /**
- * 개선된 민팅 섹션 컴포넌트
- * 향상된 사용자 경험 및 오류 처리
+ * 이 파일은 원래의 MintSection을 Coming Soon 버전으로 대체한 것입니다.
+ * 백업 파일: MintSection.jsx.original
  */
+
+// 원래 컴포넌트와 동일한 props 인터페이스 유지
 export default function MintSection({ 
-  mintPrice = MINT_PRICE, 
-  onMintComplete, 
-  isClient = false,
+  mintPrice,
+  onMintComplete,
+  isClient, 
   setErrorMessage,
   setErrorDetails,
   setLoading,
   showRefundPolicy,
-  mintAttempts = 0
+  mintAttempts,
+  ...props 
 }) {
-  const { publicKey, connected, signTransaction } = useWallet() || {};
-  const { trackEvent } = useAnalytics();
-  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
-  const [transactionPending, setTransactionPending] = useState(false);
-  const [solBalance, setSolBalance] = useState(null);
-  const [hasSufficientFunds, setHasSufficientFunds] = useState(true);
-
-  // 사용자의 SOL 잔액 조회
-  const checkBalance = useCallback(async () => {
-    if (!connected || !publicKey) return;
-    
-    try {
-      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
-      const balance = await connection.getBalance(publicKey);
-      
-      // lamports를 SOL로 변환 (1 SOL = 10^9 lamports)
-      const balanceInSol = balance / 1_000_000_000;
-      setSolBalance(balanceInSol);
-      
-      // 민팅 가격 (문자열에서 숫자로 변환)
-      const mintPriceValue = parseFloat(mintPrice.replace(' SOL', ''));
-      
-      // 민팅에 충분한 SOL이 있는지 확인 (거래 수수료 0.01 SOL 추가)
-      setHasSufficientFunds(balanceInSol >= (mintPriceValue + 0.01));
-    } catch (err) {
-      console.error('Error checking balance:', err);
-      // 오류가 발생해도 민팅은 허용 (실제 트랜잭션에서 다시 확인됨)
-      setHasSufficientFunds(true);
-    }
-  }, [publicKey, connected, mintPrice]);
+  const wallet = useWallet();
+  const router = useRouter();
   
-  // 지갑 연결 시 잔액 확인
-  useEffect(() => {
-    if (connected && publicKey) {
-      checkBalance();
-      
-      // 10초마다 잔액 업데이트
-      const interval = setInterval(checkBalance, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [connected, publicKey, checkBalance]);
-  
-  // 민팅 시도 횟수가 변경되면 UI 상태 리셋
-  useEffect(() => {
-    if (mintAttempts > 0) {
-      setAgreedToPolicy(false);
-      setTransactionPending(false);
-    }
-  }, [mintAttempts]);
-
-  // 민팅 처리 함수
-  const handlePurchase = async () => {
-    // 애널리틱스 이벤트 - 민팅 시작
-    trackEvent('mint_started', { wallet: publicKey?.toString()?.slice(0, 8) });
-    
-    try {
-      setLoading(true);
-      setTransactionPending(true);
-      setErrorMessage(null);
-      setErrorDetails(null);
-      
-      if (!connected || !publicKey) {
-        throw new Error("Please connect a wallet");
-      }
-      
-      // 잔액 다시 확인
-      await checkBalance();
-      if (!hasSufficientFunds && solBalance !== null) {
-        throw new Error(`Insufficient funds. You need at least ${mintPrice} plus transaction fees. Current balance: ${solBalance.toFixed(4)} SOL`);
-      }
-
-      // 1단계: NFT 구매 준비 - NFT 예약 및 결제 트랜잭션 생성
-      console.log("Preparing purchase...");
-      const res = await fetch("/api/purchaseNFT", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: publicKey.toBase58() }),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          throw new Error(`Server response error: ${errorText}`);
-        }
-        throw new Error(errorData.error || "Failed to create transaction");
-      }
-
-      const { transaction, mint, filename, mintIndex, lockId, paymentId } = await res.json();
-      console.log("Received transaction data:", { mint, filename, mintIndex, lockId });
-      
-      // 애널리틱스 이벤트 - 트랜잭션 생성됨
-      trackEvent('mint_transaction_created', { 
-        mintIndex: mintIndex, 
-        filename: filename 
-      });
-
-      // 2단계: 트랜잭션 크기 검증
-      const txBuf = Buffer.from(transaction, "base64");
-      if (txBuf.length > 1232) {
-        throw new Error("Transaction size exceeds Solana limit (1232 bytes)");
-      }
-
-      // 3단계: 트랜잭션 서명 요청
-      console.log("Signing transaction...");
-      const tx = Transaction.from(txBuf);
-      if (!tx.feePayer) tx.feePayer = publicKey;
-
-      let signedTx;
-      try {
-        signedTx = await signTransaction(tx);
-      } catch (signError) {
-        // 애널리틱스 이벤트 - 서명 실패
-        trackEvent('mint_signature_rejected', { error: signError.message });
-        throw new Error('Transaction signing was cancelled or failed');
-      }
-      
-      console.log("Transaction signed:", signedTx);
-      
-      // 애널리틱스 이벤트 - 트랜잭션 서명됨
-      trackEvent('mint_transaction_signed');
-
-      // 4단계: 서명된 트랜잭션 전송
-      const rawTx = signedTx.serialize();
-      const connection = new Connection(SOLANA_RPC_ENDPOINT, "confirmed");
-      
-      console.log("Sending transaction to blockchain...");
-      const signature = await connection.sendRawTransaction(rawTx, {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed'
-      });
-      
-      // 애널리틱스 이벤트 - 트랜잭션 전송됨
-      trackEvent('mint_transaction_sent', { signature: signature });
-
-      // 5단계: 트랜잭션 확인 대기
-      console.log("Waiting for transaction confirmation...");
-      await connection.confirmTransaction(signature, 'confirmed');
-
-      // 애널리틱스 이벤트 - 트랜잭션 확인됨
-      trackEvent('mint_transaction_confirmed', { signature: signature });
-
-      // 5.5단계: 락 타임스탬프 갱신
-      try {
-        console.log("Refreshing lock to prevent timeout...");
-        const refreshRes = await fetch("/api/refreshLock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            wallet: publicKey.toBase58(),
-            mintIndex,
-            lockId
-          }),
-        });
-
-        if (!refreshRes.ok) {
-          console.warn("Failed to refresh lock, continuing with minting...");
-        } else {
-          console.log("Lock refreshed successfully");
-        }
-      } catch (refreshErr) {
-        console.warn("Lock refresh error, continuing with minting:", refreshErr);
-      }
-
-      // 6단계: 민팅 완료 처리
-      console.log("Completing minting process...");
-      const completeRes = await fetch("/api/completeMinting", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          wallet: publicKey.toBase58(),
-          paymentTxId: signature,
-          mintIndex,
-          lockId
-        }),
-      });
-
-      if (!completeRes.ok) {
-        const completeErrData = await completeRes.json();
-        throw new Error(completeErrData.error || "Failed to complete minting");
-      }
-
-      const completeMintData = await completeRes.json();
-      console.log("Minting completed:", completeMintData);
-      
-      // 애널리틱스 이벤트 - 민팅 완료
-      trackEvent('mint_completed', { 
-        mintAddress: completeMintData.mintAddress,
-        filename: filename
-      });
-
-      // 7단계: UI 업데이트 및 결과 표시
-      if (onMintComplete) {
-        try {
-          // IPFS 게이트웨이로 메타데이터 가져오기
-          const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-          const resourceCID = process.env.NEXT_PUBLIC_RESOURCE_CID || '';
-          const metadataUrl = `${ipfsGateway}/ipfs/${resourceCID}/${filename}.json`;
-          console.log("Loading metadata from:", metadataUrl);
-          
-          const metadataRes = await fetch(metadataUrl);
-          if (!metadataRes.ok) {
-            throw new Error(`Failed to load metadata from IPFS: ${metadataRes.status}`);
-          }
-          
-          const metadata = await metadataRes.json();
-          
-          // 민트 주소가 메타데이터에 없으면 추가
-          if (!metadata.mintAddress && completeMintData.mintAddress) {
-            metadata.mintAddress = completeMintData.mintAddress;
-          }
-          
-          // 결과 콜백 호출
-          onMintComplete({ metadata, filename });
-          
-          // 애널리틱스 이벤트 - 메타데이터 로드 완료
-          trackEvent('mint_metadata_loaded', { 
-            filename: filename,
-            tier: metadata.attributes?.find(a => a.trait_type === 'Tier')?.value || 'Unknown'
-          });
-        } catch (metadataErr) {
-          console.error("Metadata loading error:", metadataErr);
-          
-          // 애널리틱스 이벤트 - 메타데이터 로드 실패
-          trackEvent('mint_metadata_error', { error: metadataErr.message });
-          
-          // 메타데이터 로드 실패해도 민팅은 성공했으므로 기본 정보로 콜백
-          onMintComplete({
-            metadata: {
-              name: `SOLARA #${filename}`,
-              description: "A unique SOLARA NFT from the GEN:0 collection.",
-              mintAddress: completeMintData.mintAddress
-            },
-            filename
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Minting error:", err);
-      
-      // 애널리틱스 이벤트 - 민팅 실패
-      trackEvent('mint_failed', { error: err.message });
-      
-      // 사용자 친화적인 오류 메시지 생성
-      let userMessage = "Minting failed. Please try again.";
-      
-      if (err.message.includes("wallet")) userMessage = "Wallet not connected.";
-      else if (err.message.includes("No available NFT")) userMessage = "All NFTs are sold out.";
-      else if (err.message.includes("metadata")) userMessage = "Failed to load NFT metadata. Please check IPFS connection and try again.";
-      else if (err.message.includes("Invalid wallet")) userMessage = "Invalid wallet address.";
-      else if (err.message.includes("buffer")) userMessage = "Invalid transaction data from server.";
-      else if (err.message.includes("blockhash")) userMessage = "Invalid transaction configuration.";
-      else if (err.message.includes("insufficient") || err.message.includes("Insufficient")) userMessage = "Insufficient funds in your wallet.";
-      else if (err.message.includes("rejected")) userMessage = "Transaction rejected by wallet.";
-      else if (err.message.includes("timeout")) userMessage = "Network timeout. Please try again.";
-      
-      setErrorMessage(userMessage);
-      setErrorDetails(err.message || err.toString());
-    } finally {
-      setLoading(false);
-      setTransactionPending(false);
-    }
+  // 원래 함수와 같은 이름의 함수 제공하되, Coming Soon 페이지로 리다이렉트
+  const handlePurchase = () => {
+    // 현재 경로를 returnUrl로 설정하여 돌아올 수 있게 함
+    const returnUrl = encodeURIComponent(router.asPath);
+    router.push(`/coming-soon-mint?returnUrl=${returnUrl}`);
   };
 
+  // 버튼 텍스트 표시를 위한 로직 (원래 컴포넌트와 유사)
+  const getMintButtonText = () => {
+    if (!wallet.connected) return "CONNECT WALLET";
+    return "MINT NOW";
+  };
+
+  // 원래 컴포넌트의 UI와 최대한 동일하게 유지
   return (
-    <div className="flex flex-col items-center space-y-6 mt-10 w-full max-w-sm mx-auto">
-      {/* 지갑 연결 가이드 */}
-      <WalletGuide />
-      
-      {isClient ? (
-        <>
-          <div className="wallet-button-container">
-            <WalletMultiButton />
+    <div className="bg-gray-900 rounded-2xl overflow-hidden border border-purple-500/30 shadow-lg shadow-purple-900/20 mb-12">
+      <div className="flex flex-col md:flex-row">
+        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              SOLARA NFT Collection
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Mint your unique SOLARA NFT and join our exclusive community. Each NFT is completely unique with premium design.
+            </p>
+            <div className="space-y-4 mb-6">
+              <div className="flex items-center">
+                <div className="bg-purple-900/30 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-gray-200">Limited collection of 1,000 NFTs</span>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-pink-900/30 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-gray-200">Completely unique designs</span>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-blue-900/30 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-200">Stake to earn TESOLA rewards</span>
+                  <span className="text-xs text-gray-400 mt-1">Up to 30% APY based on rarity</span>
+                </div>
+              </div>
+            </div>
           </div>
           
-          {connected && publicKey && (
-            <div className="bg-gray-800 text-purple-300 font-mono text-sm md:text-base rounded-lg px-4 py-2 shadow-md">
-              <div className="flex items-center justify-between">
-                <span>Connected Wallet: {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
-                
-                {solBalance !== null && (
-                  <span className={`ml-2 font-bold ${hasSufficientFunds ? 'text-green-400' : 'text-red-400'}`}>
-                    {solBalance.toFixed(4)} SOL
-                  </span>
-                )}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-gray-400 font-medium">Price:</p>
+                <div className="font-bold text-white text-xl">{mintPrice}</div>
               </div>
               
-              {/* 잔액 부족 경고 */}
-              {!hasSufficientFunds && solBalance !== null && (
-                <div className="mt-1 text-xs text-red-400">
-                  Insufficient funds for minting. You need at least {mintPrice} plus fees.
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      ) : (
-        <div>Loading wallet button...</div>
-      )}
-      
-      {isClient && connected && (
-        <div className="w-full">
-          {/* 환불 정책 동의 체크박스 */}
-          <div className="mb-4 flex items-start space-x-2">
-            <input
-              type="checkbox"
-              id="agreeToPolicy"
-              checked={agreedToPolicy}
-              onChange={(e) => {
-                setAgreedToPolicy(e.target.checked);
-                if (e.target.checked) {
-                  // 애널리틱스 이벤트 - 환불 정책 동의
-                  trackEvent('refund_policy_agreed');
-                }
-              }}
-              className="mt-1"
-            />
-            <label htmlFor="agreeToPolicy" className="text-sm">
-              I agree to the{" "}
               <button
-                type="button"
-                onClick={() => {
-                  showRefundPolicy();
-                  // 애널리틱스 이벤트 - 환불 정책 조회
-                  trackEvent('refund_policy_viewed');
-                }}
-                className="text-purple-400 hover:text-purple-300 underline"
+                onClick={() => showRefundPolicy && showRefundPolicy()}
+                className="text-sm text-purple-400 hover:text-purple-300 underline underline-offset-2"
               >
-                refund policy
+                Refund Policy
               </button>
-              {" "}and understand that NFT sales are final.
-            </label>
-          </div>
-          
-          <button
-            onClick={handlePurchase}
-            disabled={!agreedToPolicy || transactionPending || !hasSufficientFunds}
-            className={`w-full mint-button inline-flex items-center justify-center ${
-              !agreedToPolicy || transactionPending || !hasSufficientFunds ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            aria-label="Mint an NFT"
-          >
-            {transactionPending ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing...
-              </>
-            ) : (
-              <>
-                Mint Now ({mintPrice})
-                <span className="ml-3">
-                  <Image src="/logo2.png" alt="SOLARA Logo" width={32} height={32} priority />
-                </span>
-              </>
-            )}
-          </button>
-          
-          {/* 잔액 부족 경고 별도 표시 */}
-          {!hasSufficientFunds && solBalance !== null && connected && (
-            <div className="mt-2 text-xs text-center text-red-400">
-              Please add more SOL to your wallet to mint.
             </div>
-          )}
+            
+            <button
+              onClick={handlePurchase}
+              className="mint-button w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-purple-900/40 font-medium text-lg flex items-center justify-center"
+              disabled={!isClient}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              {getMintButtonText()}
+            </button>
+            
+            <p className="text-gray-500 text-xs text-center mt-3">
+              By minting, you agree to our Terms of Service
+            </p>
+          </div>
         </div>
-      )}
-      
-      {isClient && !connected && (
-        <div className="text-red-500 font-mono text-sm md:text-base">
-          Wallet not connected. Please connect a wallet to mint.
+        
+        <div className="w-full md:w-1/2 p-4 md:p-0 md:flex md:items-stretch">
+          <div className="w-full h-full min-h-[250px] relative rounded-xl md:rounded-l-none md:rounded-r-xl overflow-hidden">
+            <Image
+              src="/nft-previews/0416.png"
+              alt="SOLARA NFT Preview"
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center p-6">
+              <div className="text-center">
+                <p className="text-white font-medium mb-2">SOLARA #416</p>
+                <p className="text-xs text-gray-300">Preview of collection item</p>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

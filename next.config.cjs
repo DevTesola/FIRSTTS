@@ -66,7 +66,8 @@ const nextConfig = {
       'cloudflare-ipfs.com',
       'dweb.link',
       'gateway.pinata.cloud',
-      'tesola.mypinata.cloud'
+      'tesola.mypinata.cloud',
+      'img.youtube.com'
     ],
     remotePatterns: [
       {

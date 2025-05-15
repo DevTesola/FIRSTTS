@@ -117,44 +117,88 @@ const CollectionBonus = ({ stats }) => {
       <div className="space-y-3">
         <p className="text-sm text-gray-400 mb-2">Bonus Tiers</p>
         
-        {tiers.map((tier, index) => {
-          const isCurrentTier = stakedCount >= tier.min && stakedCount <= tier.max;
-          const hasPassed = stakedCount > tier.max;
+        {/* Collection Bonus Progress Bar */}
+        <div className="bg-gray-800/30 rounded-lg p-4 mb-3">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-white font-medium">Progress</span>
+            <span className="text-white font-medium">{stakedCount}/3 NFTs</span>
+          </div>
           
-          return (
-            <div key={index} className={`rounded-lg p-3 ${isCurrentTier ? 'bg-gray-700/30 border border-purple-500/30' : 'bg-gray-800/30'}`}>
-              <div className="flex justify-between items-center mb-1">
-                <div className="flex items-center">
-                  <div className={`w-3 h-3 rounded-full ${getColorClass(tier.color)} mr-2`}></div>
-                  <span className={`font-medium ${isCurrentTier ? getTextColorClass(tier.color) : 'text-gray-300'}`}>
-                    {tier.label}
+          {/* Unified progress bar with 3 sections */}
+          <div className="w-full h-6 bg-gray-700 rounded-full overflow-hidden mt-2 relative">
+            {/* Section 1 - Gray (0-1 NFT) */}
+            <div className="absolute left-0 top-0 h-full w-1/3 border-r border-gray-600"></div>
+            {/* Section 2 - Blue (2 NFTs) */}
+            <div className="absolute left-1/3 top-0 h-full w-1/3 border-r border-gray-600"></div>
+            {/* Section 3 - Yellow (3 NFTs) */}
+            <div className="absolute left-2/3 top-0 h-full w-1/3"></div>
+            
+            {/* Progress bar fill */}
+            <div 
+              className="h-full bg-gradient-to-r from-gray-500 via-blue-500 to-yellow-500"
+              style={{
+                width: stakedCount === 0 ? '0%' :
+                       stakedCount === 1 ? '16.67%' : 
+                       stakedCount === 2 ? '50%' : '100%',
+                transition: 'width 0.5s ease-in-out'
+              }}
+            ></div>
+            
+            {/* Section labels */}
+            <div className="absolute top-0 left-0 w-full h-full flex">
+              <div className="flex-1 flex justify-center items-center">
+                <span className={`text-xs font-bold ${stakedCount >= 1 ? 'text-white' : 'text-gray-500'}`}>1 NFT</span>
+              </div>
+              <div className="flex-1 flex justify-center items-center">
+                <span className={`text-xs font-bold ${stakedCount >= 2 ? 'text-white' : 'text-gray-500'}`}>2 NFTs</span>
+              </div>
+              <div className="flex-1 flex justify-center items-center">
+                <span className={`text-xs font-bold ${stakedCount >= 3 ? 'text-white' : 'text-gray-500'}`}>3 NFTs</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Current status description */}
+          <div className="mt-3 text-sm">
+            {stakedCount === 0 && <p className="text-gray-400">Stake your first NFT to start earning rewards.</p>}
+            {stakedCount === 1 && <p className="text-gray-400">Stake one more NFT to receive a 10% bonus.</p>}
+            {stakedCount === 2 && <p className="text-blue-300">You're earning a 10% bonus! Stake one more for the maximum 20% bonus.</p>}
+            {stakedCount >= 3 && <p className="text-yellow-300">Congratulations! You're earning the maximum 20% collection bonus.</p>}
+          </div>
+        </div>
+        
+        {/* Bonus Tier Information */}
+        <div className="space-y-2">
+          {tiers.slice(1).map((tier, index) => {
+            const isCurrentTier = stakedCount >= tier.min && stakedCount <= tier.max;
+            const hasPassed = stakedCount > tier.max;
+            
+            return (
+              <div key={index} className={`
+                rounded-lg p-3 
+                ${isCurrentTier ? 'bg-gray-700/50 border border-purple-500/30' : 
+                 hasPassed ? 'bg-gray-700/30' : 'bg-gray-800/30'}
+              `}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className={`w-3 h-3 rounded-full 
+                      ${hasPassed || isCurrentTier ? getColorClass(tier.color) : 'bg-gray-600'} mr-2`}></div>
+                    <span className={`font-medium 
+                      ${isCurrentTier ? getTextColorClass(tier.color) : 
+                       hasPassed ? 'text-gray-300' : 'text-gray-500'}`}>
+                      {tier.label}
+                    </span>
+                  </div>
+                  <span className={`font-medium 
+                    ${isCurrentTier ? 'text-white' : 
+                     hasPassed ? 'text-gray-300' : 'text-gray-500'}`}>
+                    {formatBonus(tier.bonus)} bonus
                   </span>
                 </div>
-                <span className={`font-medium ${isCurrentTier ? 'text-white' : 'text-gray-400'}`}>
-                  {formatBonus(tier.bonus)} bonus
-                </span>
               </div>
-              
-              <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-                <div 
-                  className={`${getColorClass(tier.color)} h-2 rounded-full ${hasPassed ? 'w-full' : isCurrentTier ? `w-[${Math.floor((stakedCount - tier.min) / (tier.max - tier.min + 1) * 100)}%]` : 'w-0'}`}
-                  style={{ 
-                    width: hasPassed ? '100%' : isCurrentTier 
-                      ? `${Math.floor((stakedCount - tier.min) / (tier.max - tier.min + 1) * 100)}%` 
-                      : '0%' 
-                  }}
-                ></div>
-              </div>
-              
-              {isCurrentTier && (
-                <div className="flex justify-between mt-1 text-xs text-gray-500">
-                  <span>{stakedCount}/{tier.max}</span>
-                  <span>{nextTier ? `${nftsToNextTier} more to ${formatBonus(nextTier.bonus)}` : 'Max tier reached'}</span>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
       
       {/* Bonus Explanation */}
@@ -169,6 +213,10 @@ const CollectionBonus = ({ stats }) => {
           The more NFTs you stake from the same collection, the higher your bonus reward rate.
           With 2 NFTs, you get a 10% bonus. With 3 NFTs (maximum), you get a 20% bonus.
           This bonus applies to all your staked NFTs from this collection.
+        </p>
+        <p className="text-sm text-gray-300 mt-2">
+          <span className="text-yellow-300 font-medium">First 7 days bonus:</span> You also receive a 100% bonus (2x rewards) during the first 7 days of staking.
+          <span className="text-blue-300 font-medium ml-1">NFT Tier bonus:</span> Each NFT has its own tier (Common, Rare, Epic, Legendary) that affects base reward rate.
         </p>
       </div>
     </div>

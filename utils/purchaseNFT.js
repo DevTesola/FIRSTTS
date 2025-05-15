@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 config({ path: './.env.development.local' });
 
 import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
-import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
 import { SOLANA_RPC_ENDPOINT, COLLECTION_MINT } from './cluster.js';
 import { SELLER_KEYPAIR } from '../server/utils/sellerKeypair.js';
@@ -31,7 +31,7 @@ const IPFS_GATEWAYS = [
 ];
 
 const RESOURCE_CID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
-const NFT_PRICE_LAMPORTS = Number(process.env.NFT_PRICE_LAMPORTS) || 1.5 * 1e9;
+const NFT_PRICE_LAMPORTS = Number(process.env.NFT_PRICE_LAMPORTS) || 1.5 * LAMPORTS_PER_SOL;
 const SELLER_PUBLIC_KEY = process.env.NEXT_PUBLIC_SELLER_PUBLIC_KEY || 'qNfZ9QHYyu5dDDMvVAZ1hE55JX4GfUYQyfvLzZKBZi3';
 
 // Lock timeout in milliseconds (3 minutes)
@@ -105,13 +105,26 @@ export async function purchaseNFT(buyerPublicKey) {
 
     // Create payment transaction
     console.log(`[${requestId}] Creating SOL transfer transaction...`);
-    const transferTx = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: buyerPublicKey,
-        toPubkey: new PublicKey(SELLER_PUBLIC_KEY),
-        lamports: NFT_PRICE_LAMPORTS,
-      })
-    );
+    
+    // Create SystemProgram transfer instruction
+    const transferInstruction = SystemProgram.transfer({
+      fromPubkey: buyerPublicKey,
+      toPubkey: new PublicKey(SELLER_PUBLIC_KEY),
+      lamports: NFT_PRICE_LAMPORTS,
+    });
+    
+    // Create memo instruction for better wallet display
+    const memoInstruction = new TransactionInstruction({
+      keys: [],
+      programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
+      data: Buffer.from(`💰 SOLARA NFT Price: ${NFT_PRICE_LAMPORTS/LAMPORTS_PER_SOL} SOL - Minting Payment`, 'utf8'),
+    });
+    
+    // Add both instructions to transaction
+    const transferTx = new Transaction()
+      .add(transferInstruction)
+      .add(memoInstruction);
+      
     transferTx.feePayer = buyerPublicKey;
     
     // Get latest blockhash with retry logic for better reliability

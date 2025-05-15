@@ -1,10 +1,11 @@
 // components/staking/NFTGallery.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { GlassButton, PrimaryButton, SecondaryButton } from "../Buttons";
 import { processImageUrl, createPlaceholder, getNftPreviewImage } from "../../utils/mediaUtils";
 import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from "../../utils/nftImageUtils";
-import EnhancedProgressiveImage from "../EnhancedProgressiveImage";
+import ResponsiveImageLoader from "../ResponsiveImageLoader";
+import { debugLog, debugError } from "../../utils/debugUtils";
 
 /**
  * NFTGallery Component
@@ -32,7 +33,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
           }
         }
       } catch (error) {
-        console.error("Error fetching staking stats:", error);
+        debugError("NFTGallery", "Error fetching staking stats:", error);
       }
     };
     
@@ -117,19 +118,24 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
   // This function is no longer used since we're handling errors inline
   // for more consistent behavior and to prevent caching issues
   
-  // Render loading skeleton
+  // Render loading skeleton with loading message for better mobile UX
   const renderSkeleton = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {[...Array(8)].map((_, i) => (
-        <div key={i} className="bg-gray-800 rounded-lg animate-pulse">
-          <div className="aspect-square w-full bg-gray-700 rounded-t-lg"></div>
-          <div className="p-3 space-y-2">
-            <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-            <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+    <>
+      <div className="mb-3 py-2 px-3 bg-gray-800/50 rounded text-center animate-pulse">
+        <span className="text-sm text-gray-400">Loading NFT collection...</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="bg-gray-800 rounded-lg animate-pulse">
+            <div className="aspect-square w-full bg-gray-700 rounded-t-lg"></div>
+            <div className="p-2 sm:p-3 space-y-1.5 sm:space-y-2">
+              <div className="h-3 sm:h-4 bg-gray-700 rounded w-3/4"></div>
+              <div className="h-2.5 sm:h-3 bg-gray-700 rounded w-1/2"></div>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
   
   // Render empty state with expanded options
@@ -242,7 +248,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                 placeholder="Search by name, ID or #tag..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
               />
               <div className="absolute left-3 top-2.5 text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -251,7 +257,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
               </div>
               {searchTerm && (
                 <button 
-                  className="absolute right-3 top-2.5 text-gray-500 hover:text-white"
+                  className="absolute right-3 top-2.5 text-gray-500 hover:text-white p-2"
                   onClick={() => setSearchTerm("")}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -263,10 +269,10 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
           </div>
           
           {/* Tier filters with improved visuals */}
-          <div className="flex space-x-2 overflow-x-auto pb-1">
+          <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-gray-800 snap-x">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] min-w-[44px] ${
                 filter === "all"
                   ? "bg-purple-600 text-white"
                   : "bg-gray-900 text-gray-300 hover:bg-gray-700"
@@ -276,7 +282,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             </button>
             <button
               onClick={() => setFilter("legendary")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] min-w-[44px] ${
                 filter === "legendary"
                   ? "bg-yellow-700 text-white"
                   : "bg-gray-900 text-yellow-300 hover:bg-gray-700"
@@ -286,7 +292,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             </button>
             <button
               onClick={() => setFilter("epic")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] min-w-[44px] ${
                 filter === "epic"
                   ? "bg-purple-700 text-white"
                   : "bg-gray-900 text-purple-300 hover:bg-gray-700"
@@ -296,7 +302,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             </button>
             <button
               onClick={() => setFilter("rare")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] min-w-[44px] ${
                 filter === "rare"
                   ? "bg-blue-700 text-white"
                   : "bg-gray-900 text-blue-300 hover:bg-gray-700"
@@ -306,7 +312,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
             </button>
             <button
               onClick={() => setFilter("common")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] min-w-[44px] ${
                 filter === "common"
                   ? "bg-green-700 text-white"
                   : "bg-gray-900 text-green-300 hover:bg-gray-700"
@@ -391,8 +397,8 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                   <div className="aspect-square w-full bg-gray-800 relative">
                     <div className="w-full h-full relative">
                       {/* my-collection 페이지 방식으로 변경된 이미지 로딩 로직 */}
-                      <EnhancedProgressiveImage
-                        src={(() => {
+                      <ResponsiveImageLoader
+                        src={useMemo(() => {
                           // API에서 직접 제공한 이미지 URL 사용
                           let imageUrl = nft.nft_image || nft.image_url || nft.image;
 
@@ -401,14 +407,12 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                             try {
                               // URL이 유효한지 확인
                               const url = new URL(imageUrl);
-                              // 캐시 버스팅 파라미터 추가
-                              url.searchParams.set('_t', Date.now().toString());
-                              console.log(`✅ NFTGallery: 캐시 버스팅 URL 생성: ${url.toString()}`);
+                              // 안정적인 캐시 버스팅 파라미터 추가 (일관된 값 사용)
+                              url.searchParams.set('_cb', 'stable');
                               return url.toString();
                             } catch (err) {
-                              console.log(`⚠️ NFTGallery: URL 파싱 실패, 원본 URL 사용: ${imageUrl}`);
-                              // 추가 캐시 버스팅 파라미터
-                              return `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+                              // 안정적인 캐시 버스팅 파라미터 추가 (일관된 값 사용)
+                              return `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_cb=stable`;
                             }
                           }
 
@@ -421,8 +425,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                             const formattedId = String(nftId).padStart(4, '0');
                             const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                             const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_t=${Date.now()}`;
-                            console.log(`🔍 NFTGallery: 직접 IPFS URL 생성: ${gatewayUrl}`);
+                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=stable`;
                             return gatewayUrl;
                           }
 
@@ -432,21 +435,21 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                             id: nftId,
                             mint: nft.mint,
                             name: nft.name,
-                            __source: 'NFTGallery-staking',
-                            _cacheBust: Date.now() // 강제 캐시 버스팅
+                            _source: 'NFTGallery-staking',
+                            _cacheBust: 'stable' // 안정적인 캐시 키 사용
                           });
-                        })()}
+                        }, [nft])}
                         alt={getNFTName(nft)}
                         placeholder={createPlaceholder(getNFTName(nft))}
                         className="w-full h-full object-cover"
                         id={nft.id || nft.mint}
                         lazyLoad={true}
-                        priority={true} // 우선적으로 로드하도록 변경
-                        highQuality={true}
+                        quality={70} // Mobile optimization - reduced quality
+                        highQuality={false} // Reduced quality for gallery view
                         preferRemote={true}
                         useCache={false}
                         blur={true}
-                        __source="NFTGallery-staking"
+                        _source="NFTGallery-staking"
                       />
                     </div>
                     
@@ -469,20 +472,20 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                   </div>
                   
                   {/* NFT info */}
-                  <div className="p-3">
-                    <h4 className="font-medium text-white truncate">{nft.name || `SOLARA #${formatNftId(nft.id)}`}</h4>
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="text-xs text-gray-400">
+                  <div className="p-2 sm:p-3">
+                    <h4 className="font-medium text-white text-sm sm:text-base truncate">{nft.name || `SOLARA #${formatNftId(nft.id)}`}</h4>
+                    <div className="flex justify-between items-center mt-1.5 sm:mt-2">
+                      <div className="text-xxs sm:text-xs text-gray-400">
                         ID: {formatNftId(nft.id) || nft.mint?.slice(0, 6) || "Unknown"}
                       </div>
                       <PrimaryButton size="small" onClick={(e) => {
                         e.stopPropagation();
                         onSelectNFT(nft);
                       }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" viewBox="0 0 20 20" fill="currentColor">
                           <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                         </svg>
-                        Stake
+                        <span className="text-xs">Stake</span>
                       </PrimaryButton>
                     </div>
                   </div>
@@ -538,6 +541,26 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
         
         .hover-scale:hover {
           transform: scale(1.05);
+        }
+        
+        /* Mobile optimization styles */
+        @media (max-width: 640px) {
+          button, a, input, select {
+            min-height: 44px;
+            min-width: 44px;
+          }
+          
+          /* Better scrolling on mobile */
+          .scrollbar-thin {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            padding-bottom: 8px;
+          }
+          
+          /* Snap scroll for category filters */
+          .snap-x > * {
+            scroll-snap-align: start;
+          }
         }
       `}</style>
     </div>

@@ -56,9 +56,9 @@ export default function PresaleTimer({ endDate }) {
   return (
     <div className="mt-6 text-center">
       {isEnded ? (
-        <div className="bg-red-900/30 px-6 py-4 rounded-lg inline-block">
-          <p className="text-2xl font-bold text-red-400">Presale Has Ended</p>
-          <p className="text-gray-300 mt-1">Contact support for more information</p>
+        <div className="bg-blue-900/30 px-6 py-4 rounded-lg inline-block">
+          <p className="text-2xl font-bold text-blue-400">Presale Coming Soon</p>
+          <p className="text-gray-300 mt-1">Next phase starting shortly</p>
         </div>
       ) : (
         <div className="w-full">

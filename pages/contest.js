@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { SAMPLE_MEMES, ERROR_MESSAGES, GOVERNANCE } from "../utils/constants";
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { createClient } from '@supabase/supabase-js';
 import Link from "next/link";
 
 export default function MemeContest() {
@@ -18,6 +19,12 @@ export default function MemeContest() {
   const [userVoted, setUserVoted] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Supabase 클라이언트 초기화
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   // Meme data is imported from constants.js
 
@@ -146,7 +153,44 @@ export default function MemeContest() {
     }
   };
 
-  // Handle form submission with IPFS upload and on-chain transaction
+  // Supabase Storage에 이미지 업로드 함수
+  const uploadImageToSupabase = async (file) => {
+    try {
+      // 파일명 생성: timestamp + 랜덤 문자열
+      const fileName = `meme_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      const fileExt = file.name.split('.').pop();
+      const filePath = `memes/${fileName}.${fileExt}`;
+      
+      // 업로드 진행상황 이벤트 핸들러 설정
+      const uploadOptions = {
+        cacheControl: '3600',
+        upsert: false,
+        onUploadProgress: (progress) => {
+          const percent = Math.round((progress.loaded / progress.total) * 100);
+          setUploadProgress(percent);
+        }
+      };
+      
+      // Supabase storage에 업로드 - 'memes' 버킷에 저장
+      const { data, error } = await supabase.storage
+        .from('memes')
+        .upload(filePath, file, uploadOptions);
+      
+      if (error) throw error;
+      
+      // 이미지 공개 URL 가져오기
+      const { data: urlData } = supabase.storage
+        .from('memes')
+        .getPublicUrl(filePath);
+      
+      return { path: filePath, url: urlData.publicUrl };
+    } catch (error) {
+      console.error('이미지 업로드 오류:', error);
+      throw error;
+    }
+  };
+
+  // Handle form submission with Supabase Storage upload and on-chain transaction
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -170,17 +214,11 @@ export default function MemeContest() {
     }
     
     setIsSubmitting(true);
+    setUploadProgress(0);
     
     try {
-      // 1. 먼저 IPFS에 이미지 업로드 (실제로는 외부 서비스를 사용)
-      // 여기서는 시뮬레이션: 실제 구현에서는 IPFS 서비스 API 호출
-      // 실제 구현: formData를 pinata 또는 nft.storage API에 업로드
-      
-      // 시뮬레이션용 - 실제 IPFS 호출 대신 랜덤 해시 생성
-      await new Promise(resolve => setTimeout(resolve, 500)); // API 호출 시뮬레이션
-      const mockIpfsHash = `Qm${Array.from({length: 44}, () => 
-        "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"[Math.floor(Math.random() * 58)]
-      ).join('')}`;
+      // 1. Supabase Storage에 이미지 업로드
+      const { path: imagePath, url: imageUrl } = await uploadImageToSupabase(selectedFile);
       
       // 2. 온체인 밈 제출 트랜잭션 생성
       const response = await fetch('/api/contest/submitMeme', {
@@ -192,7 +230,8 @@ export default function MemeContest() {
           wallet: publicKey.toString(),
           title: title,
           description: description,
-          ipfsHash: mockIpfsHash
+          imageUrl: imageUrl,
+          imagePath: imagePath
         }),
       });
       
@@ -458,29 +497,36 @@ export default function MemeContest() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-end">
+                  <div className="flex flex-col items-end relative gap-4">
+                    {/* COMING SOON 배너 */}
+                    <div className="flex items-center justify-center bg-gradient-to-r from-amber-600 to-orange-600 text-white px-4 py-2 rounded-lg w-full animate-pulse shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-bold text-lg">COMING SOON!</span>
+                      <span className="ml-2 text-white text-sm">Meme submission feature is under development</span>
+                    </div>
+                    
+                    {isSubmitting && uploadProgress > 0 && uploadProgress < 100 && (
+                      <div className="absolute -top-12 left-0 right-0 flex items-center">
+                        <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500" 
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 text-white text-sm min-w-[40px]">{uploadProgress}%</span>
+                      </div>
+                    )}
                     <button 
-                      type="submit" 
-                      disabled={isSubmitting || !connected}
-                      className={`px-6 py-3 rounded-lg font-bold text-white flex items-center ${
-                        connected 
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" 
-                          : "bg-gray-700 cursor-not-allowed"
-                      } transition-all`}
+                      type="button" /* 제출 방지를 위해 submit 대신 button으로 변경 */
+                      disabled={true} /* 항상 비활성화 */
+                      className="px-6 py-3 rounded-lg font-bold text-white flex items-center bg-gray-700 cursor-not-allowed relative overflow-hidden transition-all"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Processing...
-                        </>
-                      ) : connected ? (
-                        <>Submit Meme</>
-                      ) : (
-                        <>Connect Wallet to Submit</>
-                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <span className="text-amber-300 font-bold text-sm tracking-wider uppercase">Soon</span>
+                      </div>
+                      <span className="opacity-50">Submit Meme</span>
                     </button>
                   </div>
                 </form>

@@ -87,12 +87,25 @@ export async function fetchAPI(endpoint, params = {}, options = {}) {
     
     // 명시적으로 success 필드가 있고 data 필드가 있는 경우에만 data 필드 반환
     // 그 외에는 원본 데이터 그대로 반환하여 하위 호환성 유지
-    if (data && typeof data === 'object' && 'success' in data && data.success === true && 'data' in data) {
-      return data.data;
+    if (data && typeof data === 'object') {
+      // 표준 API 응답 형식: { success: true, data: {...} }
+      if ('success' in data && data.success === true) {
+        // data 필드가 존재하는지 확인
+        if ('data' in data) {
+          // data 필드가 null이나 undefined가 아닌지 확인
+          if (data.data !== null && data.data !== undefined) {
+            return data.data;
+          } else {
+            console.warn('API 응답의 data 필드가 null 또는 undefined입니다:', endpoint);
+            // 빈 객체 반환하여 클라이언트 코드의 null 참조 오류 방지
+            return {};
+          }
+        }
+      }
     }
     
     // 기존 API 응답 형식
-    return data;
+    return data || {}; // data가 null이나 undefined인 경우 빈 객체 반환
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
     

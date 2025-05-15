@@ -1,11 +1,22 @@
 /**
- * getStakingStats.js - 스테이킹 통계 조회 API
+ * /api/staking/getStakingStats.js - Staking Statistics API (Primary Endpoint)
  * 
- * 사용자의 스테이킹 현황, 활성 스테이킹 목록, 보상 현황 등을 조회
- * - 활성 스테이킹 목록 조회
- * - 각 스테이킹의 진행 상황 및 보상 계산
- * - 실제 NFT 이미지 및 메타데이터 매핑
- * - 통합된 통계 정보 반환
+ * IMPORTANT: This is the main canonical endpoint for staking statistics.
+ * The legacy endpoint at /api/getStakingStats.js forwards requests here.
+ * All new code should use this endpoint directly.
+ * 
+ * This API retrieves user's staking status, active staking list, and reward information:
+ * - Fetches active staking entries
+ * - Calculates progress and rewards for each staking entry
+ * - Maps real NFT images and metadata
+ * - Returns integrated statistics
+ * 
+ * Key Update on NFT ID Resolution (2025-05-14):
+ * - Updated to use database-first approach for NFT ID resolution
+ * - Supabase database is queried to get the original minted NFT ID
+ * - Only falls back to hash-based IDs if database lookup fails
+ * - Ensures NFT IDs match between minting and staking processes
+ * - Added error handling for cases where NFT ID cannot be resolved
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -15,6 +26,7 @@ import { SOLANA_RPC_ENDPOINT } from '../../../shared/constants/network';
 import { getNFTData } from '../../../shared/utils/nft';
 import { PROGRAM_ID } from '../../../shared/constants/program-ids';
 import { findPoolStatePDA, findUserStakingInfoPDA } from '../../../shared/utils/pda';
+import { resolveNftId } from '../../../utils/staking-helpers/nft-id-resolver';
 import bs58 from 'bs58'; // base58 인코딩/디코딩 라이브러리
 
 export default async function handler(req, res) {
@@ -36,6 +48,10 @@ export default async function handler(req, res) {
     
     // 캐시 방지 파라미터
     const cacheStr = nocache || Date.now();
+    
+    // 비동기 처리를 위한 변수 초기화
+    let projectedRewards = 0;
+    let earnedToDate = 0;
     
     // Supabase 클라이언트 초기화
     const supabase = getSupabase();
@@ -487,52 +503,59 @@ export default async function handler(req, res) {
     
     // 스테이킹 데이터 처리 및 계산
     const currentDate = new Date();
-    let projectedRewards = 0;
-    let earnedToDate = 0;
     
-    const activeStakes = stakingData && stakingData.length > 0 ? stakingData.map(stake => {
-      const stakingStartDate = new Date(stake.staked_at);
-      const releaseDate = new Date(stake.release_date);
+    // 스테이킹 데이터 처리를 위한 비동기 함수
+    const processStakingData = async (stakingData) => {
+      console.log(`스테이킹 데이터 처리 시작: ${stakingData.length}개 항목`);
       
-      // 총 스테이킹 기간 계산 (밀리초)
-      const totalStakingDuration = releaseDate.getTime() - stakingStartDate.getTime();
-      
-      // 경과 기간 계산 (총 기간으로 제한)
-      const elapsedDuration = Math.min(
-        currentDate.getTime() - stakingStartDate.getTime(),
-        totalStakingDuration
-      );
-      
-      // 진행률 계산
-      const progressPercentage = (elapsedDuration / totalStakingDuration) * 100;
-      
-      // 현재까지 획득한 보상 계산
-      const earnedSoFar = (stake.total_rewards * progressPercentage) / 100;
-      
-      // 총계에 추가
-      projectedRewards += parseFloat(stake.total_rewards);
-      earnedToDate += parseFloat(earnedSoFar);
-      
-      // 남은 일수 계산
-      const daysRemaining = Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24)));
-      
-      // 스테이킹 기간 완료 여부
-      const isUnlocked = currentDate >= releaseDate;
-      
-      // 경과 일수 계산
-      const daysElapsed = Math.min(
-        Math.ceil(elapsedDuration / (1000 * 60 * 60 * 24)),
-        stake.staking_period
-      );
-      
-      // 실제 NFT 데이터 확인
-      const actualNft = nftDataByMint[stake.mint_address];
-      
-      // NFT ID 추출
-      const nftId = actualNft?.mint_index || actualNft?.id || stake.id || 
-                   (stake.mint_address ? stake.mint_address.slice(0, 8) : '0');
-      
-      console.log(`NFT ID: ${nftId}, 민트 주소: ${stake.mint_address} 처리 중`);
+      // 비동기 처리를 위한 Promise.all 사용
+      const processedStakes = await Promise.all(stakingData.map(async (stake) => {
+        const stakingStartDate = new Date(stake.staked_at);
+        const releaseDate = new Date(stake.release_date);
+        
+        // 총 스테이킹 기간 계산 (밀리초)
+        const totalStakingDuration = releaseDate.getTime() - stakingStartDate.getTime();
+        
+        // 경과 기간 계산 (총 기간으로 제한)
+        const elapsedDuration = Math.min(
+          currentDate.getTime() - stakingStartDate.getTime(),
+          totalStakingDuration
+        );
+        
+        // 진행률 계산
+        const progressPercentage = (elapsedDuration / totalStakingDuration) * 100;
+        
+        // 현재까지 획득한 보상 계산
+        const earnedSoFar = (stake.total_rewards * progressPercentage) / 100;
+        
+        // 총계에 추가 (비동기 처리에서는 이 방법으로 합산하지 않고 나중에 따로 처리)
+        // 이 값들은 함수 범위 바깥의 변수 참조이므로 개별 스테이크 처리 후 따로 계산
+        
+        // 남은 일수 계산
+        const daysRemaining = Math.max(0, Math.ceil((releaseDate - currentDate) / (1000 * 60 * 60 * 24)));
+        
+        // 스테이킹 기간 완료 여부
+        const isUnlocked = currentDate >= releaseDate;
+        
+        // 경과 일수 계산
+        const daysElapsed = Math.min(
+          Math.ceil(elapsedDuration / (1000 * 60 * 60 * 24)),
+          stake.staking_period
+        );
+        
+        // 실제 NFT 데이터 확인
+        const actualNft = nftDataByMint[stake.mint_address];
+        
+        // 온체인 데이터 기반으로 NFT ID 결정 방식으로 변경
+        // 데이터베이스 조회를 통해 실제 민팅된 NFT ID를 가져옴
+        // 비동기 함수 호출에 await 추가
+        const resolvedNftId = await resolveNftId(stake.mint_address);
+        
+        // 데이터베이스에서 찾은 실제 NFT ID 사용
+        const nftId = resolvedNftId;
+        
+        console.log(`Processing stake for mint: ${stake.mint_address} -> resolved NFT ID: ${resolvedNftId}`);
+        console.log(`온체인 민트 주소 기반 NFT ID 해결: ${stake.mint_address} -> ${resolvedNftId}`);
       
       // 이미지 URL 관련 변수 초기화
       let nftImageUrl = null;
@@ -599,123 +622,126 @@ export default async function handler(req, res) {
         }
       }
       
-      // 실제 NFT 데이터가 없는 경우
-      if (!nftImageUrl) {
-        console.log(`실제 이미지 URL을 찾을 수 없음, NFT ID: ${nftId}에 대해 생성된 데이터 사용`);
-        
-        // IPFS 해시 설정
-        if (!ipfsHash) {
-          ipfsHash = stake.ipfs_hash;
-          
-          if (!ipfsHash) {
-            // 실제 TESOLA 컬렉션의 IPFS CID
-            const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
-            ipfsHash = COLLECTION_IPFS_HASH;
-          }
-          
-          // 4자리 ID로 포맷팅
-          let formattedId;
-          
-          // stake.id 사용 (숫자만 추출)
-          if (stake.id) {
-            try {
-              const numericId = parseInt(String(stake.id).replace(/\D/g, '') || '0');
-              formattedId = String(numericId).padStart(4, '0');
-              console.log(`숫자 ID 기반 포맷팅: ${formattedId} (원본 ID: ${stake.id})`);
-            } catch (err) {
-              formattedId = '0001';
-              console.log(`ID 변환 실패, 기본값 사용: ${formattedId}`);
-            }
-          } else if (nftId) {
-            // NFT ID 사용 (숫자만 추출하고 4자리로 포맷팅)
-            try {
-              const numericId = parseInt(String(nftId).replace(/\D/g, '') || '0');
-              formattedId = String(numericId).padStart(4, '0');
-              console.log(`일반 NFT ID 포맷팅: ${formattedId} (원본: ${nftId})`);
-            } catch (err) {
-              formattedId = '0001';
-              console.log(`NFT ID 변환 실패, 기본값 사용: ${formattedId}`);
-            }
-          } else {
-            // ID 정보가 없는 경우
-            formattedId = '0001';
-            console.log(`ID 정보 없음, 기본값 사용: ${formattedId}`);
-          }
-          
-          // IPFS URL 생성 (강제로 캐시 버스팅 추가)
-          ipfsUrl = `ipfs://${ipfsHash}/${formattedId}.png`;
-          gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsHash}/${formattedId}.png?_forcereload=true&_t=${Date.now()}`;
-          
-          console.log(`포맷팅된 ID로 IPFS URL 생성: ${formattedId}, URL: ${ipfsUrl}`);
+      // 항상 일관된 IPFS URL 생성
+      const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+      ipfsHash = COLLECTION_IPFS_HASH;
+      
+      // resolvedNftId(이미 위에서 결정)로 일관된 URL 생성
+      ipfsUrl = `ipfs://${ipfsHash}/${resolvedNftId}.png`;
+      gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${ipfsHash}/${resolvedNftId}.png?_forcereload=true&_t=${Date.now()}`;
+      
+      console.log(`온체인 기반 URL 생성: ${ipfsUrl}`);
+      console.log(`게이트웨이 URL: ${gatewayUrl}`);
+      
+      // 항상 일관된 URL 사용을 위해 기존 URL 무시하고 새로 생성한 URL 사용
+      nftImageUrl = ipfsUrl;
+      
+      // 실제 NFT 데이터가 있는 경우 디버깅 정보 출력
+      if (actualNft) {
+        console.log(`참고: 데이터베이스 원본 정보 - ID: ${actualNft.id}, 민트 인덱스: ${actualNft.mint_index}`);
+        if (actualNft.image_url) {
+          console.log(`참고: 원래 이미지 URL: ${actualNft.image_url} (온체인 해결로 대체됨)`);
         }
-        
-        // 생성된 IPFS URL을 기본 이미지 URL로 설정
-        nftImageUrl = ipfsUrl;
       }
       
       // 로컬 이미지를 실제 IPFS URL로 변환 (플레이스홀더가 아닌 실제 URL 생성)
       const previewImages = ['0119.png', '0171.png', '0327.png', '0416.png', '0418.png', '0579.png'];
-      const numericId = parseInt(String(nftId).replace(/\D/g, '') || '1');
+      
+      // 항상 resolvedNftId 사용 (이미 위에서 결정론적으로 계산됨)
+      // string ID에서 숫자만 추출
+      const numericId = parseInt(String(resolvedNftId).replace(/\D/g, '') || '1');
+      
+      console.log(`숫자 ID 기반 포맷팅: ${resolvedNftId} (숫자 추출 결과: ${numericId})`);
       previewImage = `/nft-previews/${previewImages[Math.abs(numericId % previewImages.length)]}`;
+      console.log(`선택된 프리뷰 이미지: ${previewImage}`);
 
-      // 로컬 경로 확인 함수
-      const isLocalPath = (url) => {
-        if (!url) return false;
-        return url.startsWith('/') ||
-               url.includes('/nft-') ||
-               url.includes('/placeholder') ||
-               url.includes('/public/') ||
-               url === 'placeholder-nft.png';
-      };
-
-      // IPFS URL이 없거나 로컬 경로인 경우
-      if (!nftImageUrl || isLocalPath(nftImageUrl)) {
-        // 로컬 이미지 경로인 경우 NFT ID 기반으로 직접 게이트웨이 URL 생성
-        // 민트 인덱스 또는, ID 또는 민트 주소 해시 기반으로 NFT ID 추출
-        let formattedId;
-
-        if (actualNft && actualNft.mint_index) {
-          // 민트 인덱스가 있으면 4자리로 포맷팅
-          formattedId = String(actualNft.mint_index).padStart(4, '0');
-          console.log(`민트 인덱스 ${actualNft.mint_index}에서 포맷팅된 ID 생성: ${formattedId}`);
-        } else if (nftId) {
-          // NFT ID가 있으면 4자리로 포맷팅
-          formattedId = String(numericId).padStart(4, '0');
-          console.log(`NFT ID ${nftId}에서 포맷팅된 ID 생성: ${formattedId}`);
-        } else {
-          // 민트 주소 해시 기반으로 ID 생성
-          let hash = 0;
-          const mintAddr = stake.mint_address || '';
-          for (let i = 0; i < mintAddr.length; i++) {
-            hash = ((hash << 5) - hash) + mintAddr.charCodeAt(i);
-            hash = hash & hash;
-          }
-          const genId = Math.abs(hash % 999) + 1;
-          formattedId = String(genId).padStart(4, '0');
-          console.log(`민트 주소 해시에서 ID 생성: ${formattedId}`);
-        }
-
-        // 직접 게이트웨이 URL 생성 (플레이스홀더가 아닌 실제 이미지)
-        const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
-        const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-
-        // 직접 게이트웨이 URL 생성 (캐시 버스팅 추가)
-        const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_forcereload=true&_t=${Date.now()}`;
-        console.log(`🔄 로컬 경로를 직접 게이트웨이 URL로 변환: ${nftImageUrl} -> ${gatewayUrl}`);
-
-        // 사용자에게 전달되는 nft_image 필드에는 직접 게이트웨이 URL 사용
-        nftImageUrl = gatewayUrl;
-      }
+      // 항상 일관된 온체인 기반 ID 사용 확인
       
       // 실제 NFT 데이터가 있으면 이름 및 기타 세부 정보 포함
-      const nftName = actualNft?.name || stake.nft_name || `SOLARA #${nftId}`;
+      // resolvedNftId 사용하여 일관성 보장
+      const nftName = actualNft?.name || stake.nft_name || `SOLARA #${resolvedNftId}`;
       const nftTier = actualNft?.metadata?.attributes?.find(attr => 
         attr.trait_type?.toLowerCase() === 'tier' || attr.trait_type?.toLowerCase() === 'rarity'
       )?.value || stake.nft_tier || 'Common';
       
       // 계산된 필드가 추가된 스테이킹 정보 반환
+      // 최종 반환 전에 null 확인 - null이면 이미지 로드 실패 처리
+      if (!resolvedNftId) {
+        console.error(`[getStakingStats] 오류: NFT ID를 찾을 수 없음 (mint=${stake.mint_address})`);
+        return {
+          ...stake,
+          // 이미지 오류 상태 표시
+          image_error: true,
+          _debug_source: "id_resolution_failed",
+          progress_percentage: parseFloat(progressPercentage.toFixed(2)),
+          earned_so_far: parseFloat(earnedSoFar.toFixed(2)),
+          days_remaining: daysRemaining,
+          days_elapsed: daysElapsed,
+          is_unlocked: isUnlocked,
+          current_apy: calculateCurrentAPY(stake),
+        };
+      }
+      
+      // 정상적으로 ID 찾은 경우
+      // 온체인 스테이크 계정에서 티어 정보 확인
+      let tierMultiplier = 1; // 기본값
+      
+      try {
+        // 스테이크 PDA 계산 후 계정 정보 확인
+        if (stake.mint_address) {
+          const mintPubkey = new PublicKey(stake.mint_address);
+          
+          // 스테이크 PDA 계산
+          const [stakePDA] = findStakeInfoPDA(mintPubkey);
+          console.log(`Tier 확인을 위한 스테이크 PDA: ${stakePDA.toString()} (민트: ${stake.mint_address})`);
+          
+          // 스테이크 계정 조회
+          const connection = new Connection(SOLANA_RPC_ENDPOINT);
+          const stakeAccount = await connection.getAccountInfo(stakePDA);
+          
+          if (stakeAccount) {
+            console.log(`Tier 조회: 스테이크 계정 발견: ${stakeAccount.data.length} 바이트`);
+            
+            try {
+              // Anchor discriminator 건너뛰기 (8바이트)
+              const ACCOUNT_DISCRIMINATOR_SIZE = 8;
+              const stakeData = stakeAccount.data.slice(ACCOUNT_DISCRIMINATOR_SIZE);
+              
+              // 계정 구조 참고: tier 값은 바이트 81에 위치 (owner 32, mint 32, stakedAt 8, releaseDate 8, isStaked 1)
+              const tierByte = stakeData[81]; // u8은 1바이트
+              console.log(`온체인 tier 값: ${tierByte} (민트: ${stake.mint_address})`);
+              
+              // tier_multiplier 계산 (확인된 매핑 사용)
+              // 온체인 tier 값: 0 = Common, 1 = Rare, 2 = Epic, 3 = Legendary
+              switch(tierByte) {
+                case 1: tierMultiplier = 2; break; // Rare
+                case 2: tierMultiplier = 4; break; // Epic
+                case 3: tierMultiplier = 8; break; // Legendary
+                default: tierMultiplier = 1; // Common
+              }
+              
+              console.log(`온체인 tier 값 ${tierByte}에서 multiplier ${tierMultiplier}로 계산 (민트: ${stake.mint_address})`);
+            } catch (parseErr) {
+              console.warn(`스테이크 계정 파싱 오류: ${parseErr.message}`);
+              // 기본값 1 유지
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`온체인 tier 조회 실패: ${err.message}`);
+        // 기본값 1 유지
+      }
+      
       return {
         ...stake,
+        // 기존 ID 덮어쓰기 - 온체인에서 결정론적으로 생성된 ID 우선
+        id: parseInt(resolvedNftId),
+        nft_id: resolvedNftId,
+        staked_nft_id: resolvedNftId,
+        
+        // 온체인에서 가져온 tier_multiplier 추가 - 클라이언트에서 티어 계산에 사용
+        tier_multiplier: tierMultiplier,
+        
         progress_percentage: parseFloat(progressPercentage.toFixed(2)),
         earned_so_far: parseFloat(earnedSoFar.toFixed(2)),
         days_remaining: daysRemaining,
@@ -727,14 +753,16 @@ export default async function handler(req, res) {
         nft_name: nftName,
         nft_tier: nftTier,
         
-        // 이미지 필드 통합 처리 - 직접 게이트웨이 URL로 모든 필드 설정 (이미지 로딩 보장)
+        // 이미지 필드 통합 처리 - 일관된 URL 사용
         ipfs_hash: ipfsHash,
-        image: nftImageUrl,
-        image_url: nftImageUrl,
-        nft_image: nftImageUrl, // 중요: 직접 게이트웨이 URL을 모든 필드에 설정
+        // 항상 resolvedNftId 기반 이미지 URL 사용
+        image: `ipfs://${ipfsHash}/${resolvedNftId}.png`,
+        image_url: `ipfs://${ipfsHash}/${resolvedNftId}.png`,
+        nft_image: `https://tesola.mypinata.cloud/ipfs/${ipfsHash}/${resolvedNftId}.png?_forcereload=true&_t=${Date.now()}`,
         
         // 디버깅 정보
-        _debug_image_source: actualNft ? "actual_nft_data" : "generated",
+        _debug_image_source: "resolved_id_based", // 온체인 ID 기반 소스로 변경
+        _original_db_id: stake.id, // 디버깅용으로 원래 DB ID 유지
         
         // 실제 NFT 데이터 사용 여부 플래그
         using_actual_nft_data: !!actualNft,
@@ -745,75 +773,120 @@ export default async function handler(req, res) {
           attributes: [
             { trait_type: "Tier", value: nftTier }
           ],
-          image: nftImageUrl
+          image: `ipfs://${ipfsHash}/${resolvedNftId}.png`
         }
       };
-    }) : [];
+    }));
+      
+    // 이 부분에서 집계하는 코드는 외부 함수에서 processedStakes 반환 후 계산하도록 수정
+    // 현재 위치에서의 계산은 제거 (함수 반환 후 상위 스코프에서 계산)
     
-    // 소수점 값 포맷팅
-    projectedRewards = parseFloat(projectedRewards.toFixed(2));
-    earnedToDate = parseFloat(earnedToDate.toFixed(2));
+    return processedStakes;
+  };
+  
+  // 온체인 데이터에서 찾은 민트 주소 목록 변수 추출 (디버깅용)
+  // 이미 위에서 정의된 mintAddresses가 온체인 데이터에서 가져온 민트 주소 목록임
+  console.log(`온체인에서 검증된 민트 주소 목록 (${mintAddresses.length}개):`, mintAddresses);
+  
+  // 데이터베이스 스테이킹 데이터가 온체인 데이터와 일치하는지 확인
+  if (stakingData && stakingData.length > 0) {
+    // 데이터베이스에 있는 레코드 중 온체인 데이터에 없는 레코드 필터링
+    // 온체인과 불일치하는 스테이킹 레코드를 찾음
+    const invalidRecords = stakingData.filter(record => 
+      !mintAddresses.includes(record.mint_address)
+    );
     
-    // 실제 스테이킹 데이터만 반환 - 모의 데이터 비활성화
-    if (activeStakes.length === 0) {
-      console.log('스테이킹된 NFT가 없습니다');
-
-      return res.status(200).json(
-        createApiResponse(true, '스테이킹된 NFT가 없습니다', {
-          activeStakes: [],
-          stats: {
-            totalStaked: 0,
-            projectedRewards: 0,
-            earnedToDate: 0
-          },
-          fetchTime: new Date().toISOString()
-        })
-      );
-    }
-    
-    // 데이터 샘플 로깅
-    if (activeStakes && activeStakes.length > 0) {
-      console.log('getStakingStats API - 첫 번째 stake 이미지 필드 확인:', {
-        image: activeStakes[0].image,
-        image_url: activeStakes[0].image_url,
-        nft_image: activeStakes[0].nft_image,
-        ipfs_hash: activeStakes[0].ipfs_hash
+    if (invalidRecords.length > 0) {
+      console.log(`데이터베이스에 온체인과 일치하지 않는 ${invalidRecords.length}개의 레코드가 있습니다`);
+      invalidRecords.forEach(record => {
+        console.log(`불일치 레코드: ID=${record.id}, 민트=${record.mint_address}, 상태=${record.status}`);
       });
       
-      console.log('getStakingStats API - 첫 번째 stake 상세 정보:', {
-        id: activeStakes[0].id,
-        mint_address: activeStakes[0].mint_address,
-        image: activeStakes[0].image,
-        image_url: activeStakes[0].image_url,
-        nft_image: activeStakes[0].nft_image,
-        ipfs_hash: activeStakes[0].ipfs_hash,
-        metadata: activeStakes[0].metadata ? '있음' : '없음',
-        mint_index: activeStakes[0].mint_index
-      });
+      // 온체인 데이터와 일치하는 레코드만 필터링
+      const validRecords = stakingData.filter(record => 
+        mintAddresses.includes(record.mint_address)
+      );
+      
+      console.log(`불일치 레코드 제거 후 ${validRecords.length}개의 유효한 스테이킹 레코드를 사용합니다`);
+      
+      // 필터링된 레코드만 사용
+      stakingData = validRecords;
     }
+  }
+  
+  // 비동기 처리를 위한 호출 - processStakingData 함수 사용
+  const activeStakes = stakingData && stakingData.length > 0 ? 
+    await processStakingData(stakingData) : [];
     
-    // 처리된 데이터 반환
+  // 집계 값 다시 계산 - activeStakes의 모든 항목에서 집계
+  // 이 부분은 processStakingData 함수 내부에서도 계산되지만, 
+  // 여기서 다시 계산하여 확실하게 처리
+  projectedRewards = 0;
+  earnedToDate = 0;
+  
+  activeStakes.forEach(stake => {
+    projectedRewards += parseFloat(stake.total_rewards || 0);
+    earnedToDate += parseFloat(stake.earned_so_far || 0);
+  });
+    
+  // 소수점 값 포맷팅
+  projectedRewards = parseFloat(projectedRewards.toFixed(2));
+  earnedToDate = parseFloat(earnedToDate.toFixed(2));
+    
+  // 실제 스테이킹 데이터만 반환 - 모의 데이터 비활성화
+  if (activeStakes.length === 0) {
+    console.log('스테이킹된 NFT가 없습니다');
+
     return res.status(200).json(
-      createApiResponse(true, '스테이킹 통계를 성공적으로 조회했습니다', {
-        activeStakes,
+      createApiResponse(true, '스테이킹된 NFT가 없습니다', {
+        activeStakes: [],
         stats: {
-          totalStaked: activeStakes.length,
-          projectedRewards,
-          earnedToDate
-        },
-        debug: {
-          image_fields_sample: activeStakes.length > 0 ? {
-            image: activeStakes[0].image,
-            image_url: activeStakes[0].image_url,
-            nft_image: activeStakes[0].nft_image,
-            starts_with_ipfs: activeStakes[0].image?.startsWith('ipfs://')
-          } : null,
-          has_actual_nft_data: activeStakes.some(s => s.using_actual_nft_data),
-          source: "enhanced_getStakingStats"
+          totalStaked: 0,
+          projectedRewards: 0,
+          earnedToDate: 0
         },
         fetchTime: new Date().toISOString()
       })
     );
+  }
+    
+  // 데이터 샘플 로깅
+  if (activeStakes && activeStakes.length > 0) {
+    console.log('getStakingStats API - 일관된 NFT ID 기반 정보:', {
+      resolved_nft_id: activeStakes[0].nft_id,
+      mint_address: activeStakes[0].mint_address,
+      ipfs_image: activeStakes[0].image,
+      gateway_url: activeStakes[0].nft_image
+    });
+      
+    console.log('getStakingStats API - 온체인 데이터 기반 해결됨:', {
+      mint_address: activeStakes[0].mint_address,
+      resolved_id: activeStakes[0].nft_id,
+      original_db_id: activeStakes[0]._original_db_id,
+      image_source: activeStakes[0]._debug_image_source
+    });
+  }
+    
+  // 처리된 데이터 반환
+  return res.status(200).json(
+    createApiResponse(true, '스테이킹 통계를 성공적으로 조회했습니다', {
+      activeStakes,
+      stats: {
+        totalStaked: activeStakes.length,
+        projectedRewards,
+        earnedToDate
+      },
+      debug: {
+        resolved_nft_ids: activeStakes.map(s => s.nft_id),
+        mint_addresses: activeStakes.map(s => s.mint_address),
+        using_consistent_hash_ids: true,
+        id_resolution_method: "deterministic_hash",
+        image_url_format: "ipfs://${hash}/${resolvedNftId}.png",
+        source: "enhanced_onchain_getStakingStats"
+      },
+      fetchTime: new Date().toISOString()
+    })
+  );
     
   } catch (error) {
     console.error('getStakingStats API 오류:', error);
@@ -831,6 +904,9 @@ export default async function handler(req, res) {
 function calculateCurrentAPY(stake) {
   const dailyRate = stake.daily_reward_rate || 25; // 설정되지 않은 경우 기본값 25
   
+  // NaN 방지 - total_rewards가 0이면 0 반환
+  if (!stake.total_rewards) return 0;
+  
   // 기본 APY 계산 (일일 보상 * 365 / 총 보상) * 100
   const baseAPY = (dailyRate * 365 / stake.total_rewards) * 100;
   
@@ -841,5 +917,7 @@ function calculateCurrentAPY(stake) {
   else if (stake.staking_period >= 90) stakingBonus = 40; // +40%
   else if (stake.staking_period >= 30) stakingBonus = 20; // +20%
   
-  return parseFloat((baseAPY * (1 + stakingBonus / 100)).toFixed(2));
+  // NaN, Infinity 방지 - 결과가 숫자가 아니면 0 반환
+  const result = parseFloat((baseAPY * (1 + stakingBonus / 100)).toFixed(2));
+  return isNaN(result) || !isFinite(result) ? 0 : result;
 }

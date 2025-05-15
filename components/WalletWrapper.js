@@ -73,52 +73,143 @@ export default function WalletWrapper({ children }) {
 
   // 월렛 에러 상태 관리
   const [walletError, setWalletError] = useState(null);
+  const [walletStatus, setWalletStatus] = useState({
+    status: 'idle', // idle, connecting, connected, disconnecting, error
+    lastConnected: null,
+    connectionAttempts: 0,
+    message: null
+  });
   
-  // 월렛 에러 핸들러 개선
+  // Wallet state change handler
+  const onWalletStateChange = (walletState) => {
+    const { connecting, connected, disconnecting } = walletState;
+    
+    if (connecting) {
+      setWalletStatus(prev => ({
+        ...prev,
+        status: 'connecting',
+        message: 'Connecting to wallet...',
+        connectionAttempts: prev.connectionAttempts + 1
+      }));
+    } else if (connected) {
+      setWalletStatus({
+        status: 'connected',
+        lastConnected: new Date().toISOString(),
+        connectionAttempts: 0,
+        message: 'Wallet connected successfully'
+      });
+      
+      // Show success notification
+      const notification = {
+        message: 'Wallet Connected Successfully',
+        type: 'success',
+        timestamp: Date.now()
+      };
+      
+      // Display success notification briefly
+      setWalletError(notification);
+      setTimeout(() => {
+        if (setWalletError) setWalletError(null);
+      }, 3000);
+      
+    } else if (disconnecting) {
+      setWalletStatus(prev => ({
+        ...prev,
+        status: 'disconnecting',
+        message: 'Disconnecting wallet...'
+      }));
+    } else if (!connected && walletStatus.status === 'connected') {
+      // Wallet was connected but now it's not
+      setWalletStatus(prev => ({
+        ...prev,
+        status: 'idle',
+        message: 'Wallet disconnected'
+      }));
+    }
+  };
+  
+  // Enhanced wallet error handler
   const onWalletError = (error) => {
     console.error("Wallet connection error:", error);
     
     // 특정 에러 유형에 따른 처리
     let errorMessage = '';
     let errorType = 'error';
+    let fixSuggestion = '';
     
     if (error.name === 'WalletNotReadyError' || 
         (error.message && error.message.includes('not ready'))) {
-      errorMessage = 'This wallet is not installed or not ready. Please install the wallet extension and refresh the page.';
+      errorMessage = 'This wallet is not installed or not ready.';
+      fixSuggestion = 'Please install the wallet extension and refresh the page.';
       errorType = 'warning';
     } else if (error.name === 'WalletWindowClosedError' ||
                (error.message && error.message.includes('closed'))) {
-      errorMessage = 'You closed the wallet connection window. Please try again when you are ready to connect.';
+      errorMessage = 'You closed the wallet connection window.';
+      fixSuggestion = 'Please try again when you are ready to connect.';
       errorType = 'info';
     } else if (error.name === 'WalletTimeoutError' ||
                (error.message && error.message.includes('timeout'))) {
-      errorMessage = 'Wallet connection timed out. Please check your wallet and try again.';
+      errorMessage = 'Wallet connection timed out.';
+      fixSuggestion = 'Please check your wallet extension is responding and try again.';
       errorType = 'warning';
     } else if (error.name === 'WalletConnectionError' ||
                (error.message && error.message.includes('connection'))) {
-      errorMessage = 'Failed to connect to your wallet. Please check your internet connection and try again.';
+      errorMessage = 'Failed to connect to your wallet.';
+      fixSuggestion = 'Please check your internet connection and try again.';
+      errorType = 'error';
+    } else if (error.name === 'WalletAccountError' ||
+               (error.message && error.message.includes('account'))) {
+      errorMessage = 'There was an issue with your wallet account.';
+      fixSuggestion = 'Please ensure your wallet is unlocked and has a valid Solana account.';
+      errorType = 'warning';
+    } else if (error.name === 'WalletNetworkError' ||
+               (error.message && error.message.includes('network'))) {
+      errorMessage = 'Network mismatch detected.';
+      fixSuggestion = 'Please ensure your wallet is connected to the correct Solana network (Mainnet or Devnet).';
+      errorType = 'warning';
+    } else if (error.name === 'WalletDisconnectedError' ||
+               (error.message && error.message.includes('disconnect'))) {
+      errorMessage = 'Your wallet disconnected unexpectedly.';
+      fixSuggestion = 'Please check your wallet extension and reconnect.';
+      errorType = 'warning';
+    } else if (error.name === 'WalletSignTransactionError' ||
+               (error.message && error.message.includes('sign transaction'))) {
+      errorMessage = 'Transaction signing was rejected or failed.';
+      fixSuggestion = 'Please try again and approve the transaction in your wallet.';
       errorType = 'error';
     } else {
-      errorMessage = `Wallet connection error: ${error.message || 'Unknown error'}`;
+      errorMessage = `Wallet error: ${error.message || 'Unknown error'}`;
+      fixSuggestion = 'Please try again or use a different wallet.';
       errorType = 'error';
     }
     
-    // 에러 상태 설정
+    // Update wallet status
+    setWalletStatus(prev => ({
+      ...prev,
+      status: 'error',
+      message: errorMessage
+    }));
+    
+    // Set error state with more detailed info
     setWalletError({
       message: errorMessage,
+      suggestion: fixSuggestion,
       type: errorType,
       timestamp: Date.now()
     });
     
-    // 5초 후 에러 메시지 자동 닫기
+    // Auto-dismiss error after 6 seconds
     setTimeout(() => {
       setWalletError(null);
-    }, 5000);
+    }, 6000);
     
-    // 지갑 모달 다시 열 수 있게 상태 리셋
+    // Reset wallet modal state after a slight delay to prevent immediate reopening
     setTimeout(() => {
-      // 모달 리셋을 위한 상태 업데이트가 필요할 수 있음
-      // 여기서는 특별한 작업이 필요 없음
+      setWalletStatus(prev => ({
+        ...prev,
+        status: 'idle',
+        message: null
+      }));
     }, 500);
   };
 
@@ -134,6 +225,7 @@ export default function WalletWrapper({ children }) {
         wallets={wallets}
         autoConnect={false}
         onError={onWalletError}
+        onStateChange={onWalletStateChange}
       >
         <WalletModalProvider {...walletModalProviderConfig}>
           <>
@@ -169,25 +261,28 @@ export default function WalletWrapper({ children }) {
                 font-family: 'Orbitron', sans-serif !important;
               }
             `}</style>
-            {/* Wallet Error Toast Notification */}
+            {/* Wallet Status & Error Toast Notification */}
             {walletError && (
               <div className="fixed top-4 left-0 right-0 z-50 mx-auto w-full max-w-md px-4 animate-fade-down">
                 <div className={`
-                  bg-gradient-to-r backdrop-blur-lg p-4 rounded-lg shadow-xl animate-pulse-slow
-                  ${walletError.type === 'error' ? 'from-red-900/90 to-red-800/90 border border-red-500/70' : 
-                    walletError.type === 'warning' ? 'from-yellow-900/90 to-amber-800/90 border border-yellow-500/70' : 
-                    'from-blue-900/90 to-blue-800/90 border border-blue-500/70'}
+                  bg-gradient-to-r backdrop-blur-lg p-4 rounded-lg shadow-xl 
+                  ${walletError.type === 'error' ? 'from-red-900/90 to-red-800/90 border border-red-500/70 animate-pulse-slow' : 
+                    walletError.type === 'warning' ? 'from-yellow-900/90 to-amber-800/90 border border-yellow-500/70 animate-pulse-slow' : 
+                    walletError.type === 'success' ? 'from-green-900/90 to-emerald-800/90 border border-green-500/70' :
+                    'from-blue-900/90 to-blue-800/90 border border-blue-500/70 animate-pulse-slow'}
                 `}>
                   <div className="flex items-start">
                     <div className={`flex-shrink-0 
                       ${walletError.type === 'error' ? 'text-red-400' : 
                         walletError.type === 'warning' ? 'text-yellow-400' : 
+                        walletError.type === 'success' ? 'text-green-400' :
                         'text-blue-400'}
                     `}>
                       <div className="relative">
                         <div className="absolute -inset-1 rounded-full blur-xl opacity-70 animate-pulse-slow"
                              style={{ backgroundColor: walletError.type === 'error' ? 'rgba(239,68,68,0.2)' : 
                                                      walletError.type === 'warning' ? 'rgba(245,158,11,0.2)' : 
+                                                     walletError.type === 'success' ? 'rgba(34,197,94,0.2)' :
                                                      'rgba(59,130,246,0.2)' }}>
                         </div>
                         <div className="relative">
@@ -198,6 +293,10 @@ export default function WalletWrapper({ children }) {
                           ) : walletError.type === 'warning' ? (
                             <svg className="h-6 w-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                          ) : walletError.type === 'success' ? (
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           ) : (
                             <svg className="h-6 w-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -212,14 +311,21 @@ export default function WalletWrapper({ children }) {
                         <span className="font-bold">
                           {walletError.type === 'error' ? 'Error: ' : 
                            walletError.type === 'warning' ? 'Warning: ' : 
+                           walletError.type === 'success' ? 'Success: ' :
                            'Info: '}
                         </span>
-                        Wallet Connection Issue
+                        {walletError.type === 'success' ? 'Wallet Connected' : 'Wallet Connection Issue'}
                       </h3>
                       <p className="mt-1 text-xs text-gray-200 animate-fade-in delay-100">
                         {walletError.message}
                       </p>
-                      <div className="mt-2">
+                      {walletError.suggestion && (
+                        <p className="mt-1 text-xs text-gray-300 animate-fade-in delay-200 italic">
+                          {walletError.suggestion}
+                        </p>
+                      )}
+                      
+                      <div className="mt-2 flex justify-between items-center">
                         <button
                           type="button"
                           onClick={() => setWalletError(null)}
@@ -230,12 +336,42 @@ export default function WalletWrapper({ children }) {
                               'bg-red-800 hover:bg-red-700 border-red-600/50 hover:border-red-500 hover:shadow-[0_0_8px_rgba(220,38,38,0.5)]' : 
                               walletError.type === 'warning' ? 
                               'bg-yellow-800 hover:bg-yellow-700 border-yellow-600/50 hover:border-yellow-500 hover:shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 
+                              walletError.type === 'success' ?
+                              'bg-green-800 hover:bg-green-700 border-green-600/50 hover:border-green-500 hover:shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
                               'bg-blue-800 hover:bg-blue-700 border-blue-600/50 hover:border-blue-500 hover:shadow-[0_0_8px_rgba(59,130,246,0.5)]'}
                           `}
                         >
-                          Dismiss
+                          {walletError.type === 'success' ? 'OK' : 'Dismiss'}
                         </button>
+                        
+                        {walletError.type !== 'success' && (
+                          <a 
+                            href="https://t.me/tesolachat" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-white/70 hover:text-white transition-colors ml-4"
+                          >
+                            Need help?
+                          </a>
+                        )}
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Wallet Connecting Indicator */}
+            {walletStatus.status === 'connecting' && !walletError && (
+              <div className="fixed top-4 left-0 right-0 z-50 mx-auto w-full max-w-md px-4 animate-fade-down">
+                <div className="bg-gradient-to-r from-purple-900/90 to-blue-800/90 backdrop-blur-lg p-4 rounded-lg shadow-xl border border-purple-500/50">
+                  <div className="flex items-center">
+                    <div className="mr-3 relative">
+                      <div className="h-8 w-8 rounded-full border-2 border-t-purple-500 border-r-blue-500 border-b-indigo-500 border-l-transparent animate-spin"></div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Connecting to wallet...</p>
+                      <p className="text-xs text-gray-300 mt-1">Please confirm the connection in your wallet extension</p>
                     </div>
                   </div>
                 </div>

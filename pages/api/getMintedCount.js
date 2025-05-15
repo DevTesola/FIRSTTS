@@ -46,27 +46,33 @@ async function handler(req, res) {
       return sendError(res, "Database configuration is missing", 500, "CONFIG_ERROR");
     }
     
-    // 현재 민팅된 NFT 수 조회
+    // 실제 NFT 민팅만 카운트 (프리세일 토큰 제외, 인덱스 있는 것만)
     const { count, error } = await supabase
       .from("minted_nfts")
-      .select("*", { count: "exact", head: true });
+      .select("*", { count: "exact", head: true })
+      .eq("status", "completed")
+      .not("mint_index", "is", null)
+      .or('is_presale.eq.false,is_presale.is.null');
 
     // 에러 처리
     if (error) {
       return handleSupabaseError(res, error, "Failed to fetch minted count");
     }
     
-    // 캐싱 헤더 설정 (민팅 수 정보는 5분 캐싱)
+    // 캐싱 헤더 설정 (민팅 수 정보는 30초 캐싱으로 변경)
     const cacheHeaders = {
-      'Cache-Control': 'public, max-age=300', // 5분 캐싱
+      'Cache-Control': 'public, max-age=30', // 30초 캐싱
     };
+    
+    // 명확한 총 공급량 설정 (환경변수 또는 하드코딩)
+    const TOTAL_NFT_SUPPLY = 1000; // 고정된 NFT 총 공급량
     
     // 성공 응답 반환
     return sendSuccess(res, { 
       count: count || 0,
       supply: {
         minted: count || 0,
-        total: parseInt(process.env.NFT_TOTAL_SUPPLY || "1000") // 총 공급량
+        total: TOTAL_NFT_SUPPLY // 총 공급량 고정
       }
     }, 200, cacheHeaders);
     

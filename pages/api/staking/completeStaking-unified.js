@@ -1,6 +1,7 @@
 /**
  * 통합 NFT 스테이킹 완료 API 엔드포인트
  * 스테이킹 트랜잭션 성공 후 내부 데이터베이스에 기록
+ * NFT ID 추출 로직 개선 및 보상 계산 수정
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -36,7 +37,14 @@ export default async function handler(req, res) {
       walletAddress,
       stakingPeriod,
       accounts,
-      transactionDate
+      transactionDate,
+      // 보상 관련 필드 추가
+      nftTier,
+      nftName,  // NFT 이름 (예: "SOLARA #0019")
+      rewardDetails,
+      // 추가 메타데이터 필드
+      rawTierValue,
+      stakingStartTime
     } = req.body;
     
     // 필수 파라미터 검증
@@ -114,6 +122,149 @@ export default async function handler(req, res) {
     } else {
       console.log('새 스테이킹 기록 생성 중');
       
+      // NFT ID 추출 로직 개선 (실제 NFT 고유 식별자 추출)
+      let nftId = null;
+      
+      // 1. NFT 이름에서 ID 추출 시도 (가장 정확한 방법)
+      if (nftName) {
+        const nameMatch = nftName.match(/#\s*(\d+)/);
+        if (nameMatch && nameMatch[1]) {
+          nftId = nameMatch[1];
+          console.log(`NFT 이름에서 ID 추출 성공: ${nftId} (원본 이름: ${nftName})`);
+        }
+      }
+      
+      // 2. 민트 주소가 있는 경우, minted_nfts 테이블에서 기존 데이터 확인
+      if (!nftId && mintAddress) {
+        const { data: nftData, error: nftError } = await supabase
+          .from('minted_nfts')
+          .select('*')
+          .eq('mint_address', mintAddress)
+          .single();
+        
+        if (!nftError && nftData) {
+          nftId = nftData.mint_index || nftData.id;
+          console.log(`Minted NFTs 테이블에서 ID 추출: ${nftId}`);
+        }
+      }
+      
+      // 3. ID를 찾지 못했다면 민트 주소 해시 기반 ID 생성
+      if (!nftId && mintAddress) {
+        let mintAddressHash = 0;
+        for (let i = 0; i < mintAddress.length; i++) {
+          mintAddressHash = ((mintAddressHash << 5) - mintAddressHash) + mintAddress.charCodeAt(i);
+          mintAddressHash = mintAddressHash & mintAddressHash; // 32비트 정수로 변환
+        }
+        // 1~999 사이의 결정론적 숫자 생성
+        nftId = (Math.abs(mintAddressHash) % 999 + 1).toString();
+        console.log(`Mint 주소 해시에서 ID 생성: ${nftId}`);
+      }
+      
+      // 4자리 형식으로 포맷팅
+      nftId = String(nftId).padStart(4, '0');
+      console.log(`최종 사용 NFT ID: ${nftId}`);
+      
+      // 이미지 URL 생성
+      const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
+      const ipfsUrl = `ipfs://${IMAGES_CID}/${nftId}.png`;
+      const gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${IMAGES_CID}/${nftId}.png`;
+      
+      // 보상 계산 로직
+      let dailyRewardRate = 25; // 기본값 (COMMON)
+      let totalRewards = 0;
+      let standardizedTier = 'COMMON';
+      
+      // 클라이언트에서 보상 정보가 제공되면 사용
+      if (rewardDetails && rewardDetails.baseRate) {
+        dailyRewardRate = rewardDetails.baseRate;
+        // 클라이언트가 제공한 totalRewards 값 사용, 하지만 0인 경우 직접 계산
+        if (rewardDetails.totalRewards && rewardDetails.totalRewards > 0) {
+          totalRewards = rewardDetails.totalRewards;
+        } else {
+          // totalRewards가 0이거나 없는 경우 직접 계산
+          const stakingPeriodNum = parseInt(stakingPeriod, 10);
+          totalRewards = Math.floor(dailyRewardRate * stakingPeriodNum);
+        }
+      } else {
+        // 보상 정보가 없으면 직접 계산
+        const dailyRewardsByTier = {
+          'LEGENDARY': 200,
+          'EPIC': 100,
+          'RARE': 50,
+          'COMMON': 25
+        };
+        
+        if (nftTier) {
+          // NFT 등급 표준화
+          standardizedTier = nftTier.toUpperCase();
+          if (standardizedTier.includes('LEGEND')) standardizedTier = 'LEGENDARY';
+          else if (standardizedTier.includes('EPIC')) standardizedTier = 'EPIC';
+          else if (standardizedTier.includes('RARE')) standardizedTier = 'RARE';
+          else standardizedTier = 'COMMON';
+        }
+        
+        // 일일 보상 계산
+        dailyRewardRate = dailyRewardsByTier[standardizedTier] || 25;
+        
+        // 스테이킹 기간 승수 (장기 스테이킹 보너스)
+        let multiplier = 1.0;
+        const stakingPeriodNum = parseInt(stakingPeriod, 10);
+        
+        if (stakingPeriodNum >= 365) multiplier = 2.0;      // 365+ days: 2x
+        else if (stakingPeriodNum >= 180) multiplier = 1.7; // 180+ days: 1.7x
+        else if (stakingPeriodNum >= 90) multiplier = 1.4;  // 90+ days: 1.4x
+        else if (stakingPeriodNum >= 30) multiplier = 1.2;  // 30+ days: 1.2x
+        
+        // 총 보상 계산
+        totalRewards = Math.floor(dailyRewardRate * stakingPeriodNum * multiplier);
+      }
+      
+      // 항상 총 보상이 0보다 크도록 설정 (DB 제약조건)
+      if (totalRewards <= 0) {
+        const stakingPeriodNum = parseInt(stakingPeriod, 10);
+        totalRewards = dailyRewardRate * stakingPeriodNum;
+        if (totalRewards <= 0) totalRewards = 25 * stakingPeriodNum;
+        if (totalRewards <= 0) totalRewards = 25 * 7; // 최소 1주일치 기본 보상
+      }
+      
+      console.log('스테이킹 보상 계산:', {
+        tier: standardizedTier,
+        dailyRewardRate,
+        totalRewards,
+        stakingPeriod,
+        nftId,
+        mintAddress
+      });
+      
+      // NFT 식별자 정보를 로그로 출력하여 확인
+      console.log(`NFT ${mintAddress} 스테이킹 완료 - ID: ${nftId}, 메타데이터 이름: ${metadata.name}`);
+      
+      // 문제해결: 먼저 기존 데이터베이스에서 오래된 레코드를 삭제
+      // 동일한 mint_address로 들어오는 경우 기존 데이터 삭제 후 새로 삽입
+      const { error: deleteError } = await supabase
+        .from('nft_staking')
+        .delete()
+        .eq('mint_address', mintAddress)
+        .eq('status', 'staked');
+      
+      if (deleteError) {
+        console.log(`기존 스테이킹 레코드 삭제 오류(maysingleSingle이면 무시):`, deleteError);
+      }
+      
+      // NFT 메타데이터 생성
+      const metadata = {
+        name: nftName || `SOLARA #${nftId}`,
+        symbol: "SOLARA",
+        description: "SOLARA NFT Collection",
+        image: ipfsUrl, // ipfs:// 프로토콜 URL 사용
+        attributes: [
+          {
+            trait_type: "Tier",
+            value: standardizedTier
+          }
+        ]
+      };
+      
       // 새 스테이킹 생성
       const { data: newStake, error: insertError } = await supabase
         .from('nft_staking')
@@ -125,9 +276,23 @@ export default async function handler(req, res) {
           release_date: releaseDate.toISOString(),
           staking_period: stakingPeriod,
           status: 'staked',
+          nft_tier: standardizedTier,
+          daily_reward_rate: dailyRewardRate,
+          total_rewards: totalRewards,
+          claimed_rewards: 0,
+          earned_so_far: 0,
           created_at: now.toISOString(),
           updated_at: now.toISOString(),
-          api_version: 'unified-v1'
+          api_version: 'unified-v1',
+          // 추가 필드 - NFT ID 및 이미지 URL
+          nft_id: nftId,
+          staked_nft_id: nftId,
+          nft_name: nftName || `SOLARA #${nftId}`,
+          image: ipfsUrl,         // ipfs:// 프로토콜 URL
+          image_url: ipfsUrl,     // ipfs:// 프로토콜 URL (중복 저장)
+          nft_image: gatewayUrl,  // 게이트웨이 직접 URL
+          ipfs_hash: IMAGES_CID,  // 이미지 CID
+          metadata: metadata      // 전체 메타데이터 JSON
         })
         .select()
         .single();

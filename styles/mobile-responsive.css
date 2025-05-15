@@ -39,33 +39,49 @@
       padding: 1rem !important;
     }
     
-    /* Table responsiveness */
-    table, thead, tbody, th, td, tr {
+    /* Table responsiveness - Enhanced for better mobile experience */
+    table.responsive-table, 
+    .responsive-table thead, 
+    .responsive-table tbody, 
+    .responsive-table th, 
+    .responsive-table td, 
+    .responsive-table tr {
       display: block;
     }
     
-    thead tr {
+    .responsive-table thead tr {
       position: absolute;
       top: -9999px;
       left: -9999px;
     }
     
-    tr {
+    .responsive-table tr {
       margin-bottom: 1rem;
       border-bottom: 1px solid rgba(107, 114, 128, 0.3);
+      background-color: rgba(30, 41, 59, 0.3);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
-    td {
+    .responsive-table td {
       position: relative;
       padding-left: 50% !important;
+      padding-top: 0.75rem !important;
+      padding-bottom: 0.75rem !important;
       text-align: right !important;
-      min-height: 40px;
+      min-height: 44px;
       display: flex !important;
       align-items: center !important;
       justify-content: flex-end !important;
+      border-bottom: 1px solid rgba(75, 85, 99, 0.2);
     }
     
-    td:before {
+    .responsive-table td:last-child {
+      border-bottom: none;
+    }
+    
+    .responsive-table td:before {
       position: absolute;
       left: 12px;
       width: 45%;
@@ -73,6 +89,60 @@
       text-align: left;
       font-weight: bold;
       content: attr(data-label);
+      display: flex;
+      align-items: center;
+      height: 100%;
+      color: rgba(209, 213, 219, 1.0);
+    }
+    
+    /* Standard table responsiveness for non-specific tables */
+    table:not(.keep-structure), 
+    table:not(.keep-structure) thead, 
+    table:not(.keep-structure) tbody, 
+    table:not(.keep-structure) th, 
+    table:not(.keep-structure) td, 
+    table:not(.keep-structure) tr {
+      display: block;
+    }
+    
+    table:not(.keep-structure) thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+    
+    table:not(.keep-structure) tr {
+      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background-color: rgba(30, 41, 59, 0.3);
+      border-bottom: 1px solid rgba(107, 114, 128, 0.3);
+    }
+    
+    table:not(.keep-structure) td {
+      position: relative;
+      padding-left: 50% !important;
+      text-align: right !important;
+      min-height: 40px;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+    }
+    
+    table:not(.keep-structure) td:last-child {
+      border-bottom: none;
+    }
+    
+    table:not(.keep-structure) td:before {
+      position: absolute;
+      left: 12px;
+      width: 45%;
+      padding-right: 10px;
+      text-align: left;
+      font-weight: bold;
+      content: attr(data-label);
+      color: rgba(209, 213, 219, 1.0);
     }
     
     /* Increase tap targets */
@@ -208,4 +278,127 @@
     border-radius: 0.5rem;
     margin-top: 0.5rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Table horizontal scroll indicator - Shows when tables might scroll horizontally */
+  .table-container {
+    position: relative;
+    overflow-x: auto;
+    border-radius: 0.5rem;
+  }
+  
+  .table-container::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 20px; 
+    background: linear-gradient(to right, rgba(0,0,0,0), rgba(139, 92, 246, 0.3));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    animation: pulse 2s infinite;
+  }
+  
+  .table-container:not(.no-scroll)::after {
+    opacity: 1;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.2; }
+    50% { opacity: 0.5; }
+    100% { opacity: 0.2; }
+  }
+  
+  /* Swipe hint for tables - Shows initially and then fades */
+  .swipe-hint {
+    display: none;
+  }
+  
+  @media (max-width: 640px) {
+    .swipe-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      background: rgba(139, 92, 246, 0.3);
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      animation: fadeInOut 5s forwards;
+    }
+  }
+  
+  @keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+  }
+  
+  /* Improved mobile card layout for tables - Applied to specific tables */
+  .mobile-card-table {
+    display: block;
+    width: 100%;
+  }
+  
+  .mobile-card-table thead {
+    display: none;
+  }
+  
+  .mobile-card-table tr {
+    margin-bottom: 1rem;
+    display: block;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background-color: rgba(30, 41, 59, 0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-card-table td {
+    display: flex !important;
+    padding: 0.75rem !important;
+    align-items: center;
+    border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+    min-height: 44px;
+  }
+  
+  .mobile-card-table td:before {
+    content: attr(data-label);
+    font-weight: 600;
+    width: 40%;
+    color: rgba(209, 213, 219, 0.9);
+  }
+  
+  .mobile-card-table td:last-child {
+    border-bottom: none;
+  }
+  
+  /* Only apply special mobile card styling at mobile widths */
+  @media (min-width: 641px) {
+    .mobile-card-table {
+      display: table;
+    }
+    
+    .mobile-card-table thead {
+      display: table-header-group;
+    }
+    
+    .mobile-card-table tr {
+      display: table-row;
+      margin-bottom: 0;
+      background-color: transparent;
+      box-shadow: none;
+    }
+    
+    .mobile-card-table td {
+      display: table-cell !important;
+      padding: 0.75rem !important;
+      border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+    }
+    
+    .mobile-card-table td:before {
+      display: none;
+    }
   }

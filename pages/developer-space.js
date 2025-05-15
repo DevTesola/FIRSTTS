@@ -183,9 +183,9 @@ export default function DeveloperSpace() {
       <Layout>
         <div className="max-w-6xl mx-auto px-4 py-12 text-white">
           {/* Hero Section */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 px-4 sm:px-0">
             <div className="inline-block relative">
-              <h1 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text animate-pulse-slow"
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text animate-pulse-slow"
                 style={{
                   backgroundImage: 'linear-gradient(to right, #3b82f6, #8b5cf6, #d946ef)',
                   WebkitBackgroundClip: 'text',
@@ -194,7 +194,7 @@ export default function DeveloperSpace() {
                 }}>
                 Developer's Space
               </h1>
-              <div className="absolute -top-6 -right-8 text-3xl animate-bounce-slow">
+              <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-8 text-2xl sm:text-3xl animate-bounce-slow">
                 🧑‍💻
               </div>
             </div>
@@ -203,33 +203,33 @@ export default function DeveloperSpace() {
               <div className="h-1 w-24 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mb-6"></div>
             </div>
             
-            <p className="text-xl text-gray-200 max-w-3xl mx-auto font-light mb-4">
+            <p className="text-base sm:text-lg md:text-xl text-gray-200 max-w-3xl mx-auto font-light mb-4">
               Welcome to the secret lab where TESOLA magic happens. Witness the reality behind the blockchain innovation.
             </p>
             
-            <div className="flex flex-wrap justify-center gap-2 mb-3">
-              <span className="text-sm bg-gradient-to-r from-blue-900/40 to-blue-700/40 px-3 py-1 rounded-full border border-blue-500/30 flex items-center hover-shake cursor-pointer">
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:flex md:flex-wrap justify-center gap-2 mb-3">
+              <span className="text-xs sm:text-sm bg-gradient-to-r from-blue-900/40 to-blue-700/40 px-2 sm:px-3 py-1 rounded-full border border-blue-500/30 flex items-center hover-shake cursor-pointer">
                 <span className="mr-1">🚗</span>
                 <span>TESLA MAXI SINCE 2016</span>
               </span>
               
-              <span className="text-sm bg-gradient-to-r from-purple-900/40 to-purple-700/40 px-3 py-1 rounded-full border border-purple-500/30 flex items-center hover-wiggle cursor-pointer">
+              <span className="text-xs sm:text-sm bg-gradient-to-r from-purple-900/40 to-purple-700/40 px-2 sm:px-3 py-1 rounded-full border border-purple-500/30 flex items-center hover-wiggle cursor-pointer">
                 <span className="mr-1">⚡</span>
                 <span>SOLANA BELIEVER</span>
               </span>
               
-              <span className="text-sm bg-gradient-to-r from-green-900/40 to-blue-900/40 px-3 py-1 rounded-full border border-green-500/30 flex items-center hover-shake cursor-pointer">
+              <span className="text-xs sm:text-sm bg-gradient-to-r from-green-900/40 to-blue-900/40 px-2 sm:px-3 py-1 rounded-full border border-green-500/30 flex items-center hover-shake cursor-pointer">
                 <span className="mr-1">💻</span>
                 <span>10+ YRS DEV (Trust me bro)</span>
               </span>
               
-              <span className="text-sm bg-gradient-to-r from-red-900/40 to-yellow-900/40 px-3 py-1 rounded-full border border-red-500/30 flex items-center hover-wiggle cursor-pointer">
+              <span className="text-xs sm:text-sm bg-gradient-to-r from-red-900/40 to-yellow-900/40 px-2 sm:px-3 py-1 rounded-full border border-red-500/30 flex items-center hover-wiggle cursor-pointer">
                 <span className="mr-1">🧠</span>
-                <span>TSLA HODLER SINCE 2018</span>
+                <span>TSL HODLER SINCE 2018</span>
               </span>
             </div>
             
-            <div className="inline-block bg-gradient-to-r from-gray-900/50 to-gray-800/50 p-2 rounded text-sm text-gray-400 border border-gray-700/50 relative hover-rotate-3d">
+            <div className="inline-block bg-gradient-to-r from-gray-900/50 to-gray-800/50 p-2 rounded text-xs sm:text-sm text-gray-400 border border-gray-700/50 relative hover-rotate-3d max-w-xs sm:max-w-none mx-auto">
               <span className="absolute -top-2 -right-2 text-xs bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse">OFFICIAL</span>
               "Coding by day, driving my Tesla by night. This is the way." 
             </div>
@@ -253,9 +253,9 @@ export default function DeveloperSpace() {
             </div>
             
             <div className="relative">
-              <div className="flex justify-center items-center mb-6">
-                <div className="text-3xl mr-3">👨‍💻</div>
-                <h2 className="text-3xl font-bold text-center text-transparent bg-clip-text"
+              <div className="flex flex-wrap justify-center items-center mb-6">
+                <div className="text-2xl sm:text-3xl mr-2 sm:mr-3">👨‍💻</div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center text-transparent bg-clip-text"
                   style={{
                     backgroundImage: 'linear-gradient(to right, #60a5fa, #a78bfa)',
                     WebkitBackgroundClip: 'text',
@@ -263,10 +263,10 @@ export default function DeveloperSpace() {
                   }}>
                   The Reality of Coding
                 </h2>
-                <div className="text-3xl ml-3">💻</div>
+                <div className="text-2xl sm:text-3xl ml-2 sm:ml-3">💻</div>
               </div>
               
-              <div className="absolute -top-4 right-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-md transform rotate-12 animate-pulse">
+              <div className="absolute -top-2 right-2 sm:-top-4 sm:right-4 bg-red-600 text-white text-xs font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg shadow-md transform rotate-12 animate-pulse">
                 REAL FOOTAGE!
               </div>
               
@@ -306,23 +306,23 @@ export default function DeveloperSpace() {
               </div>
               
               {/* Control panel */}
-              <div className="flex items-center justify-center space-x-4 mb-8">
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-8">
                 <button 
                   onClick={toggleVideo}
-                  className="flex items-center bg-blue-900/30 hover:bg-blue-700/50 text-white px-4 py-2 rounded-lg transition-colors shadow-md"
+                  className="flex items-center bg-blue-900/30 hover:bg-blue-700/50 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors shadow-md"
                 >
-                  <span className="text-lg mr-2">{isPlaying ? "⏸️" : "▶️"}</span>
+                  <span className="text-lg mr-1 sm:mr-2">{isPlaying ? "⏸️" : "▶️"}</span>
                   <span>{isPlaying ? "Pause" : "Play"}</span>
                 </button>
                 
                 <div className="flex items-center text-gray-300 cursor-pointer">
-                  <span className="text-lg mr-2">⏱️</span>
-                  <span className="text-sm">03:42 / 05:17</span>
+                  <span className="text-lg mr-1 sm:mr-2">⏱️</span>
+                  <span className="text-xs sm:text-sm">03:42 / 05:17</span>
                 </div>
                 
                 <div className="flex items-center text-gray-300 cursor-pointer hover:text-blue-400 transition-colors">
-                  <span className="text-lg mr-2">🔄</span>
-                  <span className="text-sm">Loop</span>
+                  <span className="text-lg mr-1 sm:mr-2">🔄</span>
+                  <span className="text-xs sm:text-sm">Loop</span>
                 </div>
               </div>
               
@@ -427,13 +427,13 @@ export default function DeveloperSpace() {
           )}
 
           {/* Audio Tapes Section */}
-          <div className="mb-16">
+          <div className="mb-16 px-4 sm:px-0">
             <div className="text-center mb-10">
               <div className="relative inline-block">
-                <div className="absolute -top-8 right-0 transform rotate-12 bg-gradient-to-r from-blue-600 to-pink-600 text-white text-xs px-3 py-1 rounded-lg shadow-md animate-pulse-slow z-10">
+                <div className="absolute -top-6 sm:-top-8 right-0 transform rotate-12 bg-gradient-to-r from-blue-600 to-pink-600 text-white text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg shadow-md animate-pulse-slow z-10">
                   NEW DROP!
                 </div>
-                <h2 className="text-3xl font-bold text-transparent bg-clip-text"
+                <h2 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text"
                   style={{
                     backgroundImage: 'linear-gradient(to right, #60a5fa, #a78bfa, #ec4899)',
                     WebkitBackgroundClip: 'text',
@@ -442,11 +442,11 @@ export default function DeveloperSpace() {
                   Developer's Mixtapes
                 </h2>
               </div>
-              <p className="text-gray-300 mt-4">
+              <p className="text-gray-300 mt-4 text-sm sm:text-base">
                 Listen to the beats that power our development process
               </p>
-              <div className="mt-2 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg inline-block px-4 py-1 border border-blue-500/20">
-                <span className="text-sm text-blue-300 animate-pulse-slow">First Tape: TESOLA Anthem — The Dev's Journey</span>
+              <div className="mt-2 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg inline-block px-3 sm:px-4 py-1 border border-blue-500/20">
+                <span className="text-xs sm:text-sm text-blue-300 animate-pulse-slow">First Tape: TESOLA Anthem — The Dev's Journey</span>
               </div>
               <div className="mt-3 text-xs text-gray-400">
                 <span className="bg-blue-900/50 px-2 py-1 rounded">NFT HOLDERS EXCLUSIVE</span> • DRM-protected audio streaming
@@ -593,16 +593,17 @@ export default function DeveloperSpace() {
           </div>
           
           {/* Developer's Quote */}
-          <div className="text-center mb-16 relative">
-            <div className="absolute -top-6 -left-6 text-7xl text-blue-500/30 font-serif">"</div>
-            <div className="absolute -bottom-6 -right-6 text-7xl text-blue-500/30 font-serif">"</div>
+          <div className="text-center mb-16 relative px-4 sm:px-0">
+            {/* Quote marks - hidden on smallest screens */}
+            <div className="absolute -top-6 -left-6 text-5xl sm:text-7xl text-blue-500/30 font-serif hidden sm:block">"</div>
+            <div className="absolute -bottom-6 -right-6 text-5xl sm:text-7xl text-blue-500/30 font-serif hidden sm:block">"</div>
             
-            <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-8 rounded-xl border border-blue-500/20 transform hover:rotate-1 transition-transform duration-500">
+            <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-4 sm:p-8 rounded-xl border border-blue-500/20 transform hover:rotate-1 transition-transform duration-500">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                 DEVELOPER'S WISDOM
               </div>
               
-              <blockquote className="text-2xl italic font-light text-gray-300 max-w-3xl mx-auto">
+              <blockquote className="text-lg sm:text-xl md:text-2xl italic font-light text-gray-300 max-w-3xl mx-auto">
                 "The difference between a good blockchain project and a great one is not just the code, but the love and memes we put into it along the way."
               </blockquote>
               
@@ -625,7 +626,7 @@ export default function DeveloperSpace() {
                     <span className="text-xs bg-blue-900/40 px-2 py-0.5 rounded-full text-blue-300 border border-blue-500/20">Sol Maxi</span>
                     <span className="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-300 border border-gray-600/20">10+ YOE</span>
                     <span className="text-xs bg-pink-900/40 px-2 py-0.5 rounded-full text-pink-300 border border-pink-500/20">Meme Lord</span>
-                    <span className="text-xs bg-green-900/40 px-2 py-0.5 rounded-full text-green-300 border border-green-500/20">TSLA Hodler</span>
+                    <span className="text-xs bg-green-900/40 px-2 py-0.5 rounded-full text-green-300 border border-green-500/20">TSL Hodler</span>
                   </div>
                 </div>
               </div>
@@ -833,7 +834,7 @@ export default function DeveloperSpace() {
           </div>
 
           {/* Back to Home */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 px-4 sm:px-0">
             <div className="relative inline-block group">
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-2 py-1 rounded whitespace-nowrap backdrop-blur-sm">
                 Return to main page
@@ -841,7 +842,7 @@ export default function DeveloperSpace() {
               
               <Link 
                 href="/home" 
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-800/80 to-purple-800/80 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-blue-500/30 group-hover:animate-pulse"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-800/80 to-purple-800/80 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-blue-500/30 group-hover:animate-pulse"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />

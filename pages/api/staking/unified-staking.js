@@ -221,7 +221,7 @@ export default async function handler(req, res) {
         console.log('NFT 메타데이터 가져오는 중:', mintAddress);
         const { data: nftData } = await supabase
           .from('minted_nfts')
-          .select('metadata, name')
+          .select('id, metadata, name, mint_index')
           .eq('mint_address', mintAddress)
           .maybeSingle();
         
@@ -287,12 +287,34 @@ export default async function handler(req, res) {
     // 보상 계산
     const rewardCalculation = calculateEstimatedRewards(nftTier, stakingPeriodNum);
     
+    // 실제 NFT ID 확인 - 간소화된 방식
+    let realNftId = null;
+    try {
+      // 민트 주소에서 간단하게 ID 생성
+      realNftId = mintAddress.slice(0, 6);
+      console.log('스테이킹 준비: 민트 주소에서 ID 생성:', realNftId);
+      
+      // nftData가 있으면 그 값도 확인
+      if (typeof nftData !== 'undefined' && nftData) {
+        if (nftData.id) {
+          realNftId = nftData.id;
+          console.log('스테이킹 준비: DB의 NFT ID 사용:', realNftId);
+        } else if (nftData.mint_index) {
+          realNftId = nftData.mint_index;
+          console.log('스테이킹 준비: mint_index 사용:', realNftId);
+        }
+      }
+    } catch (e) {
+      console.warn('NFT ID 확인 중 오류 (무시됨):', e);
+    }
+    
     // 응답 객체 구성
     const response = {
       // 지갑 및 NFT 정보
       wallet,
       mintAddress,
       nftName: nftName || `NFT #${mintAddress.slice(0, 6)}`,
+      nftId: realNftId, // 실제 NFT ID 추가
       
       // 스테이킹 정보
       stakingPeriod: stakingPeriodNum,

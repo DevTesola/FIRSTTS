@@ -1,0 +1,211 @@
+/* Mobile-focused responsive styles */
+
+/* Base adjustments for small screens */
+@media (max-width: 640px) {
+    /* Typography */
+    .neon-title {
+      font-size: 3rem !important; /* Smaller title on mobile */
+      line-height: 1.2 !important; /* Tighter line height for better fit */
+    }
+    
+    /* Buttons */
+    .mint-button {
+      font-size: 1.25rem !important;
+      padding: 0.75rem 1.5rem !important;
+      width: 100% !important; /* Full width on mobile */
+      max-width: 280px !important; /* Prevent overly wide buttons */
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    
+    /* Layout improvements */
+    .wallet-button-container {
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+    
+    /* NFT Cards grid adjustment */
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.gap-6 {
+      grid-template-columns: 1fr !important; /* Force single column on mobile */
+      gap: 1rem !important; /* Tighter gap */
+    }
+    
+    /* Make modals more compact */
+    .fixed.inset-0.bg-black\/80.flex.items-center.justify-center.z-50 > div {
+      width: 95% !important;
+      max-height: 85vh !important;
+      overflow-y: auto !important;
+      padding: 1rem !important;
+    }
+    
+    /* Table responsiveness */
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+    
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+    
+    tr {
+      margin-bottom: 1rem;
+      border-bottom: 1px solid rgba(107, 114, 128, 0.3);
+    }
+    
+    td {
+      position: relative;
+      padding-left: 50% !important;
+      text-align: right !important;
+      min-height: 40px;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+    }
+    
+    td:before {
+      position: absolute;
+      left: 12px;
+      width: 45%;
+      padding-right: 10px;
+      text-align: left;
+      font-weight: bold;
+      content: attr(data-label);
+    }
+    
+    /* Increase tap targets */
+    button, a {
+      min-height: 44px;
+      min-width: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Video player controls */
+    .video-player-container button {
+      min-width: 44px;
+      min-height: 44px;
+      margin: 0 4px;
+    }
+    
+    /* Header adjustments */
+    .flex.items-center.justify-between.px-6.py-4 {
+      padding: 0.75rem 1rem !important;
+    }
+    
+    /* Footer spacing */
+    .flex.justify-center.space-x-8.mt-8 {
+      flex-wrap: wrap !important;
+      gap: 1rem !important;
+    }
+    
+    /* Form elements */
+    input, textarea, select {
+      font-size: 16px !important; /* Prevent iOS zoom on focus */
+      padding: 0.75rem !important;
+    }
+    
+    /* Fix spacing in Wallet UI */
+    .wallet-adapter-button {
+      min-height: 48px;
+      padding: 0.75rem 1.25rem !important;
+      font-size: 1rem !important;
+    }
+  }
+  
+  /* Additional adjustments for extra small screens */
+  @media (max-width: 380px) {
+    .neon-title {
+      font-size: 2.5rem !important;
+    }
+    
+    /* Stack footer links on very small screens */
+    .flex.justify-center.space-x-8.mt-8 {
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 1rem !important;
+    }
+    
+    .flex.justify-center.space-x-8.mt-8 > * {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+    
+    /* NFT details page */
+    .flex.flex-col.md\:flex-row.gap-8 {
+      gap: 2rem !important;
+    }
+    
+    /* Shrink header on tiny screens */
+    .text-4xl.font-bold.mb-8 {
+      font-size: 1.75rem !important;
+      margin-bottom: 1rem !important;
+    }
+  }
+  
+  /* Fix wallet modal on mobile */
+  @media (max-width: 640px) {
+    .wallet-adapter-modal-wrapper {
+      width: 95% !important;
+      max-width: 360px !important;
+      margin: 0 auto !important;
+      border-radius: 12px !important;
+    }
+    
+    .wallet-adapter-button {
+      width: 100% !important;
+    }
+    
+    .wallet-adapter-modal-list {
+      grid-template-columns: 1fr !important; /* Stack wallet options */
+      padding: 1rem !important;
+      gap: 0.5rem !important;
+    }
+    
+    .wallet-adapter-modal-button-close {
+      top: 16px !important;
+      right: 16px !important;
+      padding: 8px !important;
+    }
+  }
+  
+  /* Fix for iOS safari viewport height issues */
+  @supports (-webkit-touch-callout: none) {
+    .min-h-screen {
+      min-height: -webkit-fill-available;
+    }
+    
+    .h-screen, .h-full {
+      height: -webkit-fill-available;
+    }
+  }
+  
+  /* Common mobile adjustments that apply to all screen sizes */
+  button, a, .wallet-adapter-button {
+    min-height: 44px; /* Minimum recommended touch target size */
+  }
+  
+  /* Improve tap area for close buttons */
+  .fixed.inset-0 button[aria-label="Close modal"],
+  .fixed.inset-0 button[aria-label="Close"],
+  button.absolute.top-4.right-4 {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 60; /* Ensure it's clickable */
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 9999px;
+  }
+  
+  /* Enhance the mobile navigation experience */
+  .md\:hidden.bg-gray-900.px-6.py-4.flex.flex-col.space-y-2.animate-fade-in {
+    padding: 0.5rem !important;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }

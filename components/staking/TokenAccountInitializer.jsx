@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Transaction } from "@solana/web3.js";
 import { GlassButton, SecondaryButton } from "../Buttons";
+import { debugLog, debugError } from "../../utils/debugUtils";
 
 /**
  * Enhanced Token Account Initializer Component
@@ -61,11 +62,11 @@ const TokenAccountInitializer = ({
       const diagData = await diagnosticResponse.json();
       setDiagnosticInfo(diagData.data);
 
-      console.log("Account diagnostic results:", diagData.data);
+      debugLog("TokenAccountInitializer", "Account diagnostic results:", diagData.data);
 
       // If all accounts are already properly initialized, we can proceed to staking
       if (diagData.data.accountReadiness.readyForStaking) {
-        console.log("All accounts are already initialized and ready for staking");
+        debugLog("TokenAccountInitializer", "All accounts are already initialized and ready for staking");
         setStatus("success");
 
         // Call the success callback to continue with staking
@@ -132,7 +133,7 @@ const TokenAccountInitializer = ({
           let initializationSuccess = false;
 
           if (!submitResponse.ok) {
-            console.warn("Standard initialization failed, trying direct initialization method");
+            debugLog("TokenAccountInitializer", "Standard initialization failed, trying direct initialization method");
 
             // If standard initialization fails, try the direct initialization method
             setStatus("alternate-token-init");
@@ -286,7 +287,7 @@ const TokenAccountInitializer = ({
       }
 
     } catch (err) {
-      console.error("Account initialization error:", err);
+      debugError("TokenAccountInitializer", "Account initialization error:", err);
       setError(err.message || "Failed to initialize accounts");
       setStatus("error");
 

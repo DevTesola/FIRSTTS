@@ -1,6 +1,6 @@
 import StakingComponent from "../components/StakingComponent";
 import Head from "next/head";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Layout from "../components/Layout";
@@ -21,6 +21,19 @@ import { fetchAPI, getErrorMessage } from "../utils/apiClient";
 import { getStakingStats as fetchEnhancedStakingStats } from "../services/stakingService";
 import EnhancedStakingButton from "../components/staking/EnhancedStakingButton";
 
+// Simple loading placeholder component
+const LoadingPlaceholder = ({ height = "200px", text = "Loading..." }) => (
+  <div 
+    className="flex items-center justify-center bg-gray-800/50 rounded-xl border border-purple-500/20 p-4"
+    style={{ height }}
+  >
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+      <p className="text-gray-300">{text}</p>
+    </div>
+  </div>
+);
+
 export default function StakingPage() {
   const { publicKey, connected } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,9 +51,18 @@ export default function StakingPage() {
   // Load staking stats when wallet connects
   useEffect(() => {
     if (connected && publicKey) {
-      fetchStakingStats();
-      fetchUserNFTs();
-      fetchGovernanceData();
+      // 각 함수를 setTimeout으로 래핑하여 실행 순서 제어 및 렌더링 루프 분리
+      setTimeout(() => {
+        fetchStakingStats();
+      }, 100);
+      
+      setTimeout(() => {
+        fetchUserNFTs();
+      }, 300);
+      
+      setTimeout(() => {
+        fetchGovernanceData();
+      }, 500);
     } else {
       // Reset states when wallet disconnects
       setStakingStats(null);
@@ -126,7 +148,7 @@ export default function StakingPage() {
     }
   };
   
-  // Fetch user's staking stats using enhanced service function
+  // Fetch user's staking stats with fallback to on-chain data if service fails
   const fetchStakingStats = async () => {
     if (!publicKey) return;
     
@@ -134,9 +156,104 @@ export default function StakingPage() {
     setError(null); // Clear any previous errors
     
     try {
-      console.log("Fetching staking stats from service...");
+      console.log("Fetching staking stats...");
       
-      // 중앙화된 서비스 함수 사용
+      // 완전히 새로운 방식의 온체인 데이터 API 시도
+      try {
+        console.log("모든 스테이킹된 NFT를 가져오는 Anchor 기반 API 시도...");
+        
+        // 새롭게 개발한 get-all-staked-nfts 엔드포인트 사용 
+        const response = await fetch(`/api/staking/get-all-staked-nfts?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
+        
+        if (!response.ok) {
+          throw new Error(`온체인 API 오류: ${response.status}`);
+        }
+        
+        const onchainData = await response.json();
+        
+        // API 응답에 디버그 정보가 있으면 출력
+        if (onchainData.debug_info) {
+          console.log("스테이킹 정보 디버그 데이터:", onchainData.debug_info);
+        }
+        
+        // 데이터 유효성 검사
+        if (onchainData && onchainData.stats && onchainData.stats.activeStakes) {
+          const nftCount = onchainData.stats.activeStakes.length;
+          console.log(`온체인 API: ${nftCount}개의 스테이킹된 NFT 발견`);
+          
+          // NFT 리스트 로깅
+          console.log("스테이킹된 NFT 목록:");
+          onchainData.stats.activeStakes.forEach((stake, index) => {
+            console.log(`[${index}] ID: ${stake.id}, 민트: ${stake.mint_address}, 이름: ${stake.nft_name}`);
+            console.log(`    이미지: ${stake.nft_image}`);
+          });
+          
+          // 온체인 데이터 사용
+          setStakingStats(onchainData.stats);
+          setIsLoading(false);
+          console.log("온체인 데이터 로드 성공!");
+          return;
+        } else {
+          console.log("API 응답이 예상 형식과 다릅니다:", onchainData);
+          
+          // 응답에 에러가 있으면 표시
+          if (onchainData.error) {
+            console.error("API 응답 오류:", onchainData.error);
+            if (onchainData.message) {
+              console.error("오류 메시지:", onchainData.message);
+            }
+          }
+        }
+      } catch (onchainErr) {
+        console.warn("새 온체인 API 호출 중 오류 발생:", onchainErr);
+        
+        // 기존 API를 첫 번째 폴백으로 시도
+        try {
+          console.log("첫 번째 폴백 API 시도...");
+          const fallbackResponse = await fetch(`/api/staking/getStakingInfoFromChain?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
+          
+          if (!fallbackResponse.ok) {
+            throw new Error(`첫 번째 폴백 API 오류: ${fallbackResponse.status}`);
+          }
+          
+          const fallbackData = await fallbackResponse.json();
+          
+          if (fallbackData && fallbackData.stats && fallbackData.stats.activeStakes) {
+            console.log(`첫 번째 폴백 API: ${fallbackData.stats.activeStakes.length}개의 스테이킹된 NFT 발견`);
+            setStakingStats(fallbackData.stats);
+            setIsLoading(false);
+            console.log("첫 번째 폴백 데이터 사용 성공");
+            return;
+          }
+        } catch (fallback1Err) {
+          console.warn("첫 번째 폴백 API도 실패:", fallback1Err);
+          
+          // 두 번째 폴백으로 기존 direct-onchain 시도
+          try {
+            console.log("두 번째 폴백 API 시도...");
+            const fallback2Response = await fetch(`/api/staking/direct-onchain?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
+            
+            if (!fallback2Response.ok) {
+              throw new Error(`두 번째 폴백 API 오류: ${fallback2Response.status}`);
+            }
+            
+            const fallback2Data = await fallback2Response.json();
+            
+            if (fallback2Data && fallback2Data.stats && fallback2Data.stats.activeStakes) {
+              console.log(`두 번째 폴백 API: ${fallback2Data.stats.activeStakes.length}개의 스테이킹된 NFT 발견`);
+              setStakingStats(fallback2Data.stats);
+              setIsLoading(false);
+              console.log("두 번째 폴백 데이터 사용 성공");
+              return;
+            }
+          } catch (fallback2Err) {
+            console.warn("두 번째 폴백 API도 실패:", fallback2Err);
+          }
+        }
+      }
+      
+      // Fall back to the service method if on-chain API fails
+      console.log("Falling back to service method...");
       const data = await fetchEnhancedStakingStats(
         publicKey.toString(), 
         { 
@@ -148,18 +265,18 @@ export default function StakingPage() {
         }
       );
       
-      // 검증
+      // Log the data from the service
       if (data && data.activeStakes) {
-        console.log(`Staking page: Found ${data.activeStakes.length} active stakes`);
+        console.log(`Service API: Found ${data.activeStakes.length} active stakes`);
         
-        // 첫 번째 항목 디버깅
+        // First item debugging
         if (data.activeStakes.length > 0) {
           const firstStake = data.activeStakes[0];
-          console.log("Sample stake data:", {
+          console.log("Sample service stake data:", {
             id: firstStake.id,
             mint: firstStake.mint_address,
             name: firstStake.nft_name,
-            image_url: firstStake.image_url // 이미지 필드 확인
+            image_url: firstStake.image_url
           });
         }
       }
@@ -181,9 +298,11 @@ export default function StakingPage() {
     setError(null); // Clear any previous errors
     
     try {
+      // 캐시 버스팅을 위한 타임스탬프
+      const cacheBuster = Date.now();
       console.log("Fetching NFTs for staking...");
       // My Collection 페이지와 완전히 동일한 API 사용
-      const response = await fetch(`/api/getNFTs?wallet=${publicKey.toString()}&limit=100&nocache=${Date.now()}`);
+      const response = await fetch(`/api/getNFTs?wallet=${publicKey.toString()}&limit=100&nocache=${cacheBuster}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -336,47 +455,163 @@ export default function StakingPage() {
     switch (activeTab) {
       case "dashboard":
         return (
-          <StakingDashboard 
-            stats={stakingStats} 
-            isLoading={isLoading} 
-            onRefresh={refreshAllData}
-          />
+          (() => {
+            // 무한 렌더링 문제 해결을 위해 컴포넌트를 래핑
+            // 데이터가 없거나 로딩 중이면 로딩 상태 표시
+            if (isLoading) {
+              return (
+                <div className="flex justify-center items-center p-10">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                </div>
+              );
+            }
+            
+            if (!stakingStats || (stakingStats.activeStakes && stakingStats.activeStakes.length === 0)) {
+              return (
+                <div className="bg-gray-800/50 border border-purple-500/20 rounded-xl p-6 text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-white mb-2">No Staking Data Found</h3>
+                  <p className="text-gray-400 mb-4">
+                    Your staking information will appear here once you stake your first NFT.
+                  </p>
+                  <div className="flex justify-center space-x-3">
+                    <button 
+                      onClick={refreshAllData}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                      </svg>
+                      Refresh Data
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("nfts")}
+                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                      </svg>
+                      View My NFTs
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            
+            // 데이터가 있을 때 StakingDashboard 렌더링
+            try {
+              // 안정화 처리: 깊은 복사로 불변성 보장 및 오류 방지
+              const safeStats = JSON.parse(JSON.stringify(stakingStats));
+              
+              // key 속성 추가하여 리렌더링 최적화
+              // Suspense로 감싸서 로딩 상태 핸들링
+              return (
+                <ErrorBoundary>
+                  <StakingDashboard 
+                    key="dashboard-stable" 
+                    stats={safeStats}
+                    isLoading={isLoading}
+                    onRefresh={refreshAllData}
+                  />
+                </ErrorBoundary>
+              );
+            } catch (err) {
+              console.error("대시보드 렌더링 오류:", err);
+              return (
+                <div className="bg-red-900/20 border border-red-500/20 rounded-xl p-6 text-center">
+                  <h3 className="text-lg font-semibold text-white mb-2">Error Loading Dashboard</h3>
+                  <p className="text-gray-400 mb-4">
+                    There was an error rendering the staking dashboard. Please try refreshing the page.
+                  </p>
+                  <button 
+                    onClick={refreshAllData}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                  >
+                    Refresh Data
+                  </button>
+                </div>
+              );
+            }
+          })()
         );
       case "analytics":
         return (
-          <StakingAnalytics
-            stats={stakingStats}
-            unstaked={userNFTs}
-            isLoading={isLoading} 
-            onRefresh={refreshAllData}
-          />
-        );
-      case "nfts":
-        return (
           <ErrorBoundary>
-            <NFTGallery 
-              nfts={userNFTs} 
-              isLoading={isLoadingNFTs} 
-              onSelectNFT={handleSelectNFT}
+            <StakingAnalytics
+              stats={stakingStats}
+              unstaked={userNFTs}
+              isLoading={isLoading} 
               onRefresh={refreshAllData}
             />
           </ErrorBoundary>
         );
+      case "nfts":
+        return (
+          <ErrorBoundary>
+            {(() => {
+              // NFT 탭도 비슷한 방식으로 래핑하여 안정화
+              if (isLoadingNFTs) {
+                return (
+                  <div className="flex justify-center items-center p-10">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                  </div>
+                );
+              }
+              
+              try {
+                // 깊은 복사로 불변성 보장
+                const safeNFTs = userNFTs ? JSON.parse(JSON.stringify(userNFTs)) : [];
+                
+                return (
+                  <NFTGallery 
+                    key="nfts-gallery-stable"
+                    nfts={safeNFTs} 
+                    isLoading={false} 
+                    onSelectNFT={handleSelectNFT}
+                    onRefresh={refreshAllData}
+                  />
+                );
+              } catch (err) {
+                console.error("NFT 갤러리 렌더링 오류:", err);
+                return (
+                  <div className="bg-red-900/20 border border-red-500/20 rounded-xl p-6 text-center">
+                    <h3 className="text-lg font-semibold text-white mb-2">Error Loading NFTs</h3>
+                    <p className="text-gray-400 mb-4">
+                      There was an error rendering your NFT gallery. Please try refreshing the page.
+                    </p>
+                    <button 
+                      onClick={refreshAllData}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                    >
+                      Refresh Data
+                    </button>
+                  </div>
+                );
+              }
+            })()}
+          </ErrorBoundary>
+        );
       case "leaderboard":
         return (
-          <Leaderboard 
-            stats={stakingStats}
-            isLoading={isLoading}
-            onRefresh={refreshAllData}
-          />
+          <ErrorBoundary>
+            <Leaderboard 
+              stats={stakingStats}
+              isLoading={isLoading}
+              onRefresh={refreshAllData}
+            />
+          </ErrorBoundary>
         );
       case "governance":
         return (
-          <GovernanceTab 
-            governanceData={governanceData}
-            isLoading={isLoadingGovernance}
-            onRefresh={refreshAllData}
-          />
+          <ErrorBoundary>
+            <GovernanceTab 
+              governanceData={governanceData}
+              isLoading={isLoadingGovernance}
+              onRefresh={refreshAllData}
+            />
+          </ErrorBoundary>
         );
       case "stake":
         return (
@@ -456,8 +691,7 @@ export default function StakingPage() {
                             console.log(`❗❗❗ 스테이킹 페이지: 사용된 CID: ${IMAGES_CID}`);
                             
                             return gatewayUrl;
-                          })()}
-                          alt={selectedNFT.name} 
+                          })()} alt={selectedNFT.name} 
                           className="w-full h-full"
                           lazyLoad={false}
                           priority={true}
@@ -559,7 +793,9 @@ export default function StakingPage() {
               )}
             </div>
             <div>
-              <StakingRewards stats={stakingStats} isLoading={isLoading} onSuccess={refreshAllData} />
+              <ErrorBoundary>
+                <StakingRewards stats={stakingStats} isLoading={isLoading} onSuccess={refreshAllData} />
+              </ErrorBoundary>
             </div>
           </div>
         );
@@ -596,6 +832,8 @@ export default function StakingPage() {
             className="mb-6"
           />
         )}
+        
+        {/* 에러 핸들링을 위한 ErrorBoundary */}
         
         {/* Staking explanation */}
         <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-4 md:p-6 border border-purple-500/30 shadow-lg backdrop-blur-sm mb-8">

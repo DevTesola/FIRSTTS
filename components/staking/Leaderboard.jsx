@@ -362,22 +362,39 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
           </div>
           
           {/* Progress to next rank visualization */}
-          {userRank.rank > 100 && leaderboardData.length > 0 && (
+          {userRank.rank > 100 && leaderboardData.length > 0 && leaderboardData.length >= 100 && (
             <div className="mt-4">
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-gray-400">Progress to Top 100</span>
                 <span className="text-gray-300">
-                  Need {(leaderboardData[99].score - userRank.score).toLocaleString()} more score
+                  Need {(leaderboardData[99]?.score > userRank.score ? (leaderboardData[99].score - userRank.score) : 0).toLocaleString()} more score
                 </span>
               </div>
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-yellow-500 to-red-500"
-                  style={{ width: `${Math.min(100, (userRank.score / leaderboardData[99].score) * 100)}%` }}
+                  style={{ 
+                    width: `${leaderboardData[99]?.score ? 
+                      Math.min(100, Math.max(5, (userRank.score / leaderboardData[99].score) * 100)) : 5}%` 
+                  }}
                 ></div>
               </div>
               <div className="mt-2 text-sm text-gray-400">
                 Increase your score by acquiring more TESOLA tokens and holding them longer.
+              </div>
+            </div>
+          )}
+          
+          {/* Show message when data is incomplete */}
+          {userRank.rank > 100 && (!leaderboardData.length || leaderboardData.length < 100) && (
+            <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-800/30 rounded-lg">
+              <div className="flex items-start">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm text-yellow-100">
+                  Complete leaderboard data is loading. Please check back in a moment to see your progress to Top 100.
+                </span>
               </div>
             </div>
           )}
@@ -548,7 +565,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                                   id: entry.rank,
                                   mint: entry.walletAddress,
                                   name: `Top ${position}`,
-                                  __source: 'Leaderboard-top',
+                                  _source: 'Leaderboard-top',
                                   _cacheBust: Date.now() // 강제 캐시 버스팅
                                 });
 
@@ -564,7 +581,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                               blur={true}
                               preferRemote={true}
                               useCache={false}
-                              __source="Leaderboard-top"
+                              _source="Leaderboard-top"
                             />
                           </div>
                           
@@ -687,7 +704,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                             blur={true}
                             preferRemote={true}
                             useCache={false}
-                            __source="Leaderboard-table"
+                            _source="Leaderboard-table"
                           />
                         </div>
                       </td>
@@ -873,7 +890,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                     blur={true}
                     preferRemote={true}
                     useCache={false}
-                    __source="Leaderboard-legendary"
+                    _source="Leaderboard-legendary"
                   />
                 </div>
                 <div className="text-yellow-400 font-medium mb-1">Top 10</div>
@@ -911,7 +928,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                     blur={true}
                     preferRemote={true}
                     useCache={false}
-                    __source="Leaderboard-epic"
+                    _source="Leaderboard-epic"
                   />
                 </div>
                 <div className="text-blue-400 font-medium mb-1">Top 11-50</div>
@@ -949,7 +966,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                     blur={true}
                     preferRemote={true}
                     useCache={false}
-                    __source="Leaderboard-rare"
+                    _source="Leaderboard-rare"
                   />
                 </div>
                 <div className="text-green-400 font-medium mb-1">Top 51-100</div>

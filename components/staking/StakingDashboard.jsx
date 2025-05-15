@@ -1,58 +1,207 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useReducer } from "react";
 import { GlassButton, SecondaryButton } from "../Buttons";
 import StakedNFTCard from "./StakedNFTCard";
 import CollectionBonus from "./CollectionBonus";
 import useStakingEvents from "../../utils/hooks/useStakingEvents";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { resolveStakedNftId } from "../../utils/staking-helpers/nft-id-resolver";
+
+// Reducer function definition - located outside the component
+const stakingReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_ANIMATE_STATS':
+      return { ...state, animateStats: action.payload };
+    case 'SET_WELCOME_GUIDE':
+      return { ...state, showWelcomeGuide: action.payload };
+    case 'SET_SORT_BY':
+      return { ...state, sortBy: action.payload };
+    case 'SET_EXPANDED_VIEW':
+      return { ...state, expandedView: action.payload };
+    case 'SET_LIVE_UPDATE_ENABLED':
+      return { ...state, liveUpdateEnabled: action.payload };
+    case 'SET_STAKES_WITH_IDS':
+      return { ...state, stakesWithIds: action.payload };
+    case 'ADD_REALTIME_UPDATE':
+      const { mintAddress, data } = action.payload;
+      // 이전 업데이트가 있는지 확인
+      const existingIndex = state.realtimeUpdates.findIndex(item =>
+        item.mintAddress === mintAddress
+      );
+
+      if (existingIndex >= 0) {
+        // 기존 항목 업데이트
+        const newUpdates = [...state.realtimeUpdates];
+        newUpdates[existingIndex] = {
+          ...newUpdates[existingIndex],
+          timestamp: Date.now(),
+          data: data,
+          animateUpdate: true
+        };
+        return { ...state, realtimeUpdates: newUpdates };
+      } else {
+        // 새 항목 추가
+        return { 
+          ...state, 
+          realtimeUpdates: [
+            {
+              mintAddress,
+              type: 'stake_update',
+              timestamp: Date.now(),
+              data,
+              animateUpdate: true
+            },
+            ...state.realtimeUpdates.slice(0, 9) // 마지막 10개 업데이트만 유지
+          ]
+        };
+      }
+    case 'ADD_USER_STAKING_UPDATE':
+      return { 
+        ...state, 
+        realtimeUpdates: [
+          {
+            type: 'user_staking_update',
+            timestamp: Date.now(),
+            data: action.payload,
+            animateUpdate: true
+          },
+          ...state.realtimeUpdates.slice(0, 9) // 마지막 10개 업데이트만 유지
+        ]
+      };
+    case 'RESET_ANIMATIONS':
+      return {
+        ...state,
+        realtimeUpdates: state.realtimeUpdates.map(update => ({
+          ...update,
+          animateUpdate: false
+        }))
+      };
+    default:
+      return state;
+  }
+};
+
+// 초기 상태 정의
+const initialState = {
+  animateStats: false,
+  showWelcomeGuide: true,
+  sortBy: "newest", // "newest", "oldest", "rewards"
+  expandedView: null,
+  realtimeUpdates: [],
+  liveUpdateEnabled: true,
+  stakesWithIds: [] // 비동기 ID 해결을 위한 state
+};
 
 /**
  * Enhanced Staking Dashboard Component
  * Displays user's staking statistics and currently staked NFTs with improved UX
+ * 
+ * 최적화된 상태 관리를 위해 useReducer 사용
  */
 const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
-  const [animateStats, setAnimateStats] = useState(false);
-  const [showWelcomeGuide, setShowWelcomeGuide] = useState(true);
-  const [sortBy, setSortBy] = useState("newest"); // "newest", "oldest", "rewards"
-  const [expandedView, setExpandedView] = useState(null);
-  const [realtimeUpdates, setRealtimeUpdates] = useState([]);
-  const [liveUpdateEnabled, setLiveUpdateEnabled] = useState(true);
+  // useReducer를 사용하여 관련 상태를 하나로 통합
+  const [state, dispatch] = useReducer(stakingReducer, initialState);
+  
+  // 상태 값을 구조 분해 할당으로 쉽게 접근
+  const { 
+    animateStats, 
+    showWelcomeGuide, 
+    sortBy, 
+    expandedView, 
+    realtimeUpdates, 
+    liveUpdateEnabled, 
+    stakesWithIds 
+  } = state;
   const { publicKey } = useWallet();
+  
+  // 스테이킹 NFT의 실제 ID 해결을 위한 useEffect - 무한 렌더링 방지를 위해 최적화
+  useEffect(() => {
+    if (stats?.activeStakes && stats.activeStakes.length > 0 && !isLoading) {
+      console.log(`받은 스테이킹 NFT ${stats.activeStakes.length}개 중 유효한 데이터 필터링`);
+      
+      // 민트 주소가 있는 NFT만 필터링 - 데이터 일관성 유지
+      const validStakes = stats.activeStakes.filter(stake => 
+        stake.mint_address && stake.mint_address.length > 30
+      );
+      
+      if (validStakes.length !== stats.activeStakes.length) {
+        console.log(`유효하지 않은 스테이킹 NFT ${stats.activeStakes.length - validStakes.length}개 제외`);
+      }
+      
+      // 초기 상태 설정: 기존 ID 또는 null로 설정
+      const initialStakes = validStakes.map(stake => ({
+        ...stake,
+        staked_nft_id: stake.staked_nft_id || stake.nft_id || null,
+        nft_id: stake.nft_id || stake.staked_nft_id || null
+      }));
+      
+      // 상태 업데이트는 한 번만 수행
+      dispatch({ type: 'SET_STAKES_WITH_IDS', payload: initialStakes });
+      
+      // 비동기 처리를 위한 함수 - useEffect 내부의 함수는 의존성에 포함되지 않음
+      const resolveAllIds = () => {
+        // 각 스테이킹 항목에 대해 실제 ID 비동기적으로 조회
+        // Promise.all 대신 setTimeout으로 비동기 작업 스케줄링하여 렌더링 블로킹 방지
+        setTimeout(() => {
+          // 이미 처리된 민트 주소 추적
+          const processedMints = {};
+          
+          initialStakes.forEach(async (stake, index) => {
+            try {
+              // 중복 처리 방지
+              if (processedMints[stake.mint_address]) return;
+              processedMints[stake.mint_address] = true;
+              
+              // 모든 NFT에 대해 민트 주소에서 ID 결정론적으로 추출
+              const realId = await resolveStakedNftId(stake);
+              
+              // NFT ID 해결 로깅 추가
+              console.log(`스테이킹 NFT 처리 완료: 민트=${stake.mint_address}, 해결ID=${realId}`);
+              
+              // 실제 ID가 조회되면 state 업데이트 - 컴포넌트가 마운트되어 있는지 확인
+              if (realId && document.body.contains(document.getElementById('staking-dashboard'))) {
+                // 현재 상태 가져와서 업데이트
+                const updatedStakes = [...stakesWithIds];
+                
+                // 인덱스가 유효한지 확인
+                if (index < updatedStakes.length) {
+                  updatedStakes[index] = {
+                    ...updatedStakes[index],
+                    staked_nft_id: realId,
+                    nft_id: realId
+                  };
+                  
+                  // 상태 업데이트 디스패치
+                  dispatch({ 
+                    type: 'SET_STAKES_WITH_IDS', 
+                    payload: updatedStakes
+                  });
+                }
+              }
+            } catch (err) {
+              console.error(`NFT ID 해결 중 오류: ${stake.mint_address}`, err);
+            }
+          });
+        }, 100); // 약간의 지연으로 초기 렌더링 완료 후 실행
+      };
+      
+      // 비동기 함수 실행
+      resolveAllIds();
+    }
+  }, [stats?.activeStakes?.length, isLoading]); // 전체 배열 대신 길이만 의존성에 포함
 
   // Handle real-time updates from staking events
   const handleStakeAccountUpdate = useCallback((update) => {
     if (!liveUpdateEnabled) return;
 
+    // Handle stake account update
     console.log('Stake account update received:', update);
 
-    // Add update to the realtime updates array
-    setRealtimeUpdates(prev => {
-      // Check if we already have an update for this mint address
-      const existingIndex = prev.findIndex(item =>
-        item.mintAddress === update.mintAddress
-      );
-
-      if (existingIndex >= 0) {
-        // Update existing entry
-        const newUpdates = [...prev];
-        newUpdates[existingIndex] = {
-          ...newUpdates[existingIndex],
-          timestamp: Date.now(),
-          data: update.data,
-          animateUpdate: true
-        };
-        return newUpdates;
-      } else {
-        // Add new entry
-        return [
-          {
-            mintAddress: update.mintAddress,
-            type: 'stake_update',
-            timestamp: Date.now(),
-            data: update.data,
-            animateUpdate: true
-          },
-          ...prev.slice(0, 9) // Keep only last 10 updates
-        ];
+    // Add update to the realtime updates array using the reducer action
+    dispatch({
+      type: 'ADD_REALTIME_UPDATE',
+      payload: {
+        mintAddress: update.mintAddress,
+        data: update.data
       }
     });
 
@@ -72,18 +221,13 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
   const handleUserStakingUpdate = useCallback((update) => {
     if (!liveUpdateEnabled) return;
 
-    console.log('User staking update received:', update);
+    // Handle user staking update
 
-    // Add update to the realtime updates array
-    setRealtimeUpdates(prev => [
-      {
-        type: 'user_staking_update',
-        timestamp: Date.now(),
-        data: update.data,
-        animateUpdate: true
-      },
-      ...prev.slice(0, 9) // Keep only last 10 updates
-    ]);
+    // Add update to the realtime updates array using reducer action
+    dispatch({
+      type: 'ADD_USER_STAKING_UPDATE',
+      payload: update.data
+    });
 
     // Request a data refresh to update the UI with latest data
     if (onRefresh && typeof onRefresh === 'function') {
@@ -110,34 +254,41 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
     onUserStakingUpdate: handleUserStakingUpdate
   });
 
-  // Subscribe to all stake accounts when stats change
+  // Subscribe to all stake accounts when stats change - 무한 렌더링 방지
   useEffect(() => {
     if (stats?.activeStakes && stats.activeStakes.length > 0 && !isLoading) {
-      // Extract mint addresses
-      const mintAddresses = stats.activeStakes
-        .filter(stake => stake.mint_address)
-        .map(stake => stake.mint_address);
-
-      // Subscribe to all mint addresses that aren't already subscribed
-      const currentMints = activeSubscriptions
-        .filter(sub => sub.type === 'stake_account')
-        .map(sub => sub.key);
-
-      const newMints = mintAddresses.filter(mint => !currentMints.includes(mint));
-
-      if (newMints.length > 0) {
-        subscribeToMultipleNFTs(newMints);
-      }
+      // 비동기 작업을 별도 함수로 분리
+      const setupSubscriptions = () => {
+        // Extract mint addresses
+        const mintAddresses = stats.activeStakes
+          .filter(stake => stake.mint_address)
+          .map(stake => stake.mint_address);
+  
+        // Subscribe to all mint addresses that aren't already subscribed
+        const currentMints = activeSubscriptions
+          .filter(sub => sub.type === 'stake_account')
+          .map(sub => sub.key);
+  
+        const newMints = mintAddresses.filter(mint => !currentMints.includes(mint));
+  
+        if (newMints.length > 0) {
+          // 구독 작업을 setTimeout으로 분리하여 렌더링 사이클과 분리
+          setTimeout(() => {
+            subscribeToMultipleNFTs(newMints);
+          }, 100);
+        }
+      };
+      
+      // 비동기 함수 실행
+      setupSubscriptions();
     }
-  }, [stats, isLoading, subscribeToMultipleNFTs, activeSubscriptions]);
+  }, [stats?.activeStakes?.length, isLoading, subscribeToMultipleNFTs, activeSubscriptions?.length]);
 
   // Animate updates after a small delay
   useEffect(() => {
     if (realtimeUpdates.some(update => update.animateUpdate)) {
       const timer = setTimeout(() => {
-        setRealtimeUpdates(updates =>
-          updates.map(update => ({ ...update, animateUpdate: false }))
-        );
+        dispatch({ type: 'RESET_ANIMATIONS' });
       }, 5000);
 
       return () => clearTimeout(timer);
@@ -147,8 +298,9 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
   // Trigger number animation when stats change
   useEffect(() => {
     if (stats && !isLoading) {
-      setAnimateStats(true);
-      const timer = setTimeout(() => setAnimateStats(false), 1500);
+      dispatch({ type: 'SET_ANIMATE_STATS', payload: true });
+      const timer = setTimeout(() => 
+        dispatch({ type: 'SET_ANIMATE_STATS', payload: false }), 1500);
       return () => clearTimeout(timer);
     }
   }, [stats, isLoading]);
@@ -183,59 +335,28 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
 
   // Calculate stats for display (using placeholders if data is loading)
   const totalStaked = isLoading ? "--" : (stats?.activeStakes?.length || 0);
-  const projectedRewards = isLoading ? "--" : (stats?.stats?.projectedRewards || 0).toLocaleString();
-  const earnedToDate = isLoading ? "--" : (stats?.stats?.earnedToDate || 0).toLocaleString();
+  const projectedRewards = isLoading ? "--" : ((stats?.stats?.projectedRewards || 0) + "").toLocaleString();
+  const earnedToDate = isLoading ? "--" : ((stats?.stats?.earnedToDate || 0) + "").toLocaleString();
   
-  // Sort staked NFTs based on selection
+  // Sort staked NFTs based on selection - function definition kept but now called through useMemo
   const getSortedStakes = () => {
     if (!stats?.activeStakes) return [];
     
-    // 디버그 - 항상 활성화하여 NFT 이미지 필드 정보 확인
-    if (stats.activeStakes.length > 0) {
-      console.log("DEBUG - Sample stake object:", JSON.stringify(stats.activeStakes[0], null, 2));
-      
-      // 실제 NFT 이미지 URL 확인용 로그 추가
-      const firstStake = stats.activeStakes[0];
-      
-      // IPFS URL을 추출하기 위해 모든 필드 심층 분석
-      console.log("DEBUG - Image fields in stake (VERBOSE):", firstStake);
-      
-      // 주요 이미지 필드만 간략히 출력
-      console.log("DEBUG - Image fields in stake:", {
-        image: firstStake.image,
-        image_url: firstStake.image_url,
-        nft_image: firstStake.nft_image,
-        ipfs_hash: firstStake.ipfs_hash,
-        metadata_image: firstStake.metadata?.image,
-        metadata_full: firstStake.metadata,
-        using_actual_nft_data: firstStake.using_actual_nft_data,
-        __source: 'StakingDashboard-debug'
-      });
-      
-      // 모든 스테이킹 NFT 데이터 확인
-      stats.activeStakes.forEach((stake, index) => {
-        console.log(`NFT #${index} 이미지 필드:`, {
-          id: stake.id || stake.mint_address,
-          image: stake.image,
-          image_url: stake.image_url,
-          nft_image: stake.nft_image,
-          ipfs_hash: stake.ipfs_hash,
-          metadata_image: stake.metadata?.image
-        });
-      });
-    }
+    // stakesWithIds에 데이터가 있으면 사용하고, 그렇지 않으면 원본 사용
+    const stakesToUse = stakesWithIds.length > 0 ? stakesWithIds : (stats.activeStakes || []);
     
-    const stakes = [...stats.activeStakes];
+    console.log(`처리된 스테이킹 NFT ID들: ${stakesToUse.map(s => s.nft_id || 'null').join(', ')}`);
     
+    // 정렬은 stakesToUse 사용 (최신 ID 정보 포함)
     switch(sortBy) {
       case "newest":
-        return stakes.sort((a, b) => new Date(b.staked_at) - new Date(a.staked_at));
+        return stakesToUse.sort((a, b) => new Date(b.staked_at) - new Date(a.staked_at));
       case "oldest":
-        return stakes.sort((a, b) => new Date(a.staked_at) - new Date(b.staked_at));
+        return stakesToUse.sort((a, b) => new Date(a.staked_at) - new Date(b.staked_at));
       case "rewards":
-        return stakes.sort((a, b) => b.earned_so_far - a.earned_so_far);
+        return stakesToUse.sort((a, b) => b.earned_so_far - a.earned_so_far);
       case "tier":
-        return stakes.sort((a, b) => {
+        return stakesToUse.sort((a, b) => {
           const tierValue = {
             "LEGENDARY": 4,
             "EPIC": 3,
@@ -244,8 +365,15 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           };
           return tierValue[b.nft_tier] - tierValue[a.nft_tier];
         });
+      case "id":
+        // Sort by NFT ID numerically
+        return stakesToUse.sort((a, b) => {
+          const aId = parseInt(a.nft_id?.replace(/\D/g, '') || '0', 10);
+          const bId = parseInt(b.nft_id?.replace(/\D/g, '') || '0', 10);
+          return aId - bId;
+        });
       default:
-        return stakes;
+        return stakesToUse;
     }
   };
   
@@ -260,40 +388,54 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
     return "text-green-400"; // Common
   };
   
-  // Calculate tier distribution
-  const calculateTierDistribution = () => {
-    if (!stats?.activeStakes || !stats.activeStakes.length) return {};
-    
-    const distribution = {
+  // Calculate tier distribution - memoized for performance with fixed dependencies
+  const tierDistribution = useMemo(() => {
+    // 기본 초기값 설정
+    const defaultDistribution = {
       "LEGENDARY": 0,
       "EPIC": 0,
       "RARE": 0,
       "COMMON": 0
     };
     
-    stats.activeStakes.forEach(stake => {
-      const tier = stake.nft_tier?.toUpperCase() || "COMMON";
-      
-      if (tier.includes("LEGENDARY")) distribution["LEGENDARY"]++;
-      else if (tier.includes("EPIC")) distribution["EPIC"]++;
-      else if (tier.includes("RARE")) distribution["RARE"]++;
-      else distribution["COMMON"]++;
-    });
+    // 데이터가 없으면 기본값 반환
+    if (!stats?.activeStakes || !stats.activeStakes.length) {
+      return defaultDistribution;
+    }
+    
+    // 분포 계산을 위한 객체 복제
+    const distribution = { ...defaultDistribution };
+    
+    try {
+      // 배열 복제 후 작업하여 불변성 유지
+      [...stats.activeStakes].forEach(stake => {
+        const tier = stake.nft_tier?.toUpperCase() || "COMMON";
+        
+        if (tier.includes("LEGENDARY")) distribution["LEGENDARY"]++;
+        else if (tier.includes("EPIC")) distribution["EPIC"]++;
+        else if (tier.includes("RARE")) distribution["RARE"]++;
+        else distribution["COMMON"]++;
+      });
+    } catch (err) {
+      console.error("Error calculating tier distribution:", err);
+      // 오류 발생 시 기본값 반환
+      return defaultDistribution;
+    }
     
     return distribution;
-  };
+  }, [stats?.activeStakes?.length]); // activeStakes 배열 전체가 아닌 길이만 의존성에 포함
   
-  const tierDistribution = calculateTierDistribution();
-  const sortedStakes = getSortedStakes();
+  // Memoized sorted stakes for better performance with optimized dependencies
+  const sortedStakes = useMemo(() => getSortedStakes(), [stakesWithIds.length, stats?.activeStakes?.length, sortBy]);
   
   return (
-    <div className="space-y-6">
+    <div id="staking-dashboard" className="space-y-6">
       {/* Welcome guide for first-time users */}
       {showWelcomeGuide && totalStaked > 0 && (
         <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded-xl p-4 border border-green-500/30 relative">
           <button 
             className="absolute top-2 right-2 text-gray-400 hover:text-white"
-            onClick={() => setShowWelcomeGuide(false)}
+            onClick={() => dispatch({ type: 'SET_WELCOME_GUIDE', payload: false })}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -322,17 +464,17 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
       )}
       
       {/* Stats Cards with Animation */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-5 border border-purple-500/20 backdrop-blur-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-4 sm:p-5 border border-purple-500/20 backdrop-blur-sm">
           <div className="flex items-start">
-            <div className="bg-purple-500/20 p-2 rounded-full mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+            <div className="bg-purple-500/20 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-400">Total Staked NFTs</p>
-              <p className={`text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
+              <p className="text-xs sm:text-sm text-gray-400">Total Staked NFTs</p>
+              <p className={`text-xl sm:text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
                 {totalStaked}
               </p>
               {totalStaked > 0 && (
@@ -363,17 +505,17 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-xl p-5 border border-blue-500/20 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-xl p-4 sm:p-5 border border-blue-500/20 backdrop-blur-sm">
           <div className="flex items-start">
-            <div className="bg-blue-500/20 p-2 rounded-full mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+            <div className="bg-blue-500/20 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-400">Projected Total Rewards</p>
-              <p className={`text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
+              <p className="text-xs sm:text-sm text-gray-400">Projected Total Rewards</p>
+              <p className={`text-xl sm:text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
                 {projectedRewards}
               </p>
               <p className="text-xs text-gray-500">TESOLA Tokens</p>
@@ -381,16 +523,16 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-pink-900/30 to-red-900/30 rounded-xl p-5 border border-pink-500/20 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-pink-900/30 to-red-900/30 rounded-xl p-4 sm:p-5 border border-pink-500/20 backdrop-blur-sm">
           <div className="flex items-start">
-            <div className="bg-pink-500/20 p-2 rounded-full mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-pink-400" viewBox="0 0 20 20" fill="currentColor">
+            <div className="bg-pink-500/20 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-pink-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-400">Earned To Date</p>
-              <p className={`text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
+              <p className="text-xs sm:text-sm text-gray-400">Earned To Date</p>
+              <p className={`text-xl sm:text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
                 {earnedToDate}
               </p>
               <p className="text-xs text-gray-500">TESOLA Tokens</p>
@@ -403,27 +545,29 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
       <CollectionBonus stats={stats} />
 
       {/* Active Staking Section with Enhanced UI */}
-      <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
+      <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-          <h3 className="text-xl font-bold text-white flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+          <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
               <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
             </svg>
             Active Staking
           </h3>
           
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Controls wrapping properly on mobile */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
             {/* Sort dropdown */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto mb-2 sm:mb-0">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-gray-900 border border-gray-700 rounded-lg py-1.5 pl-3 pr-8 text-sm text-white appearance-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                onChange={(e) => dispatch({ type: 'SET_SORT_BY', payload: e.target.value })}
+                className="bg-gray-900 border border-gray-700 rounded-lg py-2.5 pl-3 pr-8 text-xs sm:text-sm text-white appearance-none focus:outline-none focus:ring-2 focus:ring-purple-500 w-full min-h-[44px]"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="rewards">Highest Rewards</option>
                 <option value="tier">By Tier</option>
+                <option value="id">By NFT ID</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                 <svg className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -432,86 +576,169 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
               </div>
             </div>
             
-            <GlassButton
-              size="small"
-              onClick={onRefresh}
-              disabled={isLoading}
-              icon={
-                isLoading ? (
-                  <svg className="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              <GlassButton
+                size="small"
+                onClick={onRefresh}
+                disabled={isLoading}
+                icon={
+                  isLoading ? (
+                    <svg className="animate-spin h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                    </svg>
+                  )
+                }
+              >
+                <span className="text-xs">Refresh</span>
+              </GlassButton>
+              
+              {/* 스테이킹 동기화 버튼 추가 */}
+              <GlassButton
+                size="small"
+                onClick={async () => {
+                  if (!publicKey) return;
+                  
+                  try {
+                    // 동기화 중 로딩 표시 - 항상 내부 상태만 사용
+                    dispatch({ type: 'SET_ANIMATE_STATS', payload: true });
+                    
+                    // 동기화 전 현재 상태 기록
+                    console.log('현재 표시된 스테이킹 NFT:', stats?.activeStakes?.length || 0);
+                    
+                    // 현재 표시된 NFT들의 ID 정보 출력
+                    if (stats?.activeStakes && stats.activeStakes.length > 0) {
+                      console.log('현재 표시된 NFT 정보:', stats.activeStakes.map(stake => ({
+                        id: stake.id,
+                        mint: stake.mint_address,
+                        nft_id: stake.nft_id,
+                        staked_nft_id: stake.staked_nft_id,
+                        nft_name: stake.nft_name
+                      })));
+                    }
+                    
+                    // 새로 추가한 강제 동기화 API 사용
+                    console.log('강제 동기화 API 호출 시도...');
+                    const response = await fetch("/api/force-sync", {
+                      method: "POST",
+                      headers: { 
+                        "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify({
+                        wallet: publicKey.toString()
+                      })
+                    });
+                    
+                    const data = await response.json();
+                    console.log("강제 동기화 결과:", data);
+                    
+                    if (data.success) {
+                      console.log(`성공적으로 ${data.stakedCount}개의 NFT를 동기화했습니다`);
+                      console.log('동기화된 NFT 정보:', data.stakedNFTs);
+                    } else {
+                      console.error('동기화 중 오류 발생:', data.error || '알 수 없는 오류');
+                      alert('동기화 중 오류가 발생했습니다. 다시 시도해주세요.');
+                    }
+                    
+                    // 동기화 완료 후 데이터 새로고침
+                    if (onRefresh && typeof onRefresh === 'function') {
+                      // 약간의 지연 후 새로고침 (DB 업데이트가 완료되도록)
+                      setTimeout(() => {
+                        onRefresh();
+                        console.log('데이터 새로고침 완료');
+                      }, 1000);
+                    }
+                  } catch (err) {
+                    console.error("Sync error:", err);
+                    alert('동기화 중 오류가 발생했습니다. 다시 시도해주세요.');
+                  } finally {
+                    // 로딩 상태 해제 - 항상 내부 상태만 사용
+                    dispatch({ type: 'SET_ANIMATE_STATS', payload: false });
+                  }
+                }}
+                disabled={isLoading || !publicKey}
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
                   </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-                  </svg>
-                )
-              }
-            >
-              Refresh
-            </GlassButton>
+                }
+              >
+                <span className="text-xs">Sync</span>
+              </GlassButton>
 
-            {/* Live Updates Toggle */}
-            <button
-              onClick={() => setLiveUpdateEnabled(!liveUpdateEnabled)}
-              className={`px-2 py-1 rounded-md text-xs flex items-center border ${
-                liveUpdateEnabled
-                  ? 'bg-green-900/20 border-green-500/30 text-green-300'
-                  : 'bg-gray-800/30 border-gray-700/30 text-gray-400'
-              }`}
-            >
-              <div className={`h-2 w-2 rounded-full mr-1 ${liveUpdateEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`}></div>
-              {liveUpdateEnabled ? 'Live Updates' : 'Updates Paused'}
-            </button>
-            
-            <GlassButton
-              size="small"
-              onClick={() => {
-                // Switch to NFTs tab
-                document.querySelector('[aria-controls="nfts"]')?.click();
-              }}
-              icon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                </svg>
-              }
-            >
-              Stake More
-            </GlassButton>
+              {/* Live Updates Toggle */}
+              <button
+                onClick={() => dispatch({ type: 'SET_LIVE_UPDATE_ENABLED', payload: !liveUpdateEnabled })}
+                className={`px-3 py-2 rounded-md text-xs flex items-center border min-h-[38px] ${
+                  liveUpdateEnabled
+                    ? 'bg-green-900/20 border-green-500/30 text-green-300'
+                    : 'bg-gray-800/30 border-gray-700/30 text-gray-400'
+                }`}
+              >
+                <div className={`h-2 w-2 rounded-full mr-1 ${liveUpdateEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`}></div>
+                <span className="text-xs">{liveUpdateEnabled ? 'Live' : 'Paused'}</span>
+              </button>
+              
+              <GlassButton
+                size="small"
+                onClick={() => {
+                  // Switch to NFTs tab
+                  document.querySelector('[aria-controls="nfts"]')?.click();
+                }}
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                  </svg>
+                }
+              >
+                <span className="text-xs">Stake More</span>
+              </GlassButton>
+            </div>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-10">
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            <div className="text-sm text-gray-400 animate-pulse">Loading staked NFTs...</div>
           </div>
         ) : sortedStakes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedStakes.map((stake) => (
-              <StakedNFTCard
-                key={stake.id}
-                stake={{
-                  ...stake,
-                  // Add source property for component identification
-                  __source: 'StakingDashboard-card',
-                  // Add cache busting with timestamp
-                  _cacheBust: Date.now(),
-                  // Explicit metadata transfer
-                  metadata: stake.metadata,
-                  // Force using actual NFT data
-                  using_actual_nft_data: true,
-                  // Pass environment variables explicitly
-                  NEXT_PUBLIC_IMAGES_CID: process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike',
-                  NEXT_PUBLIC_IPFS_GATEWAY: process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud'
-                }}
-                onRefresh={onRefresh}
-                isExpanded={expandedView === stake.id}
-                onToggleExpand={() => {
-                  setExpandedView(expandedView === stake.id ? null : stake.id);
-                }}
-              />
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {sortedStakes.map((stake) => {
+              // 정적 값 사용하여 무한 렌더링 방지
+              const stakeId = stake.id;
+              
+              return (
+                <StakedNFTCard
+                  key={stakeId}
+                  stake={{
+                    ...stake,
+                    // 온체인 데이터 기반 처리 표시
+                    _source: 'StakingDashboard-card-onchain',
+                    // 캐시 버스팅 추가 - 정적 값 사용 (문자열 접두사 추가로 타입 안정성 확보)
+                    _cacheBust: `stake-${stakeId}`,
+                    // 메타데이터 전달
+                    metadata: stake.metadata,
+                    // 실제 NFT 데이터 사용 강제
+                    using_actual_nft_data: true,
+                    // 해시 기반으로 결정론적으로 생성된 NFT ID 사용
+                    staked_nft_id: stake.staked_nft_id,
+                    // 환경 변수 전달
+                    NEXT_PUBLIC_IMAGES_CID: process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike',
+                    NEXT_PUBLIC_IPFS_GATEWAY: process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud'
+                  }}
+                  onRefresh={onRefresh}
+                  isExpanded={expandedView === stakeId}
+                  onToggleExpand={() => {
+                    dispatch({ type: 'SET_EXPANDED_VIEW', payload: expandedView === stakeId ? null : stakeId });
+                  }}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-10 bg-gray-900/30 rounded-lg">
@@ -537,21 +764,21 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
       </div>
 
       {/* Live Updates Feed Section - 항상 표시 */}
-        <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-white flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+        <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-white flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 text-green-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
               </svg>
               Real-time Updates
             </h3>
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-xxs sm:text-xs">
+              <div className="text-gray-400">
                 <span className="font-medium">{activeSubscriptions.length}</span> active subscriptions
               </div>
               {isSubscribing && (
-                <div className="text-xs text-blue-400 flex items-center">
-                  <svg className="animate-spin mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <div className="text-blue-400 flex items-center">
+                  <svg className="animate-spin mr-1 h-2.5 w-2.5 sm:h-3 sm:w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -561,13 +788,13 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             </div>
           </div>
 
-          <div className="space-y-2 mb-4">
+          <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
             {realtimeUpdates.length > 0 ? (
               realtimeUpdates.map((update, index) => {
                 // Different styling for different update types
                 let color = 'blue';
                 let icon = (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                   </svg>
                 );
@@ -575,14 +802,14 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                 if (update.type === 'stake_update') {
                   color = 'green';
                   icon = (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                     </svg>
                   );
                 } else if (update.type === 'user_staking_update') {
                   color = 'purple';
                   icon = (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
                     </svg>
                   );
@@ -591,7 +818,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                 return (
                   <div
                     key={`${update.type}-${index}`}
-                    className={`p-3 rounded-lg border ${
+                    className={`p-2 sm:p-3 rounded-lg border ${
                       update.animateUpdate
                         ? `animate-highlight-${color} border-${color}-500/40`
                         : `bg-gray-900/40 border-gray-700/30`
@@ -599,17 +826,17 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-start">
-                        <div className={`text-${color}-400 flex items-center mt-0.5`}>
+                        <div className={`text-${color}-400 flex items-center mt-0.5 flex-shrink-0`}>
                           {icon}
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-white">
+                        <div className="min-w-0">
+                          <div className="text-xs sm:text-sm font-medium text-white truncate">
                             {update.type === 'stake_update'
                               ? `NFT Update: ${update.mintAddress.slice(0, 4)}...${update.mintAddress.slice(-4)}`
                               : 'User Staking Update'
                             }
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xxs sm:text-xs text-gray-400 truncate">
                             {update.type === 'stake_update' && (
                               <>
                                 {update.data.isStaked
@@ -617,7 +844,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                                   : 'Not staked'
                                 }
                                 {update.data.currentTimeMultiplier > 0 &&
-                                  ` • Multiplier: +${update.data.currentTimeMultiplier / 100}%`
+                                  ` • +${update.data.currentTimeMultiplier / 100}%`
                                 }
                               </>
                             )}
@@ -625,14 +852,14 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                               <>
                                 Staked NFTs: {update.data.stakedCount}
                                 {update.data.collectionBonus > 0 &&
-                                  ` • Collection Bonus: +${update.data.collectionBonus / 100}%`
+                                  ` • +${update.data.collectionBonus / 100}%`
                                 }
                               </>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xxs sm:text-xs text-gray-500 flex-shrink-0 ml-2">
                         {new Date(update.timestamp).toLocaleTimeString()}
                       </div>
                     </div>
@@ -640,7 +867,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                 );
               })
             ) : (
-              <div className="text-center py-3 bg-gray-900/30 rounded-lg text-gray-400 text-sm">
+              <div className="text-center py-2 sm:py-3 bg-gray-900/30 rounded-lg text-gray-400 text-xs sm:text-sm">
                 {liveUpdateEnabled
                   ? 'Waiting for real-time updates...'
                   : 'Updates paused. Enable real-time updates to see changes.'}
@@ -648,21 +875,171 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             )}
           </div>
 
-          <div className="text-xs text-gray-400">
+          <div className="text-xxs sm:text-xs text-gray-400">
             <p>Real-time updates are enabled for your staked NFTs. You'll see live data when values change on the blockchain.</p>
           </div>
         </div>
 
+        <style jsx>{`
+          .text-xxs {
+            font-size: 0.65rem;
+            line-height: 1rem;
+          }
+          
+          /* Mobile touch optimizations */
+          @media (max-width: 640px) {
+            button, a, select, input {
+              min-height: 44px;
+              min-width: 44px;
+            }
+            
+            .table-container {
+              -webkit-overflow-scrolling: touch;
+              scroll-behavior: smooth;
+            }
+            
+            .keep-structure {
+              table-layout: fixed;
+              min-width: 600px;
+            }
+          }
+        `}</style>
+
       {/* Staking Tiers Info with Visual Enhancement */}
-      <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+      <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
           Staking Rewards by NFT Tier
         </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        
+        {/* Mobile swipe hint - only shown on small screens */}
+        <div className="swipe-hint md:hidden flex items-center text-xs text-gray-400 mb-3 py-2 px-3 bg-gray-800/30 rounded-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          <span>Swipe horizontally to see all data</span>
+        </div>
+        
+        {/* Mobile card view - visible on mobile only */}
+        <div className="block md:hidden space-y-4 mb-4">
+          {/* Legendary Tier Card */}
+          <div className="bg-gray-900/40 rounded-lg border border-yellow-500/20 overflow-hidden">
+            <div className="bg-yellow-900/30 p-3 border-b border-yellow-500/20">
+              <div className="flex items-center">
+                <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                <span className="font-medium text-yellow-300">Legendary</span>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-800">
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Daily:</span>
+                <span className="font-medium text-white">200</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Weekly:</span>
+                <span className="text-gray-300">1,400</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Monthly:</span>
+                <span className="text-gray-300">6,000</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Yearly:</span>
+                <span className="text-gray-300">73,000</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Epic Tier Card */}
+          <div className="bg-gray-900/40 rounded-lg border border-purple-500/20 overflow-hidden">
+            <div className="bg-purple-900/30 p-3 border-b border-purple-500/20">
+              <div className="flex items-center">
+                <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+                <span className="font-medium text-purple-300">Epic</span>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-800">
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Daily:</span>
+                <span className="font-medium text-white">100</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Weekly:</span>
+                <span className="text-gray-300">700</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Monthly:</span>
+                <span className="text-gray-300">3,000</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Yearly:</span>
+                <span className="text-gray-300">36,500</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Rare Tier Card */}
+          <div className="bg-gray-900/40 rounded-lg border border-blue-500/20 overflow-hidden">
+            <div className="bg-blue-900/30 p-3 border-b border-blue-500/20">
+              <div className="flex items-center">
+                <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                <span className="font-medium text-blue-300">Rare</span>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-800">
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Daily:</span>
+                <span className="font-medium text-white">50</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Weekly:</span>
+                <span className="text-gray-300">350</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Monthly:</span>
+                <span className="text-gray-300">1,500</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Yearly:</span>
+                <span className="text-gray-300">18,250</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Common Tier Card */}
+          <div className="bg-gray-900/40 rounded-lg border border-green-500/20 overflow-hidden">
+            <div className="bg-green-900/30 p-3 border-b border-green-500/20">
+              <div className="flex items-center">
+                <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                <span className="font-medium text-green-300">Common</span>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-800">
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Daily:</span>
+                <span className="font-medium text-white">25</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Weekly:</span>
+                <span className="text-gray-300">175</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Monthly:</span>
+                <span className="text-gray-300">750</span>
+              </div>
+              <div className="flex justify-between p-3">
+                <span className="text-gray-400">Yearly:</span>
+                <span className="text-gray-300">9,125</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Desktop table view - hidden on mobile */}
+        <div className="hidden md:block overflow-x-auto table-container">
+          <table className="w-full text-sm keep-structure">
             <thead>
               <tr className="border-b border-gray-700">
                 <th className="text-left py-3 px-4 text-gray-400 font-medium">NFT Tier</th>
@@ -724,25 +1101,25 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 p-3 bg-purple-900/20 rounded-lg border border-purple-500/10">
-          <h4 className="text-sm font-semibold text-white mb-2 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+        <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-purple-900/20 rounded-lg border border-purple-500/10">
+          <h4 className="text-xs sm:text-sm font-semibold text-white mb-1.5 sm:mb-2 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
             </svg>
             Bonus Rewards
           </h4>
-          <div className="flex flex-wrap gap-3">
-            <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[140px]">
-              <p className="text-xs text-gray-400 mb-1">First 7 days</p>
-              <div className="font-medium text-green-300">+100% (2x rewards)</div>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[100px] sm:min-w-[140px]">
+              <p className="text-xxs sm:text-xs text-gray-400 mb-0.5 sm:mb-1">First 7 days</p>
+              <div className="text-xs sm:text-sm font-medium text-green-300">+100% (2x rewards)</div>
             </div>
-            <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[140px]">
-              <p className="text-xs text-gray-400 mb-1">Long-term (30+ days)</p>
-              <div className="font-medium text-green-300">+20% to +100% bonus</div>
+            <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[100px] sm:min-w-[140px]">
+              <p className="text-xxs sm:text-xs text-gray-400 mb-0.5 sm:mb-1">Long-term (30+ days)</p>
+              <div className="text-xs sm:text-sm font-medium text-green-300">+20% to +100% bonus</div>
             </div>
-            <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[140px]">
-              <p className="text-xs text-gray-400 mb-1">Monthly airdrops</p>
-              <div className="font-medium text-green-300">For 30+ day stakers</div>
+            <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[100px] sm:min-w-[140px]">
+              <p className="text-xxs sm:text-xs text-gray-400 mb-0.5 sm:mb-1">Monthly airdrops</p>
+              <div className="text-xs sm:text-sm font-medium text-green-300">For 30+ day stakers</div>
             </div>
           </div>
         </div>

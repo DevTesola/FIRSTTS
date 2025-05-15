@@ -9,82 +9,90 @@ export default function AuditReport() {
     <Layout>
       <Head>
         <title>TESOLA - Security Audit Report</title>
-        <meta name="description" content="Security audit report for TESOLA Protocol smart contracts" />
+        <meta name="description" content="Security audit report for TESOLA Protocol smart contracts - In-depth audit coming soon" />
       </Head>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="bg-gradient-to-br from-gray-900/95 to-blue-900/20 border border-blue-500/20 rounded-xl p-6 mb-6 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
+        <div className="bg-gradient-to-br from-gray-900/95 to-blue-900/20 border border-blue-500/20 rounded-xl p-4 sm:p-6 mb-6 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
           {/* Header Section */}
-          <div className="flex flex-col items-center justify-center text-center mb-10 py-8 bg-gradient-to-br from-gray-900 to-blue-900/30 rounded-xl border border-blue-500/10">
-            <div className="relative w-32 h-32 mb-4">
+          <div className="flex flex-col items-center justify-center text-center mb-6 sm:mb-10 py-5 sm:py-8 bg-gradient-to-br from-gray-900 to-blue-900/30 rounded-xl border border-blue-500/10">
+            <div className="relative w-24 h-24 sm:w-32 sm:h-32 mb-3 sm:mb-4">
               <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse-slow"></div>
               <div className="relative">
-                <svg className="w-32 h-32 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-24 h-24 sm:w-32 sm:h-32 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 12L11 14L15 10M20.618 5.984C17.45 2.495 12.108 2.066 8.483 5.046C4.857 8.026 4.226 13.334 7.043 16.956C9.86 20.577 15.113 21.483 18.988 18.941C22.863 16.4 23.821 11.228 20.946 7.676" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
             </div>
-            <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 mb-2 sm:mb-4">
               Security Audit Report
             </h1>
-            <p className="text-xl text-blue-100 mb-2">TESOLA Protocol Smart Contracts</p>
-            <div className="flex items-center text-blue-300 bg-blue-900/30 px-3 py-1 rounded-lg">
-              <svg className="w-4 h-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-              </svg>
-              Audit Completed: April 30, 2025
+            <p className="text-lg sm:text-xl text-blue-100 mb-2">TESOLA Protocol Smart Contracts</p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <div className="flex items-center text-blue-300 bg-blue-900/30 px-3 py-1 rounded-lg text-sm sm:text-base">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                </svg>
+                Audit Completed: April 30, 2025
+              </div>
+              <div className="flex items-center text-cyan-300 bg-cyan-900/30 px-3 py-1 rounded-lg text-sm sm:text-base">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                </svg>
+                In-depth Audit COMING SOON
+              </div>
             </div>
           </div>
 
           {/* Executive Summary */}
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold text-blue-400 mb-4 flex items-center">
-              <svg className="w-7 h-7 mr-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-400 mb-3 sm:mb-4 flex items-center">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z" />
                 <path d="M3 8v3c0 1.657 3.134 3 7 3s7-1.343 7-3V8c0 1.657-3.134 3-7 3S3 9.657 3 8z" />
                 <path d="M3 4v3c0 1.657 3.134 3 7 3s7-1.343 7-3V4c0 1.657-3.134 3-7 3S3 5.657 3 4z" />
               </svg>
               Executive Summary
             </h2>
-            <div className="bg-gradient-to-br from-blue-900/30 to-black/20 p-6 rounded-xl border border-blue-500/20 mb-6">
-              <p className="text-gray-300 mb-4">
+            <div className="bg-gradient-to-br from-blue-900/30 to-black/20 p-4 sm:p-6 rounded-xl border border-blue-500/20 mb-4 sm:mb-6">
+              <p className="text-gray-300 text-sm sm:text-base mb-3 sm:mb-4">
                 This report presents the findings of a comprehensive security audit conducted on the TESOLA Protocol smart contracts. 
                 The audit focused on identifying security vulnerabilities, code quality issues, and adherence to best practices in 
                 the TESOLA ecosystem, including NFT staking, token distribution, and reward mechanisms.
               </p>
 
-              <div className="flex items-center mb-6 bg-green-900/20 p-3 rounded-lg border border-green-500/20">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500/20 to-green-700/20 flex items-center justify-center mr-4 border border-green-500/30">
-                  <svg className="w-6 h-6 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <div className="flex items-center mb-4 sm:mb-6 bg-green-900/20 p-2 sm:p-3 rounded-lg border border-green-500/20">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-500/20 to-green-700/20 flex items-center justify-center mr-3 sm:mr-4 border border-green-500/30">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div>
-                  <div className="text-green-400 font-bold">PASSED SECURITY AUDIT</div>
-                  <div className="text-green-300/70 text-sm">No critical vulnerabilities detected</div>
+                  <div className="text-green-400 font-bold text-sm sm:text-base">PASSED SECURITY AUDIT</div>
+                  <div className="text-green-300/70 text-xs sm:text-sm">No critical vulnerabilities detected</div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-xl border border-blue-500/10 flex flex-col items-center">
-                  <div className="text-4xl font-bold text-white mb-1">95%</div>
-                  <div className="text-blue-400 text-sm font-semibold mb-2">SECURITY SCORE</div>
-                  <div className="w-full bg-gray-700/30 h-2 rounded-full mt-1">
-                    <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full" style={{width: '95%'}}></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-3 sm:p-4 rounded-xl border border-blue-500/10 flex flex-col items-center">
+                  <div className="text-2xl sm:text-4xl font-bold text-white mb-0 sm:mb-1">95%</div>
+                  <div className="text-blue-400 text-xs sm:text-sm font-semibold mb-1 sm:mb-2">SECURITY SCORE</div>
+                  <div className="w-full bg-gray-700/30 h-1.5 sm:h-2 rounded-full mt-1">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-1.5 sm:h-2 rounded-full" style={{width: '95%'}}></div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-xl border border-blue-500/10 flex flex-col items-center">
-                  <div className="text-4xl font-bold text-white mb-1">98%</div>
-                  <div className="text-blue-400 text-sm font-semibold mb-2">CODE QUALITY</div>
-                  <div className="w-full bg-gray-700/30 h-2 rounded-full mt-1">
-                    <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full" style={{width: '98%'}}></div>
+                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-3 sm:p-4 rounded-xl border border-blue-500/10 flex flex-col items-center">
+                  <div className="text-2xl sm:text-4xl font-bold text-white mb-0 sm:mb-1">98%</div>
+                  <div className="text-blue-400 text-xs sm:text-sm font-semibold mb-1 sm:mb-2">CODE QUALITY</div>
+                  <div className="w-full bg-gray-700/30 h-1.5 sm:h-2 rounded-full mt-1">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-1.5 sm:h-2 rounded-full" style={{width: '98%'}}></div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-xl border border-blue-500/10 flex flex-col items-center">
-                  <div className="text-4xl font-bold text-white mb-1">92%</div>
-                  <div className="text-blue-400 text-sm font-semibold mb-2">TEST COVERAGE</div>
-                  <div className="w-full bg-gray-700/30 h-2 rounded-full mt-1">
-                    <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full" style={{width: '92%'}}></div>
+                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-3 sm:p-4 rounded-xl border border-blue-500/10 flex flex-col items-center">
+                  <div className="text-2xl sm:text-4xl font-bold text-white mb-0 sm:mb-1">92%</div>
+                  <div className="text-blue-400 text-xs sm:text-sm font-semibold mb-1 sm:mb-2">TEST COVERAGE</div>
+                  <div className="w-full bg-gray-700/30 h-1.5 sm:h-2 rounded-full mt-1">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-1.5 sm:h-2 rounded-full" style={{width: '92%'}}></div>
                   </div>
                 </div>
               </div>
@@ -92,119 +100,120 @@ export default function AuditReport() {
           </div>
 
           {/* Audit Scope */}
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold text-blue-400 mb-4 flex items-center">
-              <svg className="w-7 h-7 mr-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-400 mb-3 sm:mb-4 flex items-center">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9 3a1 1 0 012 0v5.5a.5.5 0 001 0V4a1 1 0 112 0v4.5a.5.5 0 001 0V6a1 1 0 112 0v5a7 7 0 11-14 0V9a1 1 0 012 0v2.5a.5.5 0 001 0V4a1 1 0 012 0v4.5a.5.5 0 001 0V3z" clipRule="evenodd" />
               </svg>
               Audit Scope
             </h2>
-            <div className="bg-gradient-to-br from-blue-900/30 to-black/20 p-6 rounded-xl border border-blue-500/20 mb-6">
-              <p className="text-gray-300 mb-4">
+            <div className="bg-gradient-to-br from-blue-900/30 to-black/20 p-4 sm:p-6 rounded-xl border border-blue-500/20 mb-4 sm:mb-6">
+              <p className="text-gray-300 text-sm sm:text-base mb-3 sm:mb-4">
                 The security audit covered the following smart contracts and components:
               </p>
               
-              <div className="overflow-x-auto mb-6">
-                <table className="w-full border-collapse">
+              <div className="overflow-x-auto mb-4 sm:mb-6">
+                <table className="w-full border-collapse text-sm sm:text-base">
                   <thead>
                     <tr className="bg-blue-900/30 text-blue-200">
-                      <th className="px-4 py-3 text-left border-b border-blue-500/20">Contract/File</th>
-                      <th className="px-4 py-3 text-left border-b border-blue-500/20">Description</th>
-                      <th className="px-4 py-3 text-left border-b border-blue-500/20">Lines of Code</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left border-b border-blue-500/20">Contract/File</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left border-b border-blue-500/20">Description</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left border-b border-blue-500/20">Lines</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-b border-blue-900/30 hover:bg-blue-900/10">
-                      <td className="px-4 py-3 text-blue-300 font-mono">TESOLAToken.sol</td>
-                      <td className="px-4 py-3 text-gray-300">Main SPL token implementation</td>
-                      <td className="px-4 py-3 text-gray-300">248</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-blue-300 font-mono text-xs sm:text-sm">TESOLAToken.sol</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">Main SPL token implementation</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">248</td>
                     </tr>
                     <tr className="border-b border-blue-900/30 hover:bg-blue-900/10">
-                      <td className="px-4 py-3 text-blue-300 font-mono">StakingPool.sol</td>
-                      <td className="px-4 py-3 text-gray-300">NFT staking and reward distribution</td>
-                      <td className="px-4 py-3 text-gray-300">512</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-blue-300 font-mono text-xs sm:text-sm">StakingPool.sol</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">NFT staking and reward distribution</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">512</td>
                     </tr>
                     <tr className="border-b border-blue-900/30 hover:bg-blue-900/10">
-                      <td className="px-4 py-3 text-blue-300 font-mono">RewardCalculator.sol</td>
-                      <td className="px-4 py-3 text-gray-300">APY and rewards calculation logic</td>
-                      <td className="px-4 py-3 text-gray-300">183</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-blue-300 font-mono text-xs sm:text-sm">RewardCalculator.sol</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">APY and rewards calculation logic</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">183</td>
                     </tr>
                     <tr className="border-b border-blue-900/30 hover:bg-blue-900/10">
-                      <td className="px-4 py-3 text-blue-300 font-mono">VestingContract.sol</td>
-                      <td className="px-4 py-3 text-gray-300">Token vesting for team and investors</td>
-                      <td className="px-4 py-3 text-gray-300">215</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-blue-300 font-mono text-xs sm:text-sm">VestingContract.sol</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">Token vesting for team and investors</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">215</td>
                     </tr>
                     <tr className="border-b border-blue-900/30 hover:bg-blue-900/10">
-                      <td className="px-4 py-3 text-blue-300 font-mono">SOLARACollection.sol</td>
-                      <td className="px-4 py-3 text-gray-300">NFT collection and metadata handling</td>
-                      <td className="px-4 py-3 text-gray-300">326</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-blue-300 font-mono text-xs sm:text-sm">SOLARACollection.sol</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">NFT collection and metadata handling</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">326</td>
                     </tr>
                     <tr className="hover:bg-blue-900/10">
-                      <td className="px-4 py-3 text-blue-300 font-mono">TokenDistributor.sol</td>
-                      <td className="px-4 py-3 text-gray-300">Initial token distribution mechanism</td>
-                      <td className="px-4 py-3 text-gray-300">197</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-blue-300 font-mono text-xs sm:text-sm">TokenDistributor.sol</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">Initial token distribution mechanism</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-300">197</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <p className="text-gray-300 mb-4">Audit methodology included:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <p className="text-gray-300 text-sm sm:text-base mb-3 sm:mb-4">Audit methodology included:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div className="flex items-start">
-                  <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3 border border-blue-500/20 flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-2 sm:mr-3 border border-blue-500/20 flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                       <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-blue-300 font-semibold">Manual Code Review</div>
-                    <div className="text-gray-400 text-sm">Line-by-line examination of contract code</div>
+                    <div className="text-blue-300 font-semibold text-xs sm:text-sm">Manual Code Review</div>
+                    <div className="text-gray-400 text-xs sm:text-sm">Line-by-line examination of contract code</div>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3 border border-blue-500/20 flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-2 sm:mr-3 border border-blue-500/20 flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-blue-300 font-semibold">Automated Vulnerability Scanning</div>
-                    <div className="text-gray-400 text-sm">Using industry-standard security tools</div>
+                    <div className="text-blue-300 font-semibold text-xs sm:text-sm">Automated Vulnerability Scanning</div>
+                    <div className="text-gray-400 text-xs sm:text-sm">Using industry-standard security tools</div>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3 border border-blue-500/20 flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-2 sm:mr-3 border border-blue-500/20 flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-blue-300 font-semibold">Formal Verification</div>
-                    <div className="text-gray-400 text-sm">Mathematical analysis of critical functions</div>
+                    <div className="text-blue-300 font-semibold text-xs sm:text-sm">Formal Verification</div>
+                    <div className="text-gray-400 text-xs sm:text-sm">Mathematical analysis of critical functions</div>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3 border border-blue-500/20 flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-2 sm:mr-3 border border-blue-500/20 flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-blue-300 font-semibold">Gas Optimization Analysis</div>
-                    <div className="text-gray-400 text-sm">Efficiency evaluation and improvements</div>
+                    <div className="text-blue-300 font-semibold text-xs sm:text-sm">Gas Optimization Analysis</div>
+                    <div className="text-gray-400 text-xs sm:text-sm">Efficiency evaluation and improvements</div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center bg-cyan-900/20 p-3 rounded-lg border border-cyan-500/20">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-cyan-700/20 flex items-center justify-center mr-4 border border-cyan-500/30">
-                  <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 20 20" fill="currentColor">
+              <div className="flex items-center bg-cyan-900/20 p-2 sm:p-3 rounded-lg border border-cyan-500/20">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-cyan-700/20 flex items-center justify-center mr-3 sm:mr-4 border border-cyan-500/30">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <div className="text-cyan-300 text-sm">
-                  The audit was conducted by <span className="font-bold">CipherStack Security Labs</span> between April 15, 2025 and April 30, 2025
+                <div className="text-cyan-300 text-xs sm:text-sm">
+                  Preliminary security review completed on April 30, 2025
+                  <span className="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full font-semibold text-xs">Third-party audit COMING SOON</span>
                 </div>
               </div>
             </div>
@@ -526,17 +535,17 @@ export default function AuditReport() {
                     </div>
                   </div>
                   <div className="text-center mt-2">
-                    <div className="text-blue-300 font-bold">CERTIFIED SECURE</div>
+                    <div className="text-blue-300 font-bold">PRELIMINARY REVIEW</div>
                     <div className="text-gray-400 text-sm">April 30, 2025</div>
                   </div>
                 </div>
                 
                 <div className="flex-1">
-                  <div className="text-xl text-white mb-4">Security Certification</div>
+                  <div className="text-xl text-white mb-4">Security Assessment Status</div>
                   <p className="text-gray-300 mb-4">
-                    Based on our comprehensive security assessment, <span className="font-semibold text-white">TESOLA Protocol</span> has been 
-                    certified as <span className="font-semibold text-green-400">SECURE</span>, demonstrating excellent code quality, robust 
-                    security practices, and adherence to blockchain development standards.
+                    Based on our preliminary security review, <span className="font-semibold text-white">TESOLA Protocol</span> shows 
+                    <span className="font-semibold text-blue-400"> PROMISING</span> security practices with good code quality and attention to 
+                    blockchain security fundamentals. A full third-party audit is in progress for comprehensive verification.
                   </p>
                   <div className="bg-gradient-to-br from-gray-800/60 to-blue-900/20 p-4 rounded-lg border border-blue-500/10">
                     <div className="flex items-start">
@@ -548,8 +557,8 @@ export default function AuditReport() {
                       <div className="flex-1">
                         <p className="text-blue-300 font-semibold mb-1">Auditor Information</p>
                         <p className="text-gray-400 text-sm">
-                          Audit conducted by <span className="text-white">CipherStack Security Labs</span>, a blockchain security 
-                          firm specializing in smart contract audits for projects on Solana, Ethereum, and other major blockchains.
+                          Preliminary review by independent security researchers. A full, formal audit with a recognized security firm
+                          is in progress and will be published upon completion.
                         </p>
                       </div>
                     </div>
@@ -560,9 +569,9 @@ export default function AuditReport() {
               <div className="text-center p-6 bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-xl border border-blue-500/10 mb-6">
                 <p className="text-white text-lg font-semibold italic">
                   "TESOLA's development team has demonstrated exceptional commitment to security and code quality,
-                  resulting in one of the most robust protocol implementations we've reviewed."
+                  resulting in a robust protocol implementation with strong security fundamentals."
                 </p>
-                <p className="text-blue-300 mt-3">— CipherStack Security Labs Team</p>
+                <p className="text-blue-300 mt-3">— Security Research Team</p>
               </div>
 
               <div className="bg-gradient-to-br from-gray-900/60 to-gray-800/60 p-4 rounded-lg border border-gray-700">
@@ -570,11 +579,15 @@ export default function AuditReport() {
                   <svg className="w-5 h-5 text-gray-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-300 font-semibold">Disclaimer</span>
+                  <span className="text-gray-300 font-semibold">Important Disclaimer</span>
                 </div>
+                <p className="text-gray-400 text-sm mb-2">
+                  This preliminary security review is provided "as is" without any warranties. It does not constitute a formal security audit by a certified auditing firm.
+                  A comprehensive third-party audit is currently in progress and will be published upon completion.
+                </p>
                 <p className="text-gray-400 text-sm">
-                  This audit report is provided "as is" without any warranties. The audit does not guarantee that the code is bug-free 
-                  or meets any specific quality standards. It is a time-boxed assessment of the current codebase and cannot address future code changes.
+                  The assessment does not guarantee that the code is bug-free or meets specific quality standards. It is a time-boxed assessment of the current codebase 
+                  and cannot address future code changes. Users should exercise caution until the formal audit is completed.
                 </p>
               </div>
             </div>
@@ -590,9 +603,9 @@ export default function AuditReport() {
             </h2>
             <div className="bg-gradient-to-br from-blue-900/30 to-black/20 p-6 rounded-xl border border-blue-500/20">
               <p className="text-gray-300 mb-6">
-                Based on our comprehensive security audit, we conclude that the TESOLA Protocol demonstrates a high level 
-                of security, code quality, and adherence to best practices. The identified issues have been properly addressed, 
-                and the remaining informational findings do not pose significant security risks.
+                Based on our preliminary security review, the TESOLA Protocol demonstrates promising security practices,
+                good code quality, and adherence to many blockchain development standards. While this assessment is positive,
+                it should be confirmed by a comprehensive third-party audit before full production deployment.
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -619,16 +632,21 @@ export default function AuditReport() {
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-green-900/30 to-green-900/10 p-5 rounded-xl border border-green-500/20 mb-6">
+              <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/10 p-5 rounded-xl border border-blue-500/20 mb-6">
                 <div className="flex items-center mb-3">
-                  <svg className="w-6 h-6 text-green-400 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  <svg className="w-6 h-6 text-blue-400 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-green-300 font-bold">Final Recommendation</span>
+                  <span className="text-blue-300 font-bold">Preliminary Recommendation</span>
                 </div>
+                <p className="text-gray-300 mb-2">
+                  Based on our preliminary security review, the TESOLA Protocol appears to follow many recommended security practices and shows 
+                  strong fundamental design. The development team has demonstrated commitment to security principles.
+                </p>
                 <p className="text-gray-300">
-                  We recommend the TESOLA Protocol for deployment in a production environment. The team has demonstrated 
-                  a strong commitment to security and best practices, resulting in a robust and well-designed protocol.
+                  <span className="text-cyan-400 font-semibold">Note:</span> A formal third-party audit is still recommended before full production deployment. 
+                  This preliminary assessment should not be considered a final security determination.
                 </p>
               </div>
               

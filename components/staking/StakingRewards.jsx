@@ -454,7 +454,7 @@ const StakingRewards = ({ stats, isLoading }) => {
                       preferRemote={true}
                       useCache={false}
                       id={stake.id || stake.mint_address}
-                      __source="StakingRewards-thumbnail"
+                      _source="StakingRewards-thumbnail"
                       maxRetries={1}
                       retryInterval={1000}
                     />

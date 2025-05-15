@@ -328,22 +328,24 @@ export default function NFTPreviewMinter({ mintPrice = "1.5 SOL", onMint, loadin
       }}
       className="w-full h-full object-cover"
     />
-  ) : (
-    <EnhancedProgressiveImage 
-      src={getNFTImageUrl({
-        id: nft.id,
-        name: nft.name,
-        image: nft.image,
-        __source: 'NFTPreviewMinter'
-      })}
+  ) : nft.image ? (
+    <img 
+      src={nft.image}
       alt={nft.name}
-      placeholder={createPlaceholder(nft.name || "SOLARA NFT")}
       className="w-full h-full object-cover"
-      lazyLoad={true}
-      quality={80}
-      onError={() => {
-        // Fallback to ID-based preview image on error
-        return getNftPreviewImage(nft.id || nft.name);
+      onError={(e) => {
+        console.error(`Error loading image: ${nft.image}`);
+        e.target.src = '/placeholder-nft.png';
+      }}
+    />
+  ) : (
+    <img 
+      src={`/nft-previews/${nft.name.match(/\d+/)?.[0] || '0119'}.png`}
+      alt={nft.name}
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        console.error(`Error loading fallback image for: ${nft.name}`);
+        e.target.src = '/placeholder-nft.png';
       }}
     />
   )}

@@ -5,6 +5,7 @@ import ErrorMessage from '../ErrorMessage';
 import LoadingSkeleton from '../LoadingSkeleton';
 import EnhancedProgressiveImage from '../EnhancedProgressiveImage';
 import { createPlaceholder } from '../../utils/mediaUtils';
+import { debugLog, debugError } from '../../utils/debugUtils';
 
 /**
  * Governance Tab Component
@@ -144,7 +145,7 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
       }, 1500);
       
     } catch (err) {
-      console.error("Error casting vote:", err);
+      debugError("GovernanceTab", "Error casting vote:", err);
       setError(`Failed to cast your vote: ${err.message}`);
     } finally {
       setIsLoading(false);
@@ -282,7 +283,7 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
       
       setMockDataLoaded(true);
     } catch (error) {
-      console.error("Error loading proposals:", error);
+      debugError("GovernanceTab", "Error loading proposals:", error);
       setError(`Failed to load proposals: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -388,10 +389,10 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
                             // 최신 환경 변수 사용 (하드코딩 제거)
                             const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                             const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_t=${Date.now()}`;
+                            const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=stable`;
 
                             // 로그로 생성된 URL 확인
-                            console.log(`✅ GovernanceTab Proposal: IPFS URL 생성: ${gatewayUrl}`);
+                            debugLog("GovernanceTab", `Proposal: IPFS URL 생성: ${gatewayUrl}`);
 
                             return gatewayUrl;
                           })()}
@@ -405,7 +406,7 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
                           blur={true}
                           preferRemote={true}
                           useCache={false}
-                          __source="GovernanceTab-proposal"
+                          _source="GovernanceTab-proposal"
                           maxRetries={1}
                           retryInterval={1000}
                         />
@@ -584,7 +585,7 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
         }
       }, 1500);
     } catch (err) {
-      console.error("Error creating proposal:", err);
+      debugError("GovernanceTab", "Error creating proposal:", err);
       setError(`Failed to create proposal: ${err.message}`);
     } finally {
       setIsLoading(false);
@@ -738,7 +739,7 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
               <div className="flex items-center">
                 {/* 투표 기록에 대한 NFT 이미지 미리보기 */}
                 <div className="w-8 h-8 rounded overflow-hidden mr-2 border border-gray-700 flex-shrink-0">
-                  <EnhancedImageWithFallback
+                  <EnhancedProgressiveImage
                     src={(() => {
                       // NFT ID는 vote.id 또는 proposalTitle에서 해시 생성
                       let nftId = null;
@@ -762,7 +763,7 @@ const GovernanceTab = ({ governanceData, isLoading: parentIsLoading, onRefresh }
                       // 최신 환경 변수 사용 (하드코딩 제거)
                       const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                       const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
-                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=${Date.now()}`;
+                      const gatewayUrl = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${formattedId}.png?_cb=stable`;
                       
                       return gatewayUrl;
                     })()}

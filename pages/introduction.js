@@ -94,8 +94,105 @@ export default function Introduction() {
               
               <div className="bg-green-900/20 border-l-4 border-green-500/50 p-4 rounded-lg my-6">
                 <h3 className="text-lg font-bold text-white mb-3">The Crypto Industry's Dirty Secret:</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                
+                {/* Mobile swipe hint - only shown on small screens */}
+                <div className="swipe-hint md:hidden">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                  </svg>
+                  <span>Swipe to see comparison</span>
+                </div>
+                
+                {/* Mobile card layout for small screens */}
+                <div className="block md:hidden space-y-4">
+                  {/* Fair Launch Card */}
+                  <div className="bg-gray-900/40 rounded-lg overflow-hidden">
+                    <div className="bg-purple-900/30 p-3 border-b border-purple-500/20">
+                      <div className="font-medium text-white">"Fair Launch"</div>
+                    </div>
+                    <div className="divide-y divide-gray-800">
+                      <div className="flex p-3 border-l-4 border-red-600">
+                        <span className="text-sm text-red-300">
+                          <span className="font-bold mb-1 block text-red-300">What They Do:</span>
+                          Multiple hidden wallets
+                        </span>
+                      </div>
+                      <div className="flex p-3 border-l-4 border-green-600">
+                        <span className="text-sm text-green-300">
+                          <span className="font-bold mb-1 block text-green-300">What We Do:</span>
+                          15% clearly allocated
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* No Team Tokens Card */}
+                  <div className="bg-gray-900/40 rounded-lg overflow-hidden">
+                    <div className="bg-purple-900/30 p-3 border-b border-purple-500/20">
+                      <div className="font-medium text-white">"No Team Tokens"</div>
+                    </div>
+                    <div className="divide-y divide-gray-800">
+                      <div className="flex p-3 border-l-4 border-red-600">
+                        <span className="text-sm text-red-300">
+                          <span className="font-bold mb-1 block text-red-300">What They Do:</span>
+                          Team buys with insider info
+                        </span>
+                      </div>
+                      <div className="flex p-3 border-l-4 border-green-600">
+                        <span className="text-sm text-green-300">
+                          <span className="font-bold mb-1 block text-green-300">What We Do:</span>
+                          Team tokens fully visible
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Community Driven Card */}
+                  <div className="bg-gray-900/40 rounded-lg overflow-hidden">
+                    <div className="bg-purple-900/30 p-3 border-b border-purple-500/20">
+                      <div className="font-medium text-white">"Community Driven"</div>
+                    </div>
+                    <div className="divide-y divide-gray-800">
+                      <div className="flex p-3 border-l-4 border-red-600">
+                        <span className="text-sm text-red-300">
+                          <span className="font-bold mb-1 block text-red-300">What They Do:</span>
+                          Centralized decisions
+                        </span>
+                      </div>
+                      <div className="flex p-3 border-l-4 border-green-600">
+                        <span className="text-sm text-green-300">
+                          <span className="font-bold mb-1 block text-green-300">What We Do:</span>
+                          Transparent governance
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Renounced Contract Card */}
+                  <div className="bg-gray-900/40 rounded-lg overflow-hidden">
+                    <div className="bg-purple-900/30 p-3 border-b border-purple-500/20">
+                      <div className="font-medium text-white">"Renounced Contract"</div>
+                    </div>
+                    <div className="divide-y divide-gray-800">
+                      <div className="flex p-3 border-l-4 border-red-600">
+                        <span className="text-sm text-red-300">
+                          <span className="font-bold mb-1 block text-red-300">What They Do:</span>
+                          Can't fix or improve
+                        </span>
+                      </div>
+                      <div className="flex p-3 border-l-4 border-green-600">
+                        <span className="text-sm text-green-300">
+                          <span className="font-bold mb-1 block text-green-300">What We Do:</span>
+                          Maintained for upgrades
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Desktop table view - hidden on mobile */}
+                <div className="hidden md:block overflow-x-auto table-container">
+                  <table className="w-full keep-structure">
                     <thead>
                       <tr className="border-b border-gray-700">
                         <th className="text-left py-3 px-4 bg-red-900/30 text-red-300 font-medium">What They Say</th>
@@ -621,14 +718,13 @@ export default function Introduction() {
               </div>
               
               <div className="flex justify-center space-x-6 mt-10">
-                <a href="https://discord.gg/tesola" target="_blank" rel="noopener noreferrer" className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg transition-colors flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                    <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                <a href="https://t.me/tesolachat" target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition-colors flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm-2.426 14.741h-.012l-.001-.001-.28-.446-.448-.72v-.274l.449-.293s3.119-2.033 3.294-2.151l.14-.108c.214-.166.41-.315.546-.462.032-.037.074-.058.12-.06.046-.007.088.012.116.046.02.02.031.055.031.095.001.029-.005.075-.019.13-.05.241-.283 1.385-.418 2.045-.066.308-.163.588-.288.837-.086.174-.237.318-.436.419-.175.088-.37.125-.573.11-.174-.014-.566-.078-.784-.137-.629-.172-3.011-1.066-3.522-1.27l-.007-.003c-.341-.171-.53-.292-.484-.409.045-.118.208-.219.462-.333l.114-.068z"/>
                   </svg>
-                  Discord
+                  Telegram
                 </a>
-                <a href="https://twitter.com/tesolanft" target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition-colors flex items-center">
+                <a href="https://twitter.com/teslainsolana" target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition-colors flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
                   </svg>

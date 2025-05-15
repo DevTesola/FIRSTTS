@@ -9,95 +9,93 @@ const VideoLandingPage = () => {
   const [videoPlaying, setVideoPlaying] = useState(false);
   const router = useRouter();
 
-  // 3초 시점에 버튼 표시 
+  // Show buttons at 3 second mark
   useEffect(() => {
-    // 3초 후 버튼 표시 시작
+    // Start showing buttons after 3 seconds
     const timer = setTimeout(() => {
       setShowButtons(true);
-      console.log("Buttons showing at 3 second mark");
     }, 3000);
     
     return () => clearTimeout(timer);
   }, []);
 
-  // 비디오 재생 시작 함수
+  // Function to start video playback
   const startVideo = () => {
     try {
       const video = videoRef.current;
       if (!video) {
-        console.error("Video element not found");
+        // Video element not found
         return;
       }
 
-      console.log("Attempting to play video with sound");
+      // Attempt to play video with sound
       
-      // 비디오 옵션 설정
+      // Set video options
       video.muted = false;
       video.volume = 1.0;
       video.currentTime = 0;
       
-      // 직접 비디오 재생시키기
+      // Directly play the video
       const playPromise = video.play();
       
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log("Video successfully playing with sound");
+            // Video successfully playing with sound
             setVideoPlaying(true);
           })
           .catch(error => {
-            console.error("Video play failed:", error);
+            // Video play failed
             
-            // 실패 시 다른 방법 시도
+            // Try another method if failed
             setTimeout(() => {
               video.muted = false;
               video.play().catch(innerError => {
-                console.error("Even retry play failed:", innerError);
+                // Even retry play failed
               });
             }, 300);
           });
       } else {
-        console.log("Play promise is undefined, cannot track success/failure");
-        // 일단 재생 시작된 것으로 간주
+        // Play promise is undefined, cannot track success/failure
+        // Consider playback started anyway
         setVideoPlaying(true);
       }
     } catch (e) {
-      console.error("Error in startVideo function:", e);
+      // Error in startVideo function
     }
   };
 
-  // 비디오 이벤트 핸들러 설정
+  // Setup video event handlers
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      // 영상의 6~7초 구간에서 버튼을 표시 (6초에 "Who are you?" 대사가 나온다고 가정)
+      // Show buttons at 6-7 second mark (assuming "Who are you?" dialog appears at 6 seconds)
       if (video.currentTime >= 6 && video.currentTime <= 7 && !showButtons) {
-        console.log("Video timeupdate trigger at:", video.currentTime);
         setShowButtons(true);
       }
     };
 
     const handleCanPlay = () => {
-      console.log("Video can play now");
+      // Video can play now
     };
 
     const handleVideoPlay = () => {
-      console.log("Video started playing");
+      // Video started playing
     };
 
     const handleError = (e) => {
-      console.error("Video error:", e);
+      // Handle video error silently
     };
 
-    // 이벤트 리스너 등록
+    // Register event listeners
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('play', handleVideoPlay);
     video.addEventListener('error', handleError);
 
-    // 클린업 함수
+    // Cleanup function
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('canplay', handleCanPlay);
@@ -108,7 +106,7 @@ const VideoLandingPage = () => {
 
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden font-orbitron bg-black">
-      {/* 배경 비디오 - SPACE.mp4 */}
+      {/* Background video - SPACE.mp4 (desktop), SPACE_lowres.webm (mobile) */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
         <video
           className="absolute inset-0 w-full h-full object-cover filter brightness-90 contrast-120 saturate-100 opacity-95"
@@ -119,38 +117,39 @@ const VideoLandingPage = () => {
           preload="auto"
         >
           <source src="/SPACE.mp4" type="video/mp4" />
+          <source src="/SPACE_lowres.webm" type="video/webm" media="(max-width: 768px)" />
         </video>
         
-        {/* 어두운 필터 오버레이 - 더 투명하게 조정 */}
+        {/* Dark filter overlay - adjusted for more transparency */}
         <div className="absolute inset-0 bg-black/20"></div>
         
-        {/* 은은한 그라데이션 필터 - 더 투명하게 조정 */}
+        {/* Subtle gradient filter - adjusted for more transparency */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/40 mix-blend-multiply"></div>
       </div>
       
-      {/* 별빛 효과 배경 - 비디오 위에 겹침 (투명도 크게 감소) */}
-      <div className="absolute inset-0 z-1 bg-black/30">
-        {/* stars3.jpg 배경 이미지 오버레이 - 투명도 크게 감소 */}
+      {/* Starlight effect background - overlaps video (greatly reduced opacity) - hidden on mobile */}
+      <div className="absolute inset-0 z-1 bg-black/30 hidden md:block">
+        {/* stars3.jpg background image overlay - greatly reduced opacity */}
         <div className="absolute inset-0 bg-[url('/stars3.jpg')] bg-cover bg-center opacity-5 mix-blend-lighten"></div>
         
-        {/* CSS 별 애니메이션 - 밝기 더 감소 */}
+        {/* CSS star animations - reduced brightness */}
         <div className="stars1 opacity-40"></div>
         <div className="stars2 opacity-40"></div>
         <div className="stars3 opacity-50"></div>
       </div>
       
-      {/* 재생 버튼 - 화면 중앙에 큰 크기로 표시 (z-index 높임) */}
+      {/* Play button - displayed large in the center of the screen (increased z-index) */}
       {!videoPlaying && (
         <div className="fixed inset-0 flex flex-col items-center justify-center z-[100]" style={{ pointerEvents: 'none' }}>
-          <div className="absolute top-[32%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ pointerEvents: 'auto' }}>
-            <div className="text-white text-4xl font-bold bg-black/90 px-10 py-5 rounded-xl border-[3px] border-red-500 mb-8 shadow-[0_0_35px_rgba(255,0,100,0.8)]">
+          <div className="absolute top-[20%] md:top-[32%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ pointerEvents: 'auto' }}>
+            <div className="text-white text-xl md:text-4xl font-bold bg-black/90 px-4 md:px-10 py-3 md:py-5 rounded-xl border-[3px] border-red-500 mb-4 md:mb-8 shadow-[0_0_35px_rgba(255,0,100,0.8)]">
               CLICK TO PLAY WITH SOUND
             </div>
             <div 
-              className="bg-gradient-to-r from-red-600 to-purple-800 p-10 rounded-full shadow-[0_0_40px_rgba(255,60,60,0.8)] animate-pulse border-[6px] border-white/70 cursor-pointer"
+              className="bg-gradient-to-r from-red-600 to-purple-800 p-6 md:p-10 rounded-full shadow-[0_0_40px_rgba(255,60,60,0.8)] animate-pulse border-[6px] border-white/70 cursor-pointer"
               onClick={startVideo}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-28 w-28 text-white" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 md:h-28 md:w-28 text-white" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
               </svg>
             </div>
@@ -158,53 +157,53 @@ const VideoLandingPage = () => {
         </div>
       )}
       
-      {/* 비디오 컨테이너 - 더 크게 키우고 더 위로 올림 */}
-      <div className="absolute top-[28%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-6xl z-20">
-        {/* 스타일링된 비디오 프레임 */}
+      {/* Video container - mobile & desktop responsive - optimized for mobile */}
+      <div className="absolute top-[10%] md:top-[28%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[95%] md:w-[90%] max-w-6xl z-20">
+        {/* Styled video frame */}
         <div className="relative rounded-lg overflow-visible shadow-[0_0_50px_rgba(100,100,255,0.8)] border-4 border-gray-800/80">
-          {/* 프레임 장식 요소 */}
-          <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 z-20 border-b-2 border-blue-500/30 flex items-center justify-between px-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          {/* Frame decorative elements */}
+          <div className="absolute top-0 left-0 w-full h-8 md:h-12 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 z-20 border-b-2 border-blue-500/30 flex items-center justify-between px-2 md:px-4">
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-red-500"></div>
+              <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-green-500"></div>
             </div>
-            <div className="text-blue-300 font-bold tracking-wider text-sm">TESOLA INITIALIZATION</div>
-            <div className="w-24 h-5 bg-gray-800 rounded-md border border-gray-700"></div>
+            <div className="text-blue-300 font-bold tracking-wider text-xs md:text-sm">TESOLA INITIALIZATION</div>
+            <div className="w-16 md:w-24 h-4 md:h-5 bg-gray-800 rounded-md border border-gray-700"></div>
           </div>
           
-          {/* 사이드 패널 - 왼쪽 */}
-          <div className="absolute left-0 top-12 bottom-0 w-16 bg-gradient-to-b from-gray-900 to-blue-900/40 z-20 border-r border-blue-500/20 flex flex-col items-center justify-start pt-4 space-y-6">
-            <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full bg-blue-600/80 animate-pulse"></div>
+          {/* Side panel - left - mobile optimized */}
+          <div className="absolute left-0 top-8 md:top-12 bottom-0 w-8 md:w-16 bg-gradient-to-b from-gray-900 to-blue-900/40 z-20 border-r border-blue-500/20 flex flex-col items-center justify-start pt-2 md:pt-4 space-y-3 md:space-y-6">
+            <div className="w-5 h-5 md:w-8 md:h-8 rounded-full bg-blue-500/30 flex items-center justify-center">
+              <div className="w-3 h-3 md:w-6 md:h-6 rounded-full bg-blue-600/80 animate-pulse"></div>
             </div>
-            <div className="w-10 h-1 bg-blue-500/30 rounded-full"></div>
-            <div className="w-8 h-8 rounded-full bg-blue-500/20"></div>
-            <div className="w-8 h-8 rounded-full bg-blue-500/20"></div>
-            <div className="w-10 h-1 bg-blue-500/30 rounded-full"></div>
-            <div className="w-8 h-20 bg-gradient-to-b from-blue-500/10 to-blue-500/30 rounded-lg"></div>
+            <div className="w-6 h-0.5 md:w-10 md:h-1 bg-blue-500/30 rounded-full"></div>
+            <div className="w-4 h-4 md:w-8 md:h-8 rounded-full bg-blue-500/20"></div>
+            <div className="w-4 h-4 md:w-8 md:h-8 rounded-full bg-blue-500/20"></div>
+            <div className="w-6 h-0.5 md:w-10 md:h-1 bg-blue-500/30 rounded-full"></div>
+            <div className="w-4 h-10 md:w-8 md:h-20 bg-gradient-to-b from-blue-500/10 to-blue-500/30 rounded-lg"></div>
           </div>
           
-          {/* 사이드 패널 - 오른쪽 */}
-          <div className="absolute right-0 top-12 bottom-0 w-16 bg-gradient-to-b from-gray-900 to-blue-900/40 z-20 border-l border-blue-500/20 flex flex-col items-center justify-start pt-4 space-y-6">
-            <div className="w-8 h-8 rounded-full bg-red-500/30 flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full bg-red-600/80 animate-pulse"></div>
+          {/* Side panel - right - mobile optimized */}
+          <div className="absolute right-0 top-8 md:top-12 bottom-0 w-8 md:w-16 bg-gradient-to-b from-gray-900 to-blue-900/40 z-20 border-l border-blue-500/20 flex flex-col items-center justify-start pt-2 md:pt-4 space-y-3 md:space-y-6">
+            <div className="w-5 h-5 md:w-8 md:h-8 rounded-full bg-red-500/30 flex items-center justify-center">
+              <div className="w-3 h-3 md:w-6 md:h-6 rounded-full bg-red-600/80 animate-pulse"></div>
             </div>
-            <div className="w-10 h-1 bg-blue-500/30 rounded-full"></div>
-            <div className="w-8 h-20 bg-gradient-to-b from-red-500/10 to-red-500/30 rounded-lg"></div>
-            <div className="w-10 h-1 bg-blue-500/30 rounded-full"></div>
-            <div className="w-8 h-8 rounded-full bg-red-500/20"></div>
-            <div className="w-8 h-8 rounded-full bg-red-500/20"></div>
+            <div className="w-6 h-0.5 md:w-10 md:h-1 bg-blue-500/30 rounded-full"></div>
+            <div className="w-4 h-10 md:w-8 md:h-20 bg-gradient-to-b from-red-500/10 to-red-500/30 rounded-lg"></div>
+            <div className="w-6 h-0.5 md:w-10 md:h-1 bg-blue-500/30 rounded-full"></div>
+            <div className="w-4 h-4 md:w-8 md:h-8 rounded-full bg-red-500/20"></div>
+            <div className="w-4 h-4 md:w-8 md:h-8 rounded-full bg-red-500/20"></div>
           </div>
           
-          {/* 하단 패널 */}
-          <div className="absolute bottom-0 left-16 right-16 h-10 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 z-20 border-t border-blue-500/30 flex items-center justify-around">
-            <div className="w-20 h-2 bg-blue-500/30 rounded-full"></div>
-            <div className="w-32 h-4 bg-gray-800 rounded-md border border-blue-500/20"></div>
-            <div className="w-20 h-2 bg-blue-500/30 rounded-full"></div>
+          {/* Bottom panel - mobile optimized */}
+          <div className="absolute bottom-0 left-8 md:left-16 right-8 md:right-16 h-6 md:h-10 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 z-20 border-t border-blue-500/30 flex items-center justify-around">
+            <div className="w-10 md:w-20 h-1 md:h-2 bg-blue-500/30 rounded-full"></div>
+            <div className="w-20 md:w-32 h-2 md:h-4 bg-gray-800 rounded-md border border-blue-500/20"></div>
+            <div className="w-10 md:w-20 h-1 md:h-2 bg-blue-500/30 rounded-full"></div>
           </div>
           
-          {/* 비디오 요소 - 컨테이너 안에 intro.mp4만 표시 */}
+          {/* Video element - only displays intro.mp4 inside the container */}
           <video
             ref={videoRef}
             id="mainVideo"
@@ -217,7 +216,7 @@ const VideoLandingPage = () => {
             muted
             controls={false}
             onClick={startVideo}
-            onError={(e) => console.error("Video tag error:", e)}
+            onError={(e) => {}}
           >
             <source src="/intro.mp4" type="video/mp4" />
             Your browser does not support the video tag.
@@ -225,21 +224,21 @@ const VideoLandingPage = () => {
         </div>
       </div>
       
-      {/* 오버레이 콘텐츠 */}
+      {/* Overlay content */}
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-        {/* 구슬 버튼들 - 타이밍에 맞춰 페이드인 */}
+        {/* Orb buttons - fade in with timing - mobile optimized */}
         {showButtons && (
-          <div className="relative flex flex-wrap justify-between items-start w-full px-32 mb-20">
-            {/* 왼쪽 행성 - 화이트페이퍼 - 움직임 추가 */}
-            <Link href="/whitepaper">
-              <div className="group cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-105 relative" style={{animation: 'planetEntryLeft 3s forwards ease-out, bounce 9s ease-in-out infinite 6s'}}>
-                {/* 행성 진입 트레일 효과 */}
+          <div className="relative flex flex-wrap justify-center md:justify-between items-center md:items-start w-full px-4 md:px-32 mb-20">
+            {/* Left planet - Whitepaper - optimized for mobile */}
+            <Link href="/whitepaper" className="mb-8 md:mb-0 ml-4 md:ml-0">
+              <div className="group cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-105 relative scale-[0.6] md:scale-100" style={{animation: 'planetEntryLeft 3s forwards ease-out, bounce 9s ease-in-out infinite 6s'}}>
+                {/* Planet entry trail effect */}
                 <div className="absolute top-[50%] right-[20%] h-3 rounded-full bg-gradient-to-r from-transparent via-blue-400/70 to-purple-500/70 blur-sm z-0 animate-planetTrail"></div>
                 <div className="absolute w-56 h-56 rounded-full bg-purple-500/20 blur-md opacity-0 animate-[fadeIn_2s_ease-in-out_3s_forwards]"></div>
-                {/* 행성 도착 이펙트 */}
+                {/* Planet arrival effect */}
                 <div className="absolute w-full h-full rounded-full bg-blue-400/40 blur-md opacity-0 animate-[planetArrival_1.5s_ease-out_5s_forwards]"></div>
                 
-                {/* 별빛 스파클 효과 */}
+                {/* Starlight sparkle effect */}
                 <div className="absolute top-[-20px] left-[10px] w-8 h-8 opacity-0 animate-[sparkle_0.8s_ease-out_5.1s_forwards]">
                   <svg viewBox="0 0 24 24" className="w-full h-full text-blue-200 drop-shadow-[0_0_10px_rgba(120,120,255,0.8)]">
                     <path fill="currentColor" d="M12,2L14.2,9.2H22L16,13.9L18.2,21L12,16.3L5.8,21L8,13.9L2,9.2H9.8L12,2"/>
@@ -255,21 +254,21 @@ const VideoLandingPage = () => {
                     <path fill="currentColor" d="M12,2L14.2,9.2H22L16,13.9L18.2,21L12,16.3L5.8,21L8,13.9L2,9.2H9.8L12,2"/>
                   </svg>
                 </div>
-                {/* 화이트페이퍼 툴팁 */}
-                <div className="absolute top-[-70px] left-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform group-hover:translate-y-2">
-                  <div className="bg-gradient-to-br from-blue-900 via-blue-600 to-purple-800 text-white px-6 py-3 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(100,100,255,0.7)] border-2 border-blue-400/50 relative overflow-hidden">
-                    {/* 배경 효과 */}
+                {/* Whitepaper tooltip - optimized for mobile */}
+                <div className="absolute top-[-70px] left-[40px] md:left-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform group-hover:translate-y-2">
+                  <div className="bg-gradient-to-br from-blue-900 via-blue-600 to-purple-800 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(100,100,255,0.7)] border-2 border-blue-400/50 relative overflow-hidden">
+                    {/* Background effect */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(120,120,255,0.2)_0%,transparent_60%)]"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(180,120,255,0.2)_0%,transparent_60%)]"></div>
                     
-                    {/* 텍스트 */}
+                    {/* Text */}
                     <div className="flex flex-col items-center relative">
                       <div className="flex items-center mb-1">
-                        <span className="text-blue-200 font-black text-sm tracking-widest uppercase mr-1">THE</span>
-                        <span className="text-white font-black text-sm tracking-widest uppercase">DIAMOND</span>
+                        <span className="text-blue-200 font-black text-xs md:text-sm tracking-widest uppercase mr-1">THE</span>
+                        <span className="text-white font-black text-xs md:text-sm tracking-widest uppercase">DIAMOND</span>
                         <span className="ml-1 font-bold">💎</span>
                       </div>
-                      <div className="text-sm font-bold tracking-wider text-blue-200 uppercase">
+                      <div className="text-xs md:text-sm font-bold tracking-wider text-blue-200 uppercase">
                         <span className="animate-pulse">HODL</span>
                         <span className="mx-1">•</span>
                         <span className="text-white">HANDS</span>
@@ -284,10 +283,10 @@ const VideoLandingPage = () => {
                 </div>
                 
                 <div className="w-48 h-48 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center shadow-xl shadow-blue-500/50 hover:shadow-blue-500/80 transition-all duration-500 group-hover:scale-110 transform-gpu relative overflow-visible">
-                  {/* 행성 표면 질감 */}
+                  {/* Planet surface texture */}
                   <div className="w-44 h-44 rounded-full bg-gradient-to-br from-blue-500 to-purple-700 flex items-center justify-center overflow-hidden absolute">
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600/80 via-purple-500/80 to-blue-800/80 backdrop-blur-sm relative">
-                      {/* 행성 표면 크레이터 */}
+                      {/* Planet surface craters */}
                       <div className="absolute top-3 left-5 w-4 h-4 rounded-full bg-blue-300/20"></div>
                       <div className="absolute bottom-6 right-8 w-6 h-6 rounded-full bg-purple-300/20"></div>
                       <div className="absolute top-12 right-4 w-5 h-5 rounded-full bg-indigo-300/20"></div>
@@ -299,7 +298,7 @@ const VideoLandingPage = () => {
                     </div>
                   </div>
                   
-                  {/* 행성 고리 - 속도 통일 */}
+                  {/* Planet rings - unified speed */}
                   <div className="absolute w-[160%] h-16 border-4 border-blue-400/30 rounded-full -rotate-12 animate-spin-reverse" style={{animationDuration: '10s'}}></div>
                   <div className="absolute w-[180%] h-6 border border-blue-300/30 rounded-full -rotate-5 animate-spin" style={{animationDuration: '12s'}}></div>
                   <div className="absolute w-[170%] h-12 border-2 border-purple-500/20 rounded-full rotate-12 animate-spin" style={{animationDuration: '15s'}}></div>
@@ -323,19 +322,19 @@ const VideoLandingPage = () => {
               </div>
             </Link>
             
-            {/* 개발자 공간 행성 - 검은색과 빨간색 테마 - 더 아래쪽 왼쪽에 위치 - 빠른 등장 애니메이션 */}
-            <Link href="/developer-space" className="absolute left-[15%] bottom-[-350px] z-20">
-              <div className="group cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-105 relative" style={{animation: 'devPlanetEntry 2.5s cubic-bezier(0.25, 0.1, 0.25, 1.4) forwards, bounce 6s ease-in-out infinite 3s'}}>
-                {/* 곡선 트레일 효과 - 우측 상단에서 진입 */}
+            {/* Developer space planet - black and red theme - optimized for mobile */}
+            <Link href="/developer-space" className="absolute left-[5%] md:left-[15%] bottom-[-220px] md:bottom-[-350px] z-20">
+              <div className="group cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-105 relative scale-[0.6] md:scale-100" style={{animation: 'devPlanetEntry 2.5s cubic-bezier(0.25, 0.1, 0.25, 1.4) forwards, bounce 6s ease-in-out infinite 3s'}}>
+                {/* Curved trail effect - entering from top right */}
                 <div className="absolute top-[30%] right-[-80%] h-3 w-64 rounded-full bg-gradient-to-l from-transparent via-red-400/70 to-rose-500/70 blur-sm z-0" 
                   style={{animation: 'devPlanetEntry 2.5s forwards ease-out, fadeOut 1s ease-in 2.5s forwards', transformOrigin: 'center center'}}></div>
                 <div className="absolute w-56 h-56 rounded-full bg-rose-500/20 blur-md opacity-0"
                   style={{animation: 'fadeIn 0.5s ease-in 2s forwards'}}></div>
-                {/* 행성 도착 이펙트 */}
+                {/* Planet arrival effect */}
                 <div className="absolute w-full h-full rounded-full bg-red-400/40 blur-md opacity-0"
                   style={{animation: 'planetArrival 1s ease-out 2.5s forwards'}}></div>
                 
-                {/* 별빛 스파클 효과 */}
+                {/* Starlight sparkle effect */}
                 <div className="absolute top-[-15px] left-[5px] w-8 h-8 opacity-0" style={{animation: 'sparkle 0.8s ease-out 2.7s forwards'}}>
                   <svg viewBox="0 0 24 24" className="w-full h-full text-rose-200 drop-shadow-[0_0_10px_rgba(255,50,80,0.8)]">
                     <path fill="currentColor" d="M12,2L14.2,9.2H22L16,13.9L18.2,21L12,16.3L5.8,21L8,13.9L2,9.2H9.8L12,2"/>
@@ -351,21 +350,21 @@ const VideoLandingPage = () => {
                     <path fill="currentColor" d="M12,2L14.2,9.2H22L16,13.9L18.2,21L12,16.3L5.8,21L8,13.9L2,9.2H9.8L12,2"/>
                   </svg>
                 </div>
-                {/* 개발자 공간 툴팁 - 왼쪽 아래에 표시 */}
-                <div className="absolute bottom-[-120px] left-[10px] opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform group-hover:translate-y-[-5px]">
-                  <div className="bg-gradient-to-br from-gray-900 via-red-900 to-black text-white px-6 py-3 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(255,50,80,0.7)] border-2 border-rose-500/50 relative overflow-hidden">
-                    {/* 배경 효과 */}
+                {/* Developer space tooltip - optimized for mobile */}
+                <div className="absolute bottom-[-100px] left-[10px] opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform group-hover:translate-y-[-5px]">
+                  <div className="bg-gradient-to-br from-gray-900 via-red-900 to-black text-white px-4 md:px-6 py-2 md:py-3 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(255,50,80,0.7)] border-2 border-rose-500/50 relative overflow-hidden">
+                    {/* Background effect */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,50,80,0.2)_0%,transparent_60%)]"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(220,50,50,0.2)_0%,transparent_60%)]"></div>
                     
-                    {/* 텍스트 */}
+                    {/* Text */}
                     <div className="flex flex-col items-center relative">
                       <div className="flex items-center mb-1">
-                        <span className="text-rose-300 font-black text-sm tracking-widest uppercase mr-1">DEV</span>
-                        <span className="text-white font-black text-sm tracking-widest uppercase">MODE</span>
+                        <span className="text-rose-300 font-black text-xs md:text-sm tracking-widest uppercase mr-1">DEV</span>
+                        <span className="text-white font-black text-xs md:text-sm tracking-widest uppercase">MODE</span>
                         <span className="ml-1 font-bold">🧑‍💻</span>
                       </div>
-                      <div className="text-xs font-bold tracking-wider text-red-200 uppercase flex items-center">
+                      <div className="text-[10px] md:text-xs font-bold tracking-wider text-red-200 uppercase flex items-center">
                         <span className="animate-pulse">CODING</span>
                         <span className="mx-1">•</span>
                         <span className="text-white">LIVE</span>
@@ -380,10 +379,10 @@ const VideoLandingPage = () => {
                 </div>
                 
                 <div className="w-48 h-48 rounded-full bg-gradient-to-br from-black to-gray-900 flex items-center justify-center shadow-xl shadow-rose-500/50 hover:shadow-red-500/80 transition-all duration-500 group-hover:scale-110 transform-gpu relative overflow-visible">
-                  {/* 행성 표면 질감 */}
+                  {/* Planet surface texture */}
                   <div className="w-44 h-44 rounded-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center overflow-hidden absolute">
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-black/80 via-gray-900/80 to-gray-800/80 backdrop-blur-sm relative">
-                      {/* 행성 표면 디테일 - 코드 패턴 */}
+                      {/* Planet surface details - code pattern */}
                       <div className="absolute top-4 left-7 w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center overflow-hidden">
                         <span className="text-[8px] text-rose-300/50 font-mono">{'{'}</span>
                       </div>
@@ -403,7 +402,7 @@ const VideoLandingPage = () => {
                         <span className="text-[8px] text-rose-300/50 font-mono rotate-[15deg]">()</span>
                       </div>
                       
-                      {/* DEV 아이콘 */}
+                      {/* DEV icon */}
                       <div className="relative flex items-center justify-center">
                         <div className="absolute w-16 h-16 rounded-full bg-gradient-to-r from-rose-500 to-red-600 opacity-50 animate-pulse blur-sm"></div>
                         <div className="z-10 flex flex-col items-center justify-center">
@@ -415,7 +414,7 @@ const VideoLandingPage = () => {
                     </div>
                   </div>
                   
-                  {/* 행성 고리 - 속도 통일 */}
+                  {/* Planet rings - unified speed */}
                   <div className="absolute w-[165%] h-14 border-4 border-rose-500/30 rounded-full rotate-6 animate-spin" style={{animationDuration: '11s'}}></div>
                   <div className="absolute w-[175%] h-8 border border-red-400/30 rounded-full rotate-12 animate-spin-reverse" style={{animationDuration: '14s'}}></div>
                   <div className="absolute w-[155%] h-10 border-2 border-rose-500/20 rounded-full -rotate-8 animate-spin" style={{animationDuration: '17s'}}></div>
@@ -442,16 +441,16 @@ const VideoLandingPage = () => {
               </div>
             </Link>
 
-            {/* 오른쪽 행성 - 진짜 이야기 - 위쪽에 위치하고 움직임 추가 */}
-            <Link href="/introduction" className="absolute right-[13%] top-[-120px] z-20">
-              <div className="group cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-105 relative" style={{animation: 'planetEntryRight 3s forwards ease-out, bounce 8s ease-in-out infinite 6s'}}>
-                {/* 행성 진입 트레일 효과 */}
+            {/* Right planet - Real story - optimized positioning for mobile */}
+            <Link href="/introduction" className="absolute right-[5%] md:right-[13%] top-[20px] md:top-[-120px] z-20">
+              <div className="group cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-105 relative scale-[0.6] md:scale-100" style={{animation: 'planetEntryRight 3s forwards ease-out, bounce 8s ease-in-out infinite 6s'}}>
+                {/* Planet entry trail effect */}
                 <div className="absolute top-[50%] left-[20%] h-3 rounded-full bg-gradient-to-l from-transparent via-orange-400/70 to-red-500/70 blur-sm z-0 animate-planetTrail"></div>
                 <div className="absolute w-56 h-56 rounded-full bg-amber-500/20 blur-md opacity-0 animate-[fadeIn_2s_ease-in-out_3s_forwards]"></div>
-                {/* 행성 도착 이펙트 */}
+                {/* Planet arrival effect */}
                 <div className="absolute w-full h-full rounded-full bg-orange-400/40 blur-md opacity-0 animate-[planetArrival_1.5s_ease-out_5s_forwards]"></div>
                 
-                {/* 별빛 스파클 효과 */}
+                {/* Starlight sparkle effect */}
                 <div className="absolute top-[-20px] right-[10px] w-8 h-8 opacity-0 animate-[sparkle_0.8s_ease-out_5.1s_forwards]">
                   <svg viewBox="0 0 24 24" className="w-full h-full text-amber-200 drop-shadow-[0_0_10px_rgba(255,180,80,0.8)]">
                     <path fill="currentColor" d="M12,2L14.2,9.2H22L16,13.9L18.2,21L12,16.3L5.8,21L8,13.9L2,9.2H9.8L12,2"/>
@@ -467,26 +466,26 @@ const VideoLandingPage = () => {
                     <path fill="currentColor" d="M12,2L14.2,9.2H22L16,13.9L18.2,21L12,16.3L5.8,21L8,13.9L2,9.2H9.8L12,2"/>
                   </svg>
                 </div>
-                {/* 진짜 이야기 툴팁 */}
-                <div className="absolute top-[-70px] right-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform group-hover:translate-y-2">
-                  <div className="bg-gradient-to-br from-amber-600 via-red-600 to-orange-700 text-white px-6 py-3 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(255,150,50,0.7)] border-2 border-yellow-400/50 relative overflow-hidden">
-                    {/* 배경 효과 */}
+                {/* 진짜 이야기 툴팁 - optimized for mobile */}
+                <div className="absolute top-[-70px] right-[40px] md:right-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform group-hover:translate-y-2">
+                  <div className="bg-gradient-to-br from-amber-600 via-red-600 to-orange-700 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(255,150,50,0.7)] border-2 border-yellow-400/50 relative overflow-hidden">
+                    {/* Background effect */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,200,50,0.3)_0%,transparent_60%)]"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,100,50,0.2)_0%,transparent_60%)]"></div>
                     
-                    {/* 텍스트 */}
+                    {/* Text */}
                     <div className="flex flex-col items-center relative">
                       <div className="flex items-center justify-center mb-1">
                         <span className="animate-pulse mr-1">🤪</span>
-                        <span className="text-white font-black text-base tracking-widest uppercase drop-shadow-[0_0_8px_rgba(255,200,0,0.7)]">FULL DEGEN</span>
+                        <span className="text-white font-black text-sm md:text-base tracking-widest uppercase drop-shadow-[0_0_8px_rgba(255,200,0,0.7)]">FULL DEGEN</span>
                         <span className="animate-pulse ml-1">⚡</span>
                       </div>
-                      <div className="text-sm font-black tracking-wider uppercase flex items-center justify-center">
+                      <div className="text-xs md:text-sm font-black tracking-wider uppercase flex items-center justify-center">
                         <span className="text-white/80">WEN</span>
                         <span className="text-yellow-300 mx-1 animate-pulse">LAMBO?</span>
                         <span className="text-red-300 mx-1 rotate-3 inline-block">GMI!</span>
                       </div>
-                      <div className="flex items-center text-[10px] font-black mt-1">
+                      <div className="flex items-center text-[8px] md:text-[10px] font-black mt-1">
                         <span className="text-white/70">TRUST ME</span>
                         <span className="text-red-300 ml-1 animate-pulse">BRO!</span>
                       </div>
@@ -498,10 +497,10 @@ const VideoLandingPage = () => {
                 </div>
                 
                 <div className="w-48 h-48 rounded-full bg-gradient-to-br from-red-400 to-yellow-500 flex items-center justify-center shadow-xl shadow-amber-500/50 hover:shadow-amber-500/80 transition-all duration-500 group-hover:scale-110 transform-gpu relative overflow-visible">
-                  {/* 행성 표면 질감 */}
+                  {/* Planet surface texture */}
                   <div className="w-44 h-44 rounded-full bg-gradient-to-br from-red-500 to-yellow-600 flex items-center justify-center overflow-hidden absolute">
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-600/80 via-amber-500/80 to-red-700/80 backdrop-blur-sm relative">
-                      {/* 밈스러운 행성 표면 디테일 */}
+                      {/* Meme-styled planet surface details */}
                       <div className="absolute top-6 left-7 w-12 h-12 rounded-full bg-orange-300/20 flex items-center justify-center overflow-hidden">
                         <span className="text-[10px] text-white/40 font-bold animate-spin-reverse" style={{animationDuration: '20s'}}>TO THE MOON</span>
                       </div>
@@ -521,7 +520,7 @@ const VideoLandingPage = () => {
                         <span className="text-[8px] text-white/40 rotate-[20deg]">ALPHA</span>
                       </div>
                       
-                      {/* DEGEN 스타일 아이콘 - 세련된 SVG 아이콘 */}
+                      {/* DEGEN style icon - elegant SVG icon */}
                       <div className="relative flex items-center justify-center">
                         <div className="absolute w-16 h-16 rounded-full bg-gradient-to-r from-yellow-400 to-red-500 opacity-50 animate-pulse blur-sm"></div>
                         <div className="animate-pulse z-10 flex flex-col items-center">
@@ -540,7 +539,7 @@ const VideoLandingPage = () => {
                     </div>
                   </div>
                   
-                  {/* 행성 고리 - 속도 통일 */}
+                  {/* Planet rings - unified speed */}
                   <div className="absolute w-[150%] h-14 border-4 border-amber-400/30 rounded-full rotate-[20deg] animate-spin" style={{animationDuration: '11s'}}></div>
                   <div className="absolute w-[170%] h-5 border border-yellow-300/30 rounded-full rotate-[10deg] animate-spin-reverse" style={{animationDuration: '13s'}}></div>
                   <div className="absolute w-[160%] h-10 border-2 border-red-500/20 rounded-full -rotate-[15deg] animate-spin-reverse" style={{animationDuration: '16s'}}></div>
@@ -570,28 +569,28 @@ const VideoLandingPage = () => {
           </div>
         )}
 
-        {/* 로켓 버튼 - 화면 하단에 배치 */}
-        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 transition-all duration-1000 animate-fadeIn">
+        {/* Rocket button - positioned at the bottom of the screen - mobile optimized */}
+        <div className="absolute bottom-0 md:bottom-16 left-1/2 transform -translate-x-1/2 transition-all duration-1000 animate-fadeIn">
           <Link href="/home">
             <div className="group cursor-pointer flex flex-col items-center relative">
-              {/* 로켓 툴팁 - 더 오른쪽으로 이동 */}
-              <div className="absolute right-[-350px] top-10 opacity-0 group-hover:opacity-100 transition-all duration-500 z-50 transform scale-0 group-hover:scale-100 origin-left">
-                <div className="bg-gradient-to-r from-black via-red-800 to-black text-white px-6 py-4 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(255,30,30,0.8)] border-2 border-red-500/60 min-w-[230px] relative overflow-hidden">
-                  {/* 배경 파티클 효과 */}
+              {/* Rocket tooltip - mobile optimized */}
+              <div className="absolute right-[-180px] md:right-[-350px] top-0 md:top-10 w-[150px] md:w-auto opacity-0 group-hover:opacity-100 transition-all duration-500 z-50 transform scale-0 group-hover:scale-100 origin-left">
+                <div className="bg-gradient-to-r from-black via-red-800 to-black text-white px-3 md:px-6 py-2 md:py-4 rounded-xl backdrop-blur-md shadow-[0_0_20px_rgba(255,30,30,0.8)] border-2 border-red-500/60 min-w-[150px] md:min-w-[230px] relative overflow-hidden">
+                  {/* Background particle effect */}
                   <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute top-[10%] left-[10%] w-1 h-1 bg-red-500 rounded-full animate-ping" style={{animationDuration: '1.5s'}}></div>
-                    <div className="absolute top-[30%] left-[80%] w-1.5 h-1.5 bg-red-400 rounded-full animate-ping" style={{animationDuration: '2s'}}></div>
-                    <div className="absolute top-[80%] left-[20%] w-1 h-1 bg-orange-500 rounded-full animate-ping" style={{animationDuration: '1.8s'}}></div>
-                    <div className="absolute top-[60%] left-[70%] w-1 h-1 bg-yellow-500 rounded-full animate-ping" style={{animationDuration: '2.2s'}}></div>
+                    <div className="absolute top-[10%] left-[10%] w-0.5 md:w-1 h-0.5 md:h-1 bg-red-500 rounded-full animate-ping" style={{animationDuration: '1.5s'}}></div>
+                    <div className="absolute top-[30%] left-[80%] w-1 md:w-1.5 h-1 md:h-1.5 bg-red-400 rounded-full animate-ping" style={{animationDuration: '2s'}}></div>
+                    <div className="absolute top-[80%] left-[20%] w-0.5 md:w-1 h-0.5 md:h-1 bg-orange-500 rounded-full animate-ping" style={{animationDuration: '1.8s'}}></div>
+                    <div className="absolute top-[60%] left-[70%] w-0.5 md:w-1 h-0.5 md:h-1 bg-yellow-500 rounded-full animate-ping" style={{animationDuration: '2.2s'}}></div>
                   </div>
                   
-                  {/* 텍스트 */}
+                  {/* Text */}
                   <div className="flex flex-col items-center justify-center relative">
                     <div className="flex items-center mb-1">
-                      <span className="animate-pulse mr-2 text-base">🔥</span>
-                      <span className="text-base font-black tracking-wider text-red-500 uppercase animate-[pulse_1s_ease-in-out_infinite] drop-shadow-[0_0_8px_rgba(255,0,0,0.7)]">WHATEVER!</span>
+                      <span className="animate-pulse mr-1 md:mr-2 text-sm md:text-base">🔥</span>
+                      <span className="text-sm md:text-base font-black tracking-wider text-red-500 uppercase animate-[pulse_1s_ease-in-out_infinite] drop-shadow-[0_0_8px_rgba(255,0,0,0.7)]">WHATEVER!</span>
                     </div>
-                    <span className="font-black text-sm tracking-wider uppercase relative">
+                    <span className="font-black text-xs md:text-sm tracking-wider uppercase relative">
                       <span className="text-white/90">JUST SEND IT</span>
                       <span className="text-yellow-300 ml-1 animate-pulse"> TO THE MOON!</span>
                     </span>
@@ -603,71 +602,71 @@ const VideoLandingPage = () => {
                 </div>
               </div>
               
-              {/* 로켓 전체 컨테이너 */}
-              <div className="relative w-32 h-60" style={{animation: 'rocketFloat 4s ease-in-out infinite'}}>
-                {/* 불꽃 효과 - 로켓 아래에 배치 */}
-                <div className="absolute top-[180px] inset-x-0 mx-auto z-0">
-                  <div className="relative w-20 h-60 mx-auto">
-                    {/* 주 불꽃 */}
-                    <div className="absolute top-0 inset-x-0 transform -translate-x-1/2 w-15 h-70
+              {/* Rocket complete container - mobile optimized */}
+              <div className="relative w-20 md:w-32 h-32 md:h-60 scale-[0.7] md:scale-100" style={{animation: 'rocketFloat 4s ease-in-out infinite'}}>
+                {/* Flame effect - positioned under the rocket - mobile optimized */}
+                <div className="absolute top-[100px] md:top-[180px] inset-x-0 mx-auto z-0">
+                  <div className="relative w-16 md:w-20 h-40 md:h-60 mx-auto">
+                    {/* Main flame */}
+                    <div className="absolute top-0 inset-x-0 transform -translate-x-1/2 w-10 md:w-15 h-50 md:h-70
                         bg-gradient-to-b from-yellow-300 via-orange-500 to-transparent
                         rounded-t-full blur-[2px]" style={{animation: 'flameDown 0.7s ease-in-out infinite alternate'}}></div>
                     
-                    {/* 중앙 불꽃 */}
-                    <div className="absolute top-0 inset-x-0 transform -translate-x-1/2 w-12 h-75
+                    {/* Central flame */}
+                    <div className="absolute top-0 inset-x-0 transform -translate-x-1/2 w-8 md:w-12 h-55 md:h-75
                         bg-gradient-to-b from-yellow-200 via-orange-400 to-transparent
                         rounded-t-full blur-[3px]" style={{animation: 'flameDown 0.9s ease-in-out infinite alternate'}}></div>
                     
-                    {/* 내부 밝은 불꽃 */}
-                    <div className="absolute top-0 inset-x-4 transform -translate-x-1/2 w-12 h-60
+                    {/* Inner bright flame */}
+                    <div className="absolute top-0 inset-x-4 transform -translate-x-1/2 w-8 md:w-12 h-40 md:h-60
                         bg-gradient-to-b from-white via-yellow-300 to-transparent
                         rounded-t-full blur-[1px]" style={{animation: 'flameDown 0.5s ease-in-out infinite alternate'}}></div>
                     
-                    {/* 호버 시 불꽃 강화 */}
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-0
-                        opacity-0 group-hover:opacity-100 group-hover:h-60
+                    {/* Enhanced flame on hover */}
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 md:w-20 h-0
+                        opacity-0 group-hover:opacity-100 group-hover:h-45 md:group-hover:h-60
                         bg-gradient-to-b from-yellow-200 via-orange-500 to-transparent
                         rounded-t-full blur-[4px] transition-all duration-700"></div>
                     
-                    {/* 불꽃 입자 효과 */}
-                    <div className="absolute top-20 w-full h-60">
-                      <div className="absolute top-0 left-[20%] w-3 h-3 rounded-full bg-orange-300 opacity-80 animate-fireParticle"></div>
-                      <div className="absolute top-8 left-[70%] w-3 h-3 rounded-full bg-orange-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.2s'}}></div>
-                      <div className="absolute top-16 left-[40%] w-2 h-2 rounded-full bg-yellow-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.4s'}}></div>
-                      <div className="absolute top-12 left-[60%] w-2 h-2 rounded-full bg-yellow-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.6s'}}></div>
-                      <div className="absolute top-20 left-[30%] w-4 h-4 rounded-full bg-red-300 opacity-70 animate-fireParticle" style={{animationDelay: '0.1s'}}></div>
-                      <div className="absolute top-24 left-[80%] w-2 h-2 rounded-full bg-red-300 opacity-70 animate-fireParticle" style={{animationDelay: '0.3s'}}></div>
+                    {/* Flame particle effects - mobile optimized */}
+                    <div className="absolute top-10 md:top-20 w-full h-40 md:h-60">
+                      <div className="absolute top-0 left-[20%] w-2 md:w-3 h-2 md:h-3 rounded-full bg-orange-300 opacity-80 animate-fireParticle"></div>
+                      <div className="absolute top-5 md:top-8 left-[70%] w-2 md:w-3 h-2 md:h-3 rounded-full bg-orange-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.2s'}}></div>
+                      <div className="absolute top-10 md:top-16 left-[40%] w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-yellow-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.4s'}}></div>
+                      <div className="absolute top-8 md:top-12 left-[60%] w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-yellow-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.6s'}}></div>
+                      <div className="absolute top-12 md:top-20 left-[30%] w-2.5 md:w-4 h-2.5 md:h-4 rounded-full bg-red-300 opacity-70 animate-fireParticle" style={{animationDelay: '0.1s'}}></div>
+                      <div className="absolute top-15 md:top-24 left-[80%] w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-red-300 opacity-70 animate-fireParticle" style={{animationDelay: '0.3s'}}></div>
                       
-                      {/* 추가 파티클 */}
-                      <div className="absolute top-4 left-[50%] w-2.5 h-2.5 rounded-full bg-yellow-200 opacity-80 animate-fireParticle" style={{animationDelay: '0.7s'}}></div>
-                      <div className="absolute top-10 left-[15%] w-3 h-3 rounded-full bg-orange-200 opacity-80 animate-fireParticle" style={{animationDelay: '0.5s'}}></div>
-                      <div className="absolute top-18 left-[85%] w-2 h-2 rounded-full bg-red-200 opacity-70 animate-fireParticle" style={{animationDelay: '0.3s'}}></div>
-                      <div className="absolute top-26 left-[45%] w-3 h-3 rounded-full bg-yellow-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.9s'}}></div>
-                      <div className="absolute top-22 left-[25%] w-2 h-2 rounded-full bg-orange-300 opacity-70 animate-fireParticle" style={{animationDelay: '0.8s'}}></div>
-                      <div className="absolute top-30 left-[55%] w-3 h-3 rounded-full bg-red-300 opacity-80 animate-fireParticle" style={{animationDelay: '1.1s'}}></div>
-                      <div className="absolute top-28 left-[75%] w-2 h-2 rounded-full bg-yellow-200 opacity-80 animate-fireParticle" style={{animationDelay: '1.0s'}}></div>
-                      <div className="absolute top-32 left-[35%] w-2.5 h-2.5 rounded-full bg-orange-200 opacity-70 animate-fireParticle" style={{animationDelay: '1.2s'}}></div>
+                      {/* Additional particles - reduced for mobile */}
+                      <div className="absolute top-3 md:top-4 left-[50%] w-1.5 md:w-2.5 h-1.5 md:h-2.5 rounded-full bg-yellow-200 opacity-80 animate-fireParticle" style={{animationDelay: '0.7s'}}></div>
+                      <div className="absolute top-7 md:top-10 left-[15%] w-2 md:w-3 h-2 md:h-3 rounded-full bg-orange-200 opacity-80 animate-fireParticle" style={{animationDelay: '0.5s'}}></div>
+                      <div className="absolute top-12 md:top-18 left-[85%] w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-red-200 opacity-70 animate-fireParticle" style={{animationDelay: '0.3s'}}></div>
+                      <div className="absolute top-18 md:top-26 left-[45%] w-2 md:w-3 h-2 md:h-3 rounded-full bg-yellow-300 opacity-80 animate-fireParticle" style={{animationDelay: '0.9s'}}></div>
+                      <div className="hidden md:block absolute top-22 left-[25%] w-2 h-2 rounded-full bg-orange-300 opacity-70 animate-fireParticle" style={{animationDelay: '0.8s'}}></div>
+                      <div className="hidden md:block absolute top-30 left-[55%] w-3 h-3 rounded-full bg-red-300 opacity-80 animate-fireParticle" style={{animationDelay: '1.1s'}}></div>
+                      <div className="hidden md:block absolute top-28 left-[75%] w-2 h-2 rounded-full bg-yellow-200 opacity-80 animate-fireParticle" style={{animationDelay: '1.0s'}}></div>
+                      <div className="hidden md:block absolute top-32 left-[35%] w-2.5 h-2.5 rounded-full bg-orange-200 opacity-70 animate-fireParticle" style={{animationDelay: '1.2s'}}></div>
                     </div>
                   </div>
                 </div>
 
-                {/* 빨간 뚜껑 - 몸체 밖에 배치 */}
+                {/* Red cap - positioned outside the body */}
                 <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-12 h-8 bg-gradient-to-b from-red-500 to-red-700 rounded-t-full shadow-md z-20">
                   <div className="absolute left-1/2 top-1 transform -translate-x-1/2 w-4 h-1 bg-white/20 rounded-full"></div>
                   <div className="absolute bottom-0 inset-x-0 mx-auto w-6 h-0.5 bg-red-900/80 rounded-full"></div>
                 </div>
                 
-                {/* 로켓 몸체 */}
+                {/* Rocket body */}
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-40 bg-gradient-to-b from-gray-100 to-gray-300 rounded-xl shadow-xl overflow-hidden group-hover:shadow-blue-500/30 transition-all duration-700 z-10" style={{clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)'}}>
-                  {/* 로켓 상단 노즈콘 */}
+                  {/* Rocket top nose cone */}
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-14 h-10 bg-gradient-to-b from-gray-100 to-gray-200 rounded-t-full shadow-md"></div>
                   
-                  {/* 로고 배경 */}
+                  {/* Logo background */}
                   <div className="absolute top-4 inset-x-0 mx-auto w-18 h-18 rounded-full bg-gradient-to-br from-blue-600/40 to-purple-600/40 flex items-center justify-center shadow-inner animate-pulse" style={{animationDuration: '2s'}}>
-                    {/* 로고 빛나는 효과 */}
+                    {/* Logo glowing effect */}
                     <div className="absolute inset-0 rounded-full bg-white/30 animate-ping" style={{animationDuration: '4s'}}></div>
                     
-                    {/* 로고 빛나는 링 */}
+                    {/* Logo glowing ring */}
                     <div className="absolute inset-0 rounded-full border-2 border-blue-400/60 animate-pulse" style={{animationDuration: '1.5s'}}></div>
                     
                     <Image 
@@ -679,28 +678,28 @@ const VideoLandingPage = () => {
                     />
                   </div>
                   
-                  {/* 로켓 창문 */}
+                  {/* Rocket window */}
                   <div className="absolute top-24 inset-x-0 mx-auto w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-blue-200 shadow-inner group-hover:shadow-blue-400/50 transition-all duration-700">
                     <div className="absolute inset-1 rounded-full bg-blue-300/50"></div>
                     <div className="absolute inset-2 rounded-full bg-white/70 animate-pulse-slow"></div>
                   </div>
                   
-                  {/* 로켓 본체 디테일 */}
+                  {/* Rocket body details */}
                   <div className="absolute top-4 left-0 w-full h-0.5 bg-gray-400/30"></div>
                   <div className="absolute top-32 left-0 w-full h-0.5 bg-gray-400/30"></div>
                   
-                  {/* 반사광 효과 */}
+                  {/* Reflection light effect */}
                   <div className="absolute top-2 left-3 w-2 h-36 bg-white opacity-20 rounded-full blur-[1px] rotate-12"></div>
                   <div className="absolute top-2 right-3 w-1 h-30 bg-white opacity-15 rounded-full blur-[1px] -rotate-6"></div>
                 </div>
                 
-                {/* 로켓 하단 엔진 부분 */}
+                {/* Rocket bottom engine part */}
                 <div className="absolute top-40 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-gradient-to-b from-gray-400 to-gray-600 rounded-b-lg shadow-md overflow-hidden z-20">
-                  {/* 엔진 노즐 */}
+                  {/* Engine nozzle */}
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-3 bg-gray-700 rounded-b-lg shadow-inner"></div>
                 </div>
                 
-                {/* 로켓 날개 - 메인 */}
+                {/* Rocket wings - main */}
                 <div className="absolute top-28 left-0 w-8 h-20 bg-gradient-to-b from-red-400 to-red-600 skew-x-[30deg] rounded-md shadow-md group-hover:-translate-x-1 group-hover:rotate-2 transition-all duration-500 z-30">
                   <div className="absolute inset-0 bg-gradient-to-t from-transparent via-red-500/10 to-white/20"></div>
                   <div className="absolute top-2 left-1 w-1 h-14 bg-white opacity-20 rounded-full"></div>
@@ -710,16 +709,16 @@ const VideoLandingPage = () => {
                   <div className="absolute top-2 right-1 w-1 h-14 bg-white opacity-20 rounded-full"></div>
                 </div>
                 
-                {/* 보조 날개 */}
+                {/* Auxiliary wings */}
                 <div className="absolute top-[120px] left-[2px] w-4 h-16 bg-gradient-to-b from-red-500 to-red-700 skew-x-[30deg] rounded-md shadow-sm group-hover:-translate-x-1 transition-all duration-500 z-40"></div>
                 <div className="absolute top-[120px] right-[2px] w-4 h-16 bg-gradient-to-b from-red-500 to-red-700 skew-x-[-30deg] rounded-md shadow-sm group-hover:translate-x-1 transition-all duration-500 z-40"></div>
                 
               </div>
               
-              {/* "Enter" 텍스트 */}
-              <div className="mt-32 text-center">
-                <span className="text-white text-2xl font-bold opacity-90 group-hover:opacity-100 transition-all">Enter</span>
-                <div className="text-gray-400/80 text-sm mt-1 group-hover:text-white/80 transition-all">Home Page</div>
+              {/* "Enter" text - mobile optimized */}
+              <div className="mt-6 md:mt-32 text-center">
+                <span className="text-white text-xl md:text-2xl font-bold opacity-90 group-hover:opacity-100 transition-all">Enter</span>
+                <div className="text-gray-400/80 text-xs md:text-sm mt-1 group-hover:text-white/80 transition-all">Home Page</div>
               </div>
             </div>
           </Link>
@@ -727,6 +726,45 @@ const VideoLandingPage = () => {
       </div>
       
       <style jsx>{`
+        /* Mobile optimizations */
+        @media screen and (max-width: 768px) {
+          @keyframes planetEntryLeft {
+            0% { opacity: 0; transform: translate(-200px, 70px) scale(0.1); }
+            70% { opacity: 0.7; transform: translate(-30px, 20px) scale(0.4); }
+            100% { opacity: 1; transform: translate(0, 0) scale(0.6); }
+          }
+          
+          @keyframes planetEntryRight {
+            0% { opacity: 0; transform: translate(200px, 70px) scale(0.1); }
+            70% { opacity: 0.7; transform: translate(30px, 20px) scale(0.4); }
+            100% { opacity: 1; transform: translate(0, 0) scale(0.6); }
+          }
+          
+          @keyframes devPlanetEntry {
+            0% { opacity: 0; transform: translate(250px, -150px) scale(0.1) rotate(20deg); }
+            30% { opacity: 0.5; transform: translate(150px, -80px) scale(0.2) rotate(15deg); }
+            60% { opacity: 0.8; transform: translate(100px, 50px) scale(0.3) rotate(5deg); }
+            80% { opacity: 1; transform: translate(30px, 20px) scale(0.4) rotate(2deg); }
+            100% { opacity: 1; transform: translate(0, 0) scale(0.5) rotate(0deg); }
+          }
+          
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0px) scale(0.6); }
+            50% { transform: translateY(-8px) scale(0.6); }
+          }
+          
+          @keyframes planetTrail {
+            0%, 100% { width: 100px; opacity: 0.8; }
+            50% { width: 120px; opacity: 0.6; }
+          }
+          
+          @keyframes sparkle {
+            0% { opacity: 0; transform: scale(0.2); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.7; transform: scale(1); }
+          }
+        }
+        
         @keyframes animateStar {
           0% { transform: translateY(0); }
           100% { transform: translateY(-2000px); }

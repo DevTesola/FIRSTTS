@@ -343,18 +343,19 @@ export default function CommunityPage() {
           <div className="md:flex items-center justify-between">
             <div className="mb-4 md:mb-0">
               <h3 className="text-xl font-bold text-white mb-2">Stay updated with TESOLA News</h3>
-              <p className="text-gray-300">Get the latest news, updates, and exclusive offerings directly to your inbox.</p>
+              <p className="text-gray-300">Get the latest news, updates, and exclusive offerings through our official Telegram channel.</p>
             </div>
-            <div className="flex">
-              <input 
-                type="email" 
-                placeholder="Your email address" 
-                className="bg-gray-800/70 text-white border border-gray-700 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full"
-              />
-              <button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-r-lg font-medium hover:from-purple-500 hover:to-pink-500 transition-colors flex-shrink-0 shadow-lg shadow-purple-900/20">
-                Subscribe
-              </button>
-            </div>
+            <a 
+              href="https://t.me/tesolachat"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-2 px-4 rounded-lg font-medium transition-all duration-300 shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 flex items-center justify-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5 mr-2 fill-current">
+                <path d="M12 0c-6.626 0-12 5.372-12 12 0 6.627 5.374 12 12 12 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12zm3.224 17.871c.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-6.895c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-3.592c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953zm-.649-5.443c.654-1.561 2.067-3.182 3.425-3.182s2.771 1.621 3.425 3.182c.146.35.681.336.682-.071 0-2.235-1.836-4.046-4.107-4.046s-4.107 1.811-4.107 4.046c0 .407.536.421.682.071z"/>
+              </svg>
+              Join Our Telegram Channel
+            </a>
           </div>
         </div>
       </div>

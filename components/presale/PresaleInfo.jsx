@@ -44,7 +44,7 @@ export default function PresaleInfo({
   
   // Token metrics with shortened display versions for better presentation
   const tokenMetrics = [
-    { label: "Token Price", value: "0.000006 SOL" },
+    { label: "Token Price", value: "0.000005 SOL" },
     { label: "Presale Target", value: "10% of Supply" },
     { label: "Minimum Purchase", value: "1,000 TESOLA" },
     { label: "Total Supply", value: "1B TESOLA", fullValue: "1,000,000,000" }

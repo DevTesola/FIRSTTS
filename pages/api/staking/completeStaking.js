@@ -206,7 +206,91 @@ export default async function handler(req, res) {
     // 현재 시간
     const now = Math.floor(Date.now() / 1000);
     
-    // 스테이킹 정보 저장
+    // 스테이킹 정보 저장 - 포괄적인 NFT ID 조회 방식 사용
+    let realNftId = null;
+    try {
+      {
+        // 2. 계속 진행 - DB에서 수정된 NFT 정보 조회
+        try {
+          console.log('물음표❶ DB에서 NFT 정보 조회 시도...');
+          const { data: nftData } = await supabase
+            .from('minted_nfts')
+            .select('id, mint_index, name, metadata')
+            .eq('mint_address', mintAddress)
+            .maybeSingle();
+          
+          if (nftData) {
+            // ID 변형을 처리하기 위한 상세 정보 제공
+            console.log('물음표❶ DB에서 찾은 NFT 정보:', {
+              id: nftData.id,
+              mint_index: nftData.mint_index,
+              name: nftData.name
+            });
+            
+            // 우선순위: mint_index > id > 이름에서 추출 > 메타데이터
+            if (nftData.mint_index && !isNaN(nftData.mint_index)) {
+              realNftId = String(nftData.mint_index).padStart(4, '0');
+              console.log(`\u2776-1 mint_index에서 NFT ID 설정: ${realNftId}`);
+            } 
+            else if (nftData.id && !isNaN(nftData.id)) {
+              realNftId = String(nftData.id).padStart(4, '0');
+              console.log(`\u2776-2 id 필드에서 NFT ID 설정: ${realNftId}`);
+            }
+            else if (nftData.name) {
+              // 이름에서 추출: "SOLARA #123" 같은 형식
+              const nameMatch = nftData.name.match(/#\s*(\d+)/);
+              if (nameMatch && nameMatch[1]) {
+                realNftId = String(nameMatch[1]).padStart(4, '0');
+                console.log(`\u2776-3 이름에서 NFT ID 추출: ${realNftId}`);
+              }
+            }
+            // 메타데이터 처리
+            else if (nftData.metadata) {
+              try {
+                const metadata = typeof nftData.metadata === 'string' ? 
+                  JSON.parse(nftData.metadata) : nftData.metadata;
+                  
+                if (metadata.name) {
+                  const metaNameMatch = metadata.name.match(/#\s*(\d+)/);
+                  if (metaNameMatch && metaNameMatch[1]) {
+                    realNftId = String(metaNameMatch[1]).padStart(4, '0');
+                    console.log(`\u2776-4 메타데이터 이름에서 NFT ID 추출: ${realNftId}`);
+                  }
+                }
+              } catch (metaError) {
+                console.warn('\u2776-4 메타데이터 처리 중 오류:', metaError.message);
+              }
+            }
+          } else {
+            console.log('물음표❶ DB에서 NFT 정보를 찾을 수 없음');
+          }
+        } catch (dbError) {
+          console.warn('물음표❶ DB 조회 중 오류:', dbError.message);
+        }
+      }
+      
+      // 3. 여전히 ID가 없는 경우 - 민트 주소에서 해시 기반 ID 생성
+      if (!realNftId) {
+        console.log('물음표❷ 해시 기반 ID 생성 시도...');
+        // 해시 기반 방식 - 맨 앉에 배치 (앞 6자리에서 1-999 사이 범위로 변환)
+        let hash = 0;
+        for (let i = 0; i < mintAddress.length; i++) {
+          hash = ((hash << 5) - hash) + mintAddress.charCodeAt(i);
+          hash = hash & hash; // 32비트 정수로 유지
+        }
+        
+        // 1-999 사이의 범위로 변환하고 0 패딩
+        const hashBasedId = String(Math.abs(hash) % 999 + 1).padStart(4, '0');
+        realNftId = hashBasedId;
+        console.log(`\u2777 해시 기반 NFT ID 생성: ${realNftId}`);
+      }
+    } catch (nftError) {
+      console.warn('전체 NFT ID 추출 과정 오류:', nftError.message);
+      // 오류 발생시 기본값으로 추출
+      realNftId = mintAddress.slice(0, 6);
+      console.log(`오류 발생으로 민트 주소 앞부분을 ID로 사용: ${realNftId}`);
+    }
+    
     const stakingData = {
       wallet_address: wallet,
       mint_address: mintAddress,
@@ -226,7 +310,8 @@ export default async function handler(req, res) {
       last_compound_at: null,
       last_updated: now,
       created_at: now,
-      staking_status: 'active'
+      staking_status: 'active',
+      staked_nft_id: realNftId // 실제 NFT ID 저장
     };
     
     const { data: insertedData, error: insertError } = await supabase

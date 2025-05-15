@@ -230,7 +230,12 @@ const UnifiedStakingButton = ({
             stakingPeriod: stakingPeriod,
             walletAddress: publicKey.toString(),
             accounts: accounts,
-            autoCompound: false
+            autoCompound: false,
+            // 보상 계산 정보 추가
+            nftTier: tierAttr?.value,
+            rawTierValue: tierAttr?.value,
+            nftName: nft.name || nft.metadata?.name,
+            rewardDetails: prepareData.data.rewardDetails
           })
         });
         

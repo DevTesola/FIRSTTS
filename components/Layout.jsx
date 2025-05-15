@@ -1,8 +1,16 @@
+/**
+ * 이 파일은 원래의 Layout.jsx에서 Discord와 GitHub 링크를 Coming Soon 페이지로 리다이렉트하도록 수정한 것입니다.
+ * 백업 파일: Layout.jsx.original
+ * 
+ * 수정된 부분: handleSocialLinkClick 함수 추가 및 소셜 링크의 onClick 속성 설정
+ */
 "use client";
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic"; 
 import Navigation from "./Navigation";
+import MobileBottomNav from "./MobileBottomNav";
+import ScrollToTopButton from "./ScrollToTopButton";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/router";
@@ -98,26 +106,8 @@ const ValueModal = ({ onClose }) => (
             </div>
             <div>
               <h3 className="text-xl font-semibold text-green-300">Community Benefits</h3>
-              <p className="text-gray-300 mt-1">Exclusive airdrops, presale access, and special events for SOLARA NFT holders.</p>
+              <p className="text-gray-300 mt-1">Join our thriving community with exclusive holder events, airdrops, and early access to partnerships.</p>
             </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-blue-900/10 p-5 rounded-lg border border-blue-500/20 mt-6">
-        <div className="flex items-start">
-          <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-full p-2 mr-3 flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold text-blue-300">Hold-to-Earn & Staking</h3>
-            <p className="text-gray-300 mt-2">
-              TESOLA features a 3-phase strategy: Hold-to-Earn phase offers up to 200 TESOLA per day for Legendary NFTs, with bonuses 
-              for longer staking periods. Early participants gain advantages through our tiered rewards system, with detailed 
-              tokenomics designed for sustainable long-term value growth.
-            </p>
           </div>
         </div>
       </div>
@@ -134,12 +124,12 @@ const ValueModal = ({ onClose }) => (
   </div>
 );
 
+
 const RoadmapModal = ({ onClose }) => (
   <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={onClose}>
     <div 
-      className="bg-gradient-to-br from-gray-900 to-indigo-900/50 p-6 rounded-xl max-w-3xl w-full space-y-6 relative border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.2)]" 
+      className="bg-gradient-to-br from-gray-900 to-indigo-900/50 p-6 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto space-y-6 relative border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.2)]" 
       onClick={(e) => e.stopPropagation()}
-      style={{maxHeight: '90vh', overflowY: 'auto'}}
     >
       <button 
         onClick={onClose} 
@@ -158,152 +148,106 @@ const RoadmapModal = ({ onClose }) => (
           </svg>
         </div>
         <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400">TESOLA Roadmap</h2>
-        <p className="text-gray-300 mt-2">Our journey to build the TESOLA & SOLARA ecosystem</p>
+        <p className="text-gray-300 mt-2">Our strategic plan for ecosystem growth and value creation</p>
       </div>
       
-      <div className="relative">
-        {/* Vertical timeline line */}
-        <div className="absolute left-[19px] top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+      <div className="space-y-6">
+        <div className="relative pl-8 before:content-[''] before:absolute before:left-0 before:top-2 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-indigo-500 before:to-indigo-500/20">
+          <div className="absolute left-[-8px] top-2 w-4 h-4 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)]"></div>
+          <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400 mb-2">Phase 1: Foundation (Q1 2025)</h3>
+          <div className="bg-indigo-900/10 p-4 rounded-lg border border-indigo-500/20 space-y-3">
+            <ul className="space-y-2 text-gray-300">
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Launch SOLARA NFT Collection (1,000 unique items)</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Establish NFT Staking System & Rewards</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Initial DEX Offering for TESOLA Token</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-yellow-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Community Building & Governance Structure</span>
+              </li>
+            </ul>
+          </div>
+        </div>
         
-        <div className="space-y-8">
-          <div className="relative pl-12">
-            <div className="absolute left-0 h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 flex items-center justify-center">
-              <span className="text-white font-bold">Q1</span>
-            </div>
-            <div className="bg-indigo-900/10 p-5 rounded-lg border border-indigo-500/20 hover:border-indigo-500/30 transition-colors">
-              <h3 className="text-xl font-semibold text-indigo-300">Foundation & Launch (Q1 2025)</h3>
-              <ul className="mt-3 space-y-3">
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">SOLARA NFT Collection of 1,000 unique NFTs</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">TESOLA Token Development & Audit</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Presale & Initial Token Distribution</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Initial Hold-to-Earn Program Launch</span>
-                </li>
-              </ul>
-            </div>
+        <div className="relative pl-8 before:content-[''] before:absolute before:left-0 before:top-2 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-blue-500 before:to-blue-500/20">
+          <div className="absolute left-[-8px] top-2 w-4 h-4 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+          <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">Phase 2: Expansion (Q2-Q3 2025)</h3>
+          <div className="bg-blue-900/10 p-4 rounded-lg border border-blue-500/20 space-y-3">
+            <ul className="space-y-2 text-gray-300">
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-yellow-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>TESOLA Marketplace Launch with NFT Trading</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-yellow-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Enhanced Staking Mechanisms & Tiered Rewards</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-gray-400">Cross-Chain Integration (Ethereum, Polygon)</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-gray-400">Mobile App Development</span>
+              </li>
+            </ul>
           </div>
-          
-          <div className="relative pl-12">
-            <div className="absolute left-0 h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-              <span className="text-white font-bold">Q2</span>
-            </div>
-            <div className="bg-indigo-900/10 p-5 rounded-lg border border-indigo-500/20 hover:border-indigo-500/30 transition-colors">
-              <h3 className="text-xl font-semibold text-indigo-300">Expansion & Gameplay (Q2-Q3 2025)</h3>
-              <ul className="mt-3 space-y-3">
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">DEX Listings on Jupiter & Raydium</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Staking Platform Enhancement</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Game Drive-to-Earn Beta Launch</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Racing Game NFT Collection (2,000 Units)</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="relative pl-12">
-            <div className="absolute left-0 h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-              <span className="text-white font-bold">Q4</span>
-            </div>
-            <div className="bg-indigo-900/10 p-5 rounded-lg border border-indigo-500/20 hover:border-indigo-500/30 transition-colors">
-              <h3 className="text-xl font-semibold text-indigo-300">Ecosystem Growth (Q4 2025)</h3>
-              <ul className="mt-3 space-y-3">
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">CEX Listings & Expanded Trading</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Game Drive-to-Earn Full Launch</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Tesla Community Collaborations</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Real Drive-to-Earn Planning & Exploration</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="relative pl-12">
-            <div className="absolute left-0 h-10 w-10 rounded-full bg-gradient-to-r from-pink-500 to-red-500 flex items-center justify-center">
-              <span className="text-white font-bold">2026</span>
-            </div>
-            <div className="bg-indigo-900/10 p-5 rounded-lg border border-indigo-500/20 hover:border-indigo-500/30 transition-colors">
-              <h3 className="text-xl font-semibold text-indigo-300">Full Integration (2026)</h3>
-              <ul className="mt-3 space-y-3">
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Real Drive-to-Earn App Beta Launch</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Tesla Owner Events & Partnerships</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Cross-chain Integrations</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-6 w-6 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-300">Global Ecosystem Expansion</span>
-                </li>
-              </ul>
-            </div>
+        </div>
+        
+        <div className="relative pl-8 before:content-[''] before:absolute before:left-0 before:top-2 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-cyan-500 before:to-cyan-500/20">
+          <div className="absolute left-[-8px] top-2 w-4 h-4 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+          <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-green-400 mb-2">Phase 3: Evolution (Q4 2025 - Q1 2026)</h3>
+          <div className="bg-cyan-900/10 p-4 rounded-lg border border-cyan-500/20 space-y-3">
+            <ul className="space-y-2 text-gray-300">
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-gray-400">SOLARA Metaverse Experience</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-gray-400">Play-to-Earn Gaming Integration</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-gray-400">DAO Expansion & Community Treasury</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="h-6 w-6 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-gray-400">Global Ecosystem Expansion</span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -348,6 +292,13 @@ const Layout = ({ children }) => {
   // Check if current page is presale
   const isPresalePage = () => router.pathname === '/presale';
   const isStakingPage = () => router.pathname === '/staking';
+
+  // Discord 및 GitHub 링크 처리 함수 추가
+  const handleSocialLinkClick = (e, type) => {
+    e.preventDefault();
+    const returnUrl = encodeURIComponent(router.asPath);
+    router.push(`/coming-soon-social?type=${type}&returnUrl=${returnUrl}`);
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -476,14 +427,12 @@ const Layout = ({ children }) => {
               >
                 Whitepaper
               </Link>
-              <a
-                href="https://audits.tesola.xyz"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/audit-report"
                 className="px-4 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               >
                 Audit Report
-              </a>
+              </Link>
               <Link
                 href="/team"
                 className="px-4 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
@@ -494,7 +443,7 @@ const Layout = ({ children }) => {
           </div>
         </div>
         
-        {/* Social Links */}
+        {/* Social Links - Discord와 GitHub 링크를 Coming Soon 페이지로 리다이렉트 */}
         <div className="flex justify-center space-x-4 mb-8">
           <a 
             href="https://twitter.com/teslainsolana" 
@@ -519,9 +468,8 @@ const Layout = ({ children }) => {
             </svg>
           </a>
           <a 
-            href="https://discord.gg/tesola" 
-            target="_blank" 
-            rel="noopener noreferrer" 
+            href="#"
+            onClick={(e) => handleSocialLinkClick(e, 'discord')}
             className="bg-gray-800 hover:bg-gray-700 p-3 rounded-full transition-colors"
             aria-label="Discord"
           >
@@ -530,9 +478,8 @@ const Layout = ({ children }) => {
             </svg>
           </a>
           <a 
-            href="https://github.com/tesola-project" 
-            target="_blank" 
-            rel="noopener noreferrer" 
+            href="#"
+            onClick={(e) => handleSocialLinkClick(e, 'github')}
             className="bg-gray-800 hover:bg-gray-700 p-3 rounded-full transition-colors"
             aria-label="GitHub"
           >
@@ -559,13 +506,16 @@ const Layout = ({ children }) => {
               </div>
             </div>
             <div className="mt-4 text-xs text-gray-600">
-              TESOLA and SOLARA are not affiliated with Tesla, Inc. TESOLA token is a utility token for the SOLARA ecosystem.
-            </div>
-            <div className="mt-2 text-center text-xs text-gray-500">
-              © 2025 TESOLA. All rights reserved.
+              Powered by Solana Blockchain & TESOLA Ecosystem
             </div>
           </div>
         </footer>
+
+        {/* Mobile Bottom Navigation - Only visible on mobile devices */}
+        <MobileBottomNav />
+        
+        {/* Scroll to top button - appears when scrolling down */}
+        <ScrollToTopButton />
       </div>
     </div>
   );

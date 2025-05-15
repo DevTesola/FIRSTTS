@@ -309,12 +309,12 @@ const Team = () => {
               glowColor="rgba(234,88,12,0.5)"
             />
             
-            <RobotTeamMember 
-              name="DALLE-T" 
-              role="AI Art Assistant"
+            <TeamMember 
+              name="Alex Morgan" 
+              role="Visual Design Specialist"
               emoji="🖌️"
-              description="AI-powered design assistant helping to generate and refine visual assets for the TESOLA ecosystem, including promotional materials and UI elements."
-              version="2.5"
+              description="Creative digital artist bringing TESOLA's visual identity to life. Specializes in futuristic UI/UX design and creates promotional materials that blend crypto aesthetics with Tesla-inspired elements."
+              skills={["Digital Art", "UI/UX Design", "Visual Identity", "Motion Graphics"]}
               glowColor="rgba(249,115,22,0.5)"
             />
           </div>
@@ -334,12 +334,11 @@ const Team = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             <TeamMember 
-              name="Legal Advisor" 
-              role="Blockchain Compliance"
+              name="Richard Bennett" 
+              role="Blockchain Compliance Advisor"
               emoji="⚖️"
-              description="Working behind the scenes to ensure TESOLA's operations comply with evolving regulations in the cryptocurrency space."
-              status="(?)"
-              skills={["Crypto Regulations", "Compliance", "Legal Structure"]}
+              description="Working behind the scenes to ensure TESOLA's operations comply with evolving regulations in the cryptocurrency space. Specializes in international blockchain law."
+              skills={["Crypto Regulations", "Compliance", "Legal Structure", "Tokenomics Advisory"]}
               glowColor="rgba(79,70,229,0.5)"
             />
           </div>
@@ -364,10 +363,12 @@ const Team = () => {
             </p>
             
             <a 
-              href="mailto:careers@tesola.xyz" 
+              href="https://t.me/tesolachat" 
+              target="_blank" 
+              rel="noopener noreferrer"
               className="inline-block px-10 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-lg text-white font-bold transition-all duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(139,92,246,0.5)] transform hover:scale-105 hover:rotate-1 hover:translate-y-[-2px]"
             >
-              Contact Us
+              Contact Us on Telegram
             </a>
             
             <div className="mt-6 text-gray-400 text-sm">

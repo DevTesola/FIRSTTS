@@ -37,9 +37,9 @@ export default function PrivacyPolicy() {
               <p className="text-gray-300 mb-2">We collect personal information when you voluntarily provide it, including but not limited to:</p>
               <ul className="list-disc pl-6 space-y-2 text-gray-300">
                 <li>Cryptocurrency wallet address (for NFT minting, staking, and TESOLA token transactions)</li>
-                <li>Email address (when signing up for updates)</li>
+                <li>Telegram username (when joining our community channel for updates)</li>
                 <li>Social media handles (when participating in community activities)</li>
-                <li>Any other details you voluntarily submit through contact forms or inquiries</li>
+                <li>Any other details you voluntarily submit through our Telegram support channel</li>
               </ul>
               
               <h3 className="text-lg font-semibold text-white mt-4 mb-2">Automatically Collected Information</h3>
@@ -108,7 +108,7 @@ export default function PrivacyPolicy() {
                 <li>The right to withdraw consent for processing your data where applicable.</li>
                 <li>The right to opt out of marketing emails by unsubscribing at any time.</li>
               </ul>
-              <p className="text-gray-300 mt-3">To exercise any of these rights, please contact us at <a href="mailto:privacy@tesola.xyz" className="text-purple-400 hover:text-purple-300 transition-colors">privacy@tesola.xyz</a></p>
+              <p className="text-gray-300 mt-3">To exercise any of these rights, please contact us through our official Telegram channel: <a href="https://t.me/tesolachat" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">@tesolachat</a></p>
             </section>
 
             <section>
@@ -140,8 +140,8 @@ export default function PrivacyPolicy() {
 
             <section>
               <h2 className="text-xl font-bold text-purple-400 mb-3">11. Contact Information</h2>
-              <p className="text-gray-300 mb-3">For any privacy-related concerns or requests, please contact us at:</p>
-              <p><a href="mailto:privacy@tesola.xyz" className="text-purple-400 hover:text-purple-300 transition-colors">privacy@tesola.xyz</a></p>
+              <p className="text-gray-300 mb-3">For any privacy-related concerns or requests, please contact us through our official Telegram channel:</p>
+              <p><a href="https://t.me/tesolachat" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">@tesolachat</a></p>
             </section>
           </div>
 

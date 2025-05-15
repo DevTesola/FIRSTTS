@@ -569,7 +569,7 @@ export default function NFTViewer() {
                     blur={true}
                     preferRemote={true}
                     useCache={false}
-                    __source="solara-nft-detail"
+                    _source="solara-nft-detail"
                   />
                 )}
               </div>

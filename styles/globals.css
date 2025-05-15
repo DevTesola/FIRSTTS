@@ -2,8 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import mobile optimizations */
+@import './mobile-optimized.css';
+
 :root {
   font-family: 'Orbitron', sans-serif !important;
+  /* 애니메이션 설정 - prefers-reduced-motion 지원 */
+  --animation-duration: 1;
+}
+
+/* 애니메이션 감소 설정 지원 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animation-duration: 0.01;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Ensure font is applied globally */

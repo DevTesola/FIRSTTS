@@ -12,6 +12,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Transaction } from "@solana/web3.js";
 import { GlassButton } from "../Buttons";
 import { InfoTooltip } from "../common/InfoTooltip";
+import { debugLog, debugError } from "../../utils/debugUtils";
 
 /**
  * 향상된 NFT 스테이킹 버튼 컴포넌트
@@ -61,12 +62,12 @@ const EnhancedStakingButtonV2 = ({
   // 트랜잭션 서명 및 제출 처리
   const processTransaction = async (phase, txBase64, description, nextStatus, skipWhenNull = true) => {
     if (!txBase64 && skipWhenNull) {
-      console.log(`${phase} 트랜잭션이 필요 없음, 건너뜀`);
+      debugLog("EnhancedStakingButtonV2", `${phase} 트랜잭션이 필요 없음, 건너뜀`);
       return { success: true, signature: null, skipped: true };
     }
     
     try {
-      console.log(`${phase} 트랜잭션 처리 중: ${description}`);
+      debugLog("EnhancedStakingButtonV2", `${phase} 트랜잭션 처리 중: ${description}`);
       // 트랜잭션 역직렬화 및 서명
       const txBuffer = Buffer.from(txBase64, "base64");
       const transaction = Transaction.from(txBuffer);
@@ -98,7 +99,7 @@ const EnhancedStakingButtonV2 = ({
       // 블록체인 상태 업데이트 대기
       setStatus("confirming");
       const waitTime = phase === "setup" ? 2000 : 2000;
-      console.log(`${phase} 트랜잭션 확인 대기 중... (${waitTime}ms)`);
+      debugLog("EnhancedStakingButtonV2", `${phase} 트랜잭션 확인 대기 중... (${waitTime}ms)`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       
       // 상태 업데이트
@@ -110,7 +111,7 @@ const EnhancedStakingButtonV2 = ({
         skipped: false
       };
     } catch (err) {
-      console.error(`${phase} 트랜잭션 오류:`, err);
+      debugError("EnhancedStakingButtonV2", `${phase} 트랜잭션 오류:`, err);
       setError(`${description}: ${err.message}`);
       setStatus("error");
       return { success: false, error: err };
@@ -136,9 +137,9 @@ const EnhancedStakingButtonV2 = ({
       
       // API 요청을 통해 스테이킹 준비
       const tierAttr = nft.attributes?.find(attr => attr.trait_type?.toLowerCase() === "tier");
-      console.log("NFT 티어 정보:", tierAttr);
+      debugLog("EnhancedStakingButtonV2", "NFT 티어 정보:", tierAttr);
       
-      console.log("향상된 스테이킹 준비 API 요청...");
+      debugLog("EnhancedStakingButtonV2", "향상된 스테이킹 준비 API 요청...");
       // 향상된 스테이킹 API 엔드포인트 사용
       const prepareResponse = await fetch("/api/staking/enhanced-staking", {
         method: "POST",
@@ -164,7 +165,7 @@ const EnhancedStakingButtonV2 = ({
         throw new Error(prepareData.message || "스테이킹 준비 실패");
       }
       
-      console.log("스테이킹 준비 데이터:", prepareData.data);
+      debugLog("EnhancedStakingButtonV2", "스테이킹 준비 데이터:", prepareData.data);
       
       // 스테이킹 정보 저장 (보상 정보 등)
       if (prepareData.data.rewardDetails) {
@@ -182,7 +183,7 @@ const EnhancedStakingButtonV2 = ({
       
       // 모든 계정이 이미 초기화되어 있는지 확인
       if (accountInitialization.allReady) {
-        console.log("모든 계정이 이미 초기화되어 있습니다. 스테이킹 단계로 직접 진행합니다.");
+        debugLog("EnhancedStakingButtonV2", "모든 계정이 이미 초기화되어 있습니다. 스테이킹 단계로 직접 진행합니다.");
         setStatus("signing");
       } else {
         // 1. 계정 초기화 트랜잭션 처리
@@ -200,7 +201,7 @@ const EnhancedStakingButtonV2 = ({
             return; // 실패 시 중단
           }
         } else {
-          console.log("계정 초기화가 필요 없음, 스테이킹으로 진행");
+          debugLog("EnhancedStakingButtonV2", "계정 초기화가 필요 없음, 스테이킹으로 진행");
           setStatus("signing");
         }
       }
@@ -225,7 +226,7 @@ const EnhancedStakingButtonV2 = ({
       
       // 4. 스테이킹 완료 기록
       try {
-        console.log("스테이킹 완료 기록 중...");
+        debugLog("EnhancedStakingButtonV2", "스테이킹 완료 기록 중...");
         const completeResponse = await fetch("/api/staking/completeStaking-unified", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -240,10 +241,10 @@ const EnhancedStakingButtonV2 = ({
         });
         
         if (!completeResponse.ok) {
-          console.warn("스테이킹 완료 기록 중 오류가 발생했지만, 블록체인 트랜잭션은 성공했습니다.");
+          debugLog("EnhancedStakingButtonV2", "스테이킹 완료 기록 중 오류가 발생했지만, 블록체인 트랜잭션은 성공했습니다.");
         }
       } catch (completeError) {
-        console.warn("스테이킹 완료 기록 중 오류:", completeError);
+        debugError("EnhancedStakingButtonV2", "스테이킹 완료 기록 중 오류:", completeError);
       }
       
       // 성공 콜백 호출
@@ -262,7 +263,7 @@ const EnhancedStakingButtonV2 = ({
       }
       
     } catch (err) {
-      console.error("스테이킹 오류:", err);
+      debugError("EnhancedStakingButtonV2", "스테이킹 오류:", err);
       setStatus("error");
       setError(err.message || "Unknown error during staking");
       

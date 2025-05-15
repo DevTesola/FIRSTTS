@@ -1,0 +1,141 @@
+/* Mobile-optimized styles for Tesola website */
+
+/* Only apply these optimizations on mobile devices */
+@media (max-width: 640px) {
+  /* Reduce animation intensity and duration for better performance */
+  .animate-pulse {
+    animation-duration: 2s !important; /* Slow down pulse animations */
+  }
+  
+  .hover\:scale-\[1\.02\], 
+  .hover\:scale-\[1\.05\], 
+  .hover\:scale-105, 
+  .hover\:scale-110,
+  .transform.hover\:scale-\[1\.02\] {
+    transition: transform 0.15s ease-out !important; /* Faster transitions */
+    transform: none !important; /* Disable scaling on mobile */
+  }
+  
+  /* Reduce gradient complexity to improve rendering performance */
+  .bg-gradient-to-r {
+    background-image: none !important; /* Disable gradients */
+    background-color: rgba(67, 56, 202, 0.1) !important; /* Use solid color instead */
+  }
+  
+  /* Optimize shadows for performance */
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-md {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important; /* Simpler shadows */
+  }
+  
+  /* Disable hover effects that cause repaints */
+  .group-hover\:opacity-100 {
+    opacity: 1 !important; /* Always show instead of on hover */
+  }
+  
+  /* Optimize list rendering */
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important; /* Force 2 columns on mobile */
+  }
+  
+  /* Optimize image placeholders */
+  .object-cover {
+    background-color: rgba(30, 30, 30, 0.5); /* Simple background for images while loading */
+  }
+  
+  /* Reduce border radius for better performance */
+  .rounded-full {
+    border-radius: 999px !important; /* Keep rounded-full as is */
+  }
+  
+  .rounded-lg {
+    border-radius: 0.5rem !important; /* Slightly smaller rounded corners */
+  }
+  
+  /* Optimize backdrop filters which are expensive */
+  .backdrop-blur,
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg {
+    backdrop-filter: none !important; /* Disable backdrop blur on mobile */
+    background-color: rgba(0, 0, 0, 0.7) !important; /* Use opacity instead */
+  }
+  
+  /* Reduce font size slightly to fit more content */
+  .text-lg {
+    font-size: 1.05rem !important;
+  }
+  
+  .text-xl {
+    font-size: 1.2rem !important;
+  }
+  
+  /* Optimize loading spinners */
+  .animate-spin {
+    animation-duration: 1.5s !important; /* Slower spinning */
+  }
+  
+  /* Make buttons easier to tap */
+  button, .button, 
+  [role="button"], 
+  input[type="button"], 
+  input[type="submit"], 
+  input[type="reset"] {
+    min-height: 44px !important; /* Minimum Apple-recommended touch target size */
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Improve paragraph readability */
+  p {
+    line-height: 1.4 !important;
+    letter-spacing: 0.01em !important;
+  }
+  
+  /* Optimize NFT cards */
+  div[class*="NFTCard"], 
+  div[class*="StakedNFTCard"] {
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Make sure content is visible without scrolling */
+  .h-screen {
+    height: -webkit-fill-available !important;
+    height: 100vh !important;
+  }
+  
+  /* Disable expensive text shadows */
+  [class*="text-shadow"] {
+    text-shadow: none !important;
+  }
+  
+  /* Optimize mobile forms */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevent iOS zoom on focus */
+  }
+}
+
+/* Special styles for extremely small screens */
+@media (max-width: 380px) {
+  .grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important; /* Single column for very small screens */
+  }
+  
+  /* Reduce padding to maximize content area */
+  .p-4 {
+    padding: 0.75rem !important;
+  }
+  
+  .p-3 {
+    padding: 0.5rem !important;
+  }
+}
+
+/* Styles for iOS devices */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for iOS 100vh issue */
+  .h-screen {
+    height: -webkit-fill-available;
+  }
+}

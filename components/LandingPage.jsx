@@ -13,7 +13,7 @@ export default function LandingPage() {
   return (
     <div className="w-full max-w-6xl mx-auto font-orbitron">
       {/* Hero Section */}
-      <div className="text-center mb-16">
+      <div className="text-center mb-12 md:mb-16 px-4 md:px-0">
         <div className="flex justify-center mb-4">
           <Image 
             src="/logo2.png" 
@@ -21,36 +21,37 @@ export default function LandingPage() {
             width={100} 
             height={100} 
             className="animate-pulse" 
+            priority
           />
         </div>
-        <h1 className="text-4xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-500 bg-clip-text text-transparent">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-4 md:mb-6 bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-500 bg-clip-text text-transparent leading-tight">
           Welcome to the Future of Solana
         </h1>
-        <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+        <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 md:mb-8">
           Explore our unique NFT collection and participate in our token presale — two distinct ways to join our thriving ecosystem.
         </p>
         
         {/* Stats directly */}
         
         {/* Stats */}
-        <div className="flex flex-wrap justify-center gap-6 mb-12">
-          <div className="bg-gray-800 px-6 py-3 rounded-lg">
-            <div className="text-3xl font-bold text-purple-400">1,000</div>
-            <div className="text-sm text-gray-400">Unique NFTs</div>
+        <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-10 md:mb-12">
+          <div className="bg-gray-800 px-4 md:px-6 py-3 rounded-lg">
+            <div className="text-2xl md:text-3xl font-bold text-purple-400">1,000</div>
+            <div className="text-xs md:text-sm text-gray-400">Unique NFTs</div>
           </div>
-          <div className="bg-gray-800 px-6 py-3 rounded-lg">
-            <div className="text-3xl font-bold text-pink-400">1B</div>
-            <div className="text-sm text-gray-400">Total TESOLA Supply</div>
+          <div className="bg-gray-800 px-4 md:px-6 py-3 rounded-lg">
+            <div className="text-2xl md:text-3xl font-bold text-pink-400">1B</div>
+            <div className="text-xs md:text-sm text-gray-400">Total Supply</div>
           </div>
-          <div className="bg-gray-800 px-6 py-3 rounded-lg">
-            <div className="text-3xl font-bold text-blue-400">18K+</div>
-            <div className="text-sm text-gray-400">Community Members</div>
+          <div className="bg-gray-800 px-4 md:px-6 py-3 rounded-lg">
+            <div className="text-2xl md:text-3xl font-bold text-blue-400">18K+</div>
+            <div className="text-xs md:text-sm text-gray-400">Community</div>
           </div>
         </div>
       </div>
       
       {/* Two Main Options */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12 md:mb-16 px-4 md:px-0">
         {/* NFT Collection Card */}
         <div className="bg-gradient-to-br from-purple-900/40 to-blue-900/40 rounded-xl overflow-hidden border border-purple-500/30 shadow-xl hover:shadow-purple-500/20 transition-shadow">
           <div className="relative h-60 bg-gray-800">
@@ -173,16 +174,16 @@ export default function LandingPage() {
       </div>
       
       {/* Project Overview */}
-      <div className="text-center mb-16">
-        <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+      <div className="text-center mb-12 md:mb-16 px-4 md:px-0">
+        <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
           A Complete Ecosystem on Solana
         </h2>
-        <p className="text-lg text-gray-300 max-w-3xl mx-auto mb-8">
+        <p className="text-base md:text-lg text-gray-300 max-w-3xl mx-auto mb-6 md:mb-8">
           Our project combines the artistic appeal of NFTs with the practical utility of a governance token, creating a comprehensive ecosystem for creators and collectors.
         </p>
         
         {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           <div className="bg-gray-800 p-6 rounded-lg">
             <div className="bg-purple-900/30 w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -222,70 +223,52 @@ export default function LandingPage() {
       </div>
       
       {/* Call to Action */}
-      <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl p-8 text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Ready to Join Our Community?</h2>
-        <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+      <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl p-4 md:p-8 mx-4 md:mx-0 text-center">
+        <h2 className="text-xl md:text-2xl font-bold text-white mb-3 md:mb-4">Ready to Join Our Community?</h2>
+        <p className="text-sm md:text-base text-gray-300 mb-4 md:mb-6 max-w-2xl mx-auto">
           Whether you're interested in our unique NFT collection, our utility token, or both, now is the perfect time to get involved.
         </p>
         
-        <div className="flex flex-wrap justify-center gap-4">
+        {/* Mobile-optimized grid layout for action buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap md:justify-center gap-3 md:gap-4">
           <Link 
-            href="/nft" 
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+            href="/promotion-gallery" 
+            className="px-5 py-3 md:px-6 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
           >
-            Explore NFTs
+            Promotion Gallery
           </Link>
           <Link 
             href="/character-introduction" 
-            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white font-medium rounded-lg transition-colors"
+            className="px-5 py-3 md:px-6 bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
           >
-            Main Character Introduction
+            Main Character
           </Link>
           <Link 
             href="/love-story" 
-            className="px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors"
+            className="px-5 py-3 md:px-6 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
           >
             Love Story
           </Link>
           <Link 
             href="/developer-space" 
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium rounded-lg transition-colors"
+            className="px-5 py-3 md:px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
           >
             Developer's Space
           </Link>
+          
+          {/* The REAL Story button - now full width on mobile and with arrow indicator */}
           <Link 
             href="/introduction" 
-            className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 text-white font-medium rounded-lg transition-colors"
+            className="col-span-full px-5 py-3 md:px-6 bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 text-white font-medium rounded-lg transition-colors text-sm md:text-base flex justify-center items-center space-x-2"
           >
-            The REAL Story
+            <span>The REAL Story</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
           </Link>
         </div>
         
-        {/* Social Links with Emoji Style */}
-        <div className="flex justify-center space-x-6 mt-6">
-          <a 
-            href="https://twitter.com/teslainsolana" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="group"
-            aria-label="Twitter"
-          >
-            <div className="w-12 h-12 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110 shadow-lg hover:shadow-blue-500/50">
-              <span className="text-xl">🐦</span>
-            </div>
-          </a>
-          <a 
-            href="https://discord.gg/tesola" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="group"
-            aria-label="Discord"
-          >
-            <div className="w-12 h-12 bg-indigo-500 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-all transform hover:scale-110 shadow-lg hover:shadow-indigo-500/50">
-              <span className="text-xl">💬</span>
-            </div>
-          </a>
-        </div>
+        {/* Social links removed to avoid redundancy as requested */}
       </div>
     </div>
   );

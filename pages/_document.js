@@ -5,13 +5,22 @@ export default function MyDocument() {
   return (
     <Html lang="en">
       <Head>
-        {/* Meta tags */}
+        {/* Meta tags - Enhanced for mobile optimization */}
         <meta name="theme-color" content="#4c1d95" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="apple-touch-fullscreen" content="yes" />
+        <meta name="msapplication-tap-highlight" content="no" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/logo2.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/logo2.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/logo2.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/logo2.png" />
+        <link rel="apple-touch-startup-image" href="/logo2.png" />
         
         {/* Proper font loading with correct preload attributes */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

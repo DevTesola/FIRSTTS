@@ -1,5 +1,9 @@
 /**
- * NFT 스테이킹 정보 조회 API 엔드포인트 (통합 버전)
+ * /api/staking/getStakingInfo.js - NFT 스테이킹 정보 조회 API 엔드포인트 (Primary Endpoint)
+ * 
+ * IMPORTANT: This is the main canonical endpoint for staking information.
+ * The legacy endpoint at /api/getStakingInfo.js forwards requests here.
+ * All new code should use this endpoint directly.
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -108,12 +112,13 @@ export default async function handler(req, res) {
     // 온체인 상태 확인 (계정 존재 여부)
     const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
     
-    // 스테이크 정보 PDA 생성
+    // 스테이크 정보 PDA 생성 - 올바른 시드 값('stake')을 사용하는 findStakeInfoPDA 함수 사용
     const [stakeInfoPDA] = findStakeInfoPDA(mintPubkey);
     const [userStakingInfoPDA] = findUserStakingInfoPDA(walletPubkey);
     
     console.log('Stake Info PDA:', stakeInfoPDA.toString());
     console.log('User Staking Info PDA:', userStakingInfoPDA.toString());
+    console.log('스테이크 정보 PDA 계산에 사용된 시드 확인: shared/utils/pda.js의 findStakeInfoPDA 함수 사용');
     
     // 계정 정보 확인
     const stakeInfoAccount = await connection.getAccountInfo(stakeInfoPDA);
@@ -162,7 +167,7 @@ export default async function handler(req, res) {
       }
     }
     
-    // DB에서 스테이킹 정보 조회
+    // DB에서 스테이킹 정보 조회 (조인 쿼리 수정)
     const { data: stakingInfo, error: stakingError } = await supabase
       .from('nft_staking')
       .select('*')
@@ -227,12 +232,33 @@ export default async function handler(req, res) {
         };
       }
 
+      // 민팅된 NFT 데이터에서 ID 추출 - 간소화된 방식으로 수정
+      let realNftId = null;
+      
+      // 이미 DB에 저장된 staked_nft_id 필드 확인
+      if (stakingInfo && stakingInfo.staked_nft_id) {
+        realNftId = stakingInfo.staked_nft_id;
+        console.log('기존 저장된 staked_nft_id 사용:', realNftId);
+      }
+      // 별도 조회 없이 직접 민트 주소에서 추출 시도
+      else if (mintAddress) {
+        try {
+          // 민트 주소에서 간단한 ID 생성 (앞 6자리 추출)
+          realNftId = mintAddress.slice(0, 6);
+          console.log('민트 주소에서 ID 추출 결과:', realNftId);
+        } catch (e) {
+          console.warn("ID 추출 오류:", e);
+        }
+      }
+      
       // 응답 객체 구성
       const response = {
         isStaked: true,
         isOnChainOnly: false,
         stakingInfo: {
           ...stakingInfo,
+          // 명시적으로 실제 NFT ID 설정
+          staked_nft_id: realNftId || stakingInfo.staked_nft_id || null,
           progress_percentage: progressPercentage,
           earned_so_far: earnedSoFar,
           is_unlocked: now >= stakingInfo.release_date,

@@ -135,6 +135,13 @@ export default async function handler(req, res) {
     // 요청 파라미터 가져오기
     const { wallet, mintAddress, stakingId } = req.body;
     
+    // NFT ID 처리 - onchain_ 접두사 제거
+    const processedStakingId = stakingId && typeof stakingId === 'string' && stakingId.startsWith('onchain_')
+      ? stakingId.replace('onchain_', '')
+      : stakingId;
+    
+    console.log('처리된 stakingId:', { original: stakingId, processed: processedStakingId });
+    
     // 필수 파라미터 검증
     if (!wallet || !mintAddress) {
       return res.status(400).json(
@@ -153,7 +160,7 @@ export default async function handler(req, res) {
       );
     }
     
-    console.log('언스테이킹 요청 받음:', { wallet, mintAddress, stakingId });
+    console.log('언스테이킹 요청 받음:', { wallet, mintAddress, stakingId: processedStakingId });
     
     // 스테이킹 정보 확인
     let stakingQuery;
@@ -168,13 +175,13 @@ export default async function handler(req, res) {
         .eq('mint_address', mintAddress)
         .eq('status', 'staked')
         .maybeSingle();
-    } else if (stakingId) {
-      // If regular ID is provided
-      console.log(`ID ${stakingId}로 스테이킹 정보 조회`);
+    } else if (processedStakingId) {
+      // If processed ID is provided
+      console.log(`ID ${processedStakingId}로 스테이킹 정보 조회`);
       stakingQuery = supabase
         .from('nft_staking')
         .select('*')
-        .eq('id', stakingId)
+        .eq('id', processedStakingId)
         .eq('wallet_address', wallet)
         .eq('mint_address', mintAddress)
         .eq('status', 'staked')
@@ -226,8 +233,13 @@ export default async function handler(req, res) {
       staked_at: stakingInfo.staked_at
     });
     
-    // 스테이킹 ID 확인 (제공된 경우)
-    if (stakingId && !stakingId.toString().startsWith('onchain_') && stakingInfo.id !== stakingId) {
+    // 스테이킹 ID 확인 (제공된 경우) - processedStakingId 사용
+    if (processedStakingId && stakingInfo.id !== processedStakingId && stakingInfo.id.toString() !== processedStakingId.toString()) {
+      console.log('스테이킹 ID 불일치:', {
+        requestedId: processedStakingId,
+        actualId: stakingInfo.id,
+        types: { requested: typeof processedStakingId, actual: typeof stakingInfo.id }
+      });
       return res.status(400).json(
         createApiResponse(false, '스테이킹 ID가 일치하지 않습니다', null, 'InvalidStakingId')
       );
@@ -322,28 +334,19 @@ export default async function handler(req, res) {
     
     // 2. 언스테이킹 명령어 추가
     console.log('언스테이킹 명령어 추가...');
-    console.log('계정 구조:');
-    console.log(`0. owner: ${walletPubkey.toString()} (isSigner: true, isWritable: true)`);
-    console.log(`1. nft_mint: ${mintPubkey.toString()} (isSigner: false, isWritable: false)`);
-    console.log(`2. user_nft_account: ${userTokenAccount.toString()} (isSigner: false, isWritable: true)`);
-    console.log(`3. escrow_nft_account: ${escrowTokenAccount.toString()} (isSigner: false, isWritable: true)`);
-    console.log(`4. escrow_authority: ${escrowAuthorityPDA.toString()} (isSigner: false, isWritable: false)`);
-    console.log(`5. stake_info: ${stakeInfoPDA.toString()} (isSigner: false, isWritable: true)`);
-    console.log(`6. pool_state: ${poolStatePDA.toString()} (isSigner: false, isWritable: true)`);
-    console.log(`7. user_staking_info: ${userStakingInfoPDA.toString()} (isSigner: false, isWritable: true)`);
-    console.log(`8. token_program: ${TOKEN_PROGRAM_ID.toString()} (isSigner: false, isWritable: false)`);
-
+    
+    // 실제 IDL 순서대로 수정
     const unstakeNftIx = createUnstakeNftInstruction(
       walletPubkey,
       mintPubkey,
       poolStatePDA,
       {
-        // IDL 정의 순서대로 계정 전달 (행 1844-1952)
-        stakeInfo: stakeInfoPDA,               // 3번 위치
-        escrowTokenAccount,                    // 4번 위치
-        escrowAuthority: escrowAuthorityPDA,   // 5번 위치
-        userTokenAccount,                      // 6번 위치
-        userStakingInfo: userStakingInfoPDA    // 7번 위치
+        // 프로그램의 실제 계정 순서대로 전달
+        stakeInfo: stakeInfoPDA,               // stake_info
+        escrowTokenAccount,                    // escrow_nft_account
+        escrowAuthority: escrowAuthorityPDA,   // escrow_authority
+        userTokenAccount,                      // user_nft_account
+        userStakingInfo: userStakingInfoPDA    // user_staking_info
       }
     );
 

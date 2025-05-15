@@ -41,15 +41,15 @@ export default function CharacterIntroduction() {
       <Layout>
         <div className="max-w-6xl mx-auto px-4 py-12">
           {/* Hero Section */}
-          <div className="text-center mb-24 mt-8 relative">
+          <div className="text-center mb-16 sm:mb-24 mt-4 sm:mt-8 relative px-4 sm:px-0">
             <div className="absolute inset-0 -top-10 flex justify-center">
-              <div className="w-64 h-64 bg-gradient-to-r from-green-500/20 via-yellow-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
+              <div className="w-48 sm:w-64 h-48 sm:h-64 bg-gradient-to-r from-green-500/20 via-yellow-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
             </div>
             <div className="relative">
               <span className="inline-block text-xs font-bold uppercase tracking-widest py-1 px-3 rounded-full bg-gradient-to-r from-green-600/30 to-yellow-600/30 text-white mb-4">
                 Exclusive Character Lore
               </span>
-              <h1 className="text-5xl md:text-7xl font-black mb-8 text-transparent bg-clip-text animate-pulse-slow"
+              <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-6 sm:mb-8 text-transparent bg-clip-text animate-pulse-slow"
                 style={{
                   backgroundImage: 'linear-gradient(to right, #39ff14, #ffff00, #00ffff)',
                   textShadow: '0 0 20px rgba(57, 255, 20, 0.7), 0 0 40px rgba(57, 255, 20, 0.4)'
@@ -57,9 +57,9 @@ export default function CharacterIntroduction() {
                 THE LEGENDARY CHARACTERS
               </h1>
               <div className="flex justify-center">
-                <div className="h-1 w-24 bg-gradient-to-r from-green-400 to-yellow-400 rounded-full mb-6"></div>
+                <div className="h-1 w-24 bg-gradient-to-r from-green-400 to-yellow-400 rounded-full mb-4 sm:mb-6"></div>
               </div>
-              <p className="text-xl text-gray-300 max-w-3xl mx-auto font-light">
+              <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto font-light">
                 Meet the iconic figures that rule the SOLARA & TESOLA universe. 
                 <span className="font-bold text-white block mt-2">Part legend, part meme, all awesome.</span>
               </p>
@@ -86,9 +86,9 @@ export default function CharacterIntroduction() {
               <div className="absolute -top-24 -left-24 w-40 h-40 bg-purple-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-700"></div>
               <div className="relative p-6 h-full">
                 {/* Character Name */}
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500">SOLARA</h2>
-                  <span className="bg-purple-900/60 text-purple-100 px-3 py-1 rounded-full text-sm font-semibold">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 mb-2 sm:mb-0">SOLARA</h2>
+                  <span className="bg-purple-900/60 text-purple-100 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold w-max">
                     Cosmic Guardian
                   </span>
                 </div>
@@ -162,9 +162,9 @@ export default function CharacterIntroduction() {
               <div className="absolute -top-24 -right-24 w-40 h-40 bg-amber-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-700"></div>
               <div className="relative p-6 h-full">
                 {/* Character Name */}
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">E-LON</h2>
-                  <span className="bg-amber-900/60 text-amber-100 px-3 py-1 rounded-full text-sm font-semibold">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 mb-2 sm:mb-0">E-LON</h2>
+                  <span className="bg-amber-900/60 text-amber-100 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold w-max">
                     The Crypto King
                   </span>
                 </div>
@@ -239,11 +239,11 @@ export default function CharacterIntroduction() {
           </div>
 
           {/* Comparison Table */}
-          <div className="mb-16 relative mt-20">
+          <div className="mb-16 relative mt-16 sm:mt-20 px-4 sm:px-0">
             <div className="absolute -inset-10 bg-gradient-to-r from-purple-600/10 via-pink-600/5 to-amber-600/10 blur-3xl pointer-events-none"></div>
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 transform bg-gradient-to-r from-purple-500/20 to-amber-500/20 w-36 h-36 rounded-full blur-3xl"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 transform bg-gradient-to-r from-purple-500/20 to-amber-500/20 w-24 sm:w-36 h-24 sm:h-36 rounded-full blur-3xl"></div>
             
-            <h2 className="text-4xl font-black mb-10 text-center animate-pulse-slow"
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-6 sm:mb-10 text-center animate-pulse-slow"
                 style={{
                   backgroundImage: 'linear-gradient(90deg, #a855f7, #ec4899, #f59e0b)',
                   WebkitBackgroundClip: 'text',
@@ -253,110 +253,110 @@ export default function CharacterIntroduction() {
               CHARACTER POWER COMPARISON
             </h2>
             
-            <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-amber-500 mx-auto mb-10 rounded-full"></div>
+            <div className="w-16 sm:w-20 h-1 bg-gradient-to-r from-purple-500 to-amber-500 mx-auto mb-6 sm:mb-10 rounded-full"></div>
             
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-800/60">
-                    <th className="px-6 py-4 text-left text-gray-300">Ability</th>
-                    <th className="px-6 py-4 text-center text-purple-300">SOLARA</th>
-                    <th className="px-6 py-4 text-center text-amber-300">E-LON</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm text-gray-300">Ability</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-purple-300">SOLARA</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-amber-300">E-LON</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   <tr className="bg-gray-900/30 hover:bg-gray-800/20">
-                    <td className="px-6 py-4 text-gray-300">Market Influence</td>
-                    <td className="px-6 py-4 text-center text-purple-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300">Market Influence</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-purple-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-purple-600 h-2.5 rounded-full" style={{width: '70%'}}></div>
                         </div>
-                        <span className="ml-2">7/10</span>
+                        <span className="sm:ml-2">7/10</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-amber-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-amber-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-amber-600 h-2.5 rounded-full" style={{width: '90%'}}></div>
                         </div>
-                        <span className="ml-2">9/10</span>
+                        <span className="sm:ml-2">9/10</span>
                       </div>
                     </td>
                   </tr>
                   <tr className="bg-gray-900/30 hover:bg-gray-800/20">
-                    <td className="px-6 py-4 text-gray-300">Blockchain Power</td>
-                    <td className="px-6 py-4 text-center text-purple-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300">Blockchain Power</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-purple-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-purple-600 h-2.5 rounded-full" style={{width: '100%'}}></div>
                         </div>
-                        <span className="ml-2">10/10</span>
+                        <span className="sm:ml-2">10/10</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-amber-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-amber-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-amber-600 h-2.5 rounded-full" style={{width: '80%'}}></div>
                         </div>
-                        <span className="ml-2">8/10</span>
+                        <span className="sm:ml-2">8/10</span>
                       </div>
                     </td>
                   </tr>
                   <tr className="bg-gray-900/30 hover:bg-gray-800/20">
-                    <td className="px-6 py-4 text-gray-300">Meme Potential</td>
-                    <td className="px-6 py-4 text-center text-purple-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300">Meme Potential</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-purple-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-purple-600 h-2.5 rounded-full" style={{width: '60%'}}></div>
                         </div>
-                        <span className="ml-2">6/10</span>
+                        <span className="sm:ml-2">6/10</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-amber-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-amber-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-amber-600 h-2.5 rounded-full" style={{width: '100%'}}></div>
                         </div>
-                        <span className="ml-2">10/10</span>
+                        <span className="sm:ml-2">10/10</span>
                       </div>
                     </td>
                   </tr>
                   <tr className="bg-gray-900/30 hover:bg-gray-800/20">
-                    <td className="px-6 py-4 text-gray-300">Technical Knowledge</td>
-                    <td className="px-6 py-4 text-center text-purple-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300">Technical Knowledge</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-purple-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-purple-600 h-2.5 rounded-full" style={{width: '90%'}}></div>
                         </div>
-                        <span className="ml-2">9/10</span>
+                        <span className="sm:ml-2">9/10</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-amber-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-amber-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-amber-600 h-2.5 rounded-full" style={{width: '85%'}}></div>
                         </div>
-                        <span className="ml-2">8.5/10</span>
+                        <span className="sm:ml-2">8.5/10</span>
                       </div>
                     </td>
                   </tr>
                   <tr className="bg-gray-900/30 hover:bg-gray-800/20">
-                    <td className="px-6 py-4 text-gray-300">Community Love</td>
-                    <td className="px-6 py-4 text-center text-purple-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300">Community Love</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-purple-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-purple-600 h-2.5 rounded-full" style={{width: '75%'}}></div>
                         </div>
-                        <span className="ml-2">7.5/10</span>
+                        <span className="sm:ml-2">7.5/10</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-amber-300">
-                      <div className="flex justify-center">
-                        <div className="w-32 bg-gray-700 rounded-full h-2.5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-amber-300">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2.5">
                           <div className="bg-amber-600 h-2.5 rounded-full" style={{width: '85%'}}></div>
                         </div>
-                        <span className="ml-2">8.5/10</span>
+                        <span className="sm:ml-2">8.5/10</span>
                       </div>
                     </td>
                   </tr>
@@ -366,19 +366,19 @@ export default function CharacterIntroduction() {
           </div>
 
           {/* Fan Art Contest Banner */}
-          <div className="relative overflow-hidden rounded-xl p-10 bg-gradient-to-r from-purple-900/60 via-pink-900/60 to-amber-900/60 border border-pink-500/30 mt-28 shadow-[0_0_50px_rgba(236,72,153,0.2)]">
+          <div className="relative overflow-hidden rounded-xl p-5 sm:p-10 bg-gradient-to-r from-purple-900/60 via-pink-900/60 to-amber-900/60 border border-pink-500/30 mt-16 sm:mt-28 shadow-[0_0_50px_rgba(236,72,153,0.2)] mx-4 sm:mx-0">
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 opacity-30 blur-xl"></div>
-            <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-64 h-64">
+            <div className="absolute -top-24 sm:-top-32 left-1/2 -translate-x-1/2 w-48 sm:w-64 h-48 sm:h-64">
               <div className="absolute top-0 left-0 w-full h-full rounded-full bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-amber-500/30 blur-3xl animate-pulse-slow"></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl">✨</div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl sm:text-6xl">✨</div>
             </div>
             <div className="absolute top-0 left-0 w-full h-full bg-[url('/stars.jpg')] opacity-10 mix-blend-overlay"></div>
             <div className="relative z-10">
-              <div className="text-center mb-8">
-                <div className="inline-block px-4 py-2 bg-gradient-to-r from-pink-700/70 to-purple-700/70 rounded-full text-pink-100 text-sm font-bold mb-3 animate-pulse shadow-[0_0_15px_rgba(219,39,119,0.5)]">
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="inline-block px-3 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-pink-700/70 to-purple-700/70 rounded-full text-pink-100 text-xs sm:text-sm font-bold mb-3 animate-pulse shadow-[0_0_15px_rgba(219,39,119,0.5)]">
                   LIVE NOW
                 </div>
-                <h2 className="text-4xl font-black mb-4"
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-3 sm:mb-4"
                   style={{
                     backgroundImage: 'linear-gradient(90deg, #d8b4fe, #f9a8d4, #fcd34d)',
                     WebkitBackgroundClip: 'text',
@@ -387,8 +387,8 @@ export default function CharacterIntroduction() {
                   }}>
                   CHARACTER FAN ART CONTEST
                 </h2>
-                <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mb-6 rounded-full"></div>
-                <p className="text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed">
+                <div className="w-12 sm:w-16 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mb-4 sm:mb-6 rounded-full"></div>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed">
                   Create your own interpretation of SOLARA or E-LON and win exclusive NFTs and TESOLA tokens!
                   <span className="block text-pink-200 mt-2 font-medium">Top winners receive limited edition character NFTs worth 10 SOL each!</span>
                 </p>
@@ -397,9 +397,9 @@ export default function CharacterIntroduction() {
               <div className="flex justify-center">
                 <Link
                   href="/contest"
-                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 text-white font-bold rounded-xl hover:from-purple-500 hover:via-pink-500 hover:to-amber-500 transform transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(236,72,153,0.5)]"
+                  className="inline-flex items-center px-5 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 text-white font-bold rounded-xl hover:from-purple-500 hover:via-pink-500 hover:to-amber-500 transform transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] text-sm sm:text-base"
                 >
-                  <span className="mr-2 text-xl">🎨</span>
+                  <span className="mr-2 text-lg sm:text-xl">🎨</span>
                   JOIN THE CONTEST
                 </Link>
               </div>

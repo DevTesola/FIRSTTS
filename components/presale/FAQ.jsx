@@ -37,7 +37,7 @@ const FAQ = () => {
     {
       id: 5,
       question: "What is the presale token price?",
-      answer: "During the presale, TESOLA tokens are available at 0.000006 SOL per token. This represents a significant discount compared to the planned listing price of 0.000008 SOL after the public launch on DEXs."
+      answer: "During the presale, TESOLA tokens are available at 0.000005 SOL per token. This represents a significant discount compared to the planned listing price of 0.000008 SOL after the public launch on DEXs."
     },
     {
       id: 6,

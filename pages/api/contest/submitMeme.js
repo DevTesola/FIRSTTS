@@ -36,11 +36,11 @@ export default async function handler(req, res) {
 
   try {
     // 요청 파라미터 추출
-    const { wallet, title, description, ipfsHash } = req.body;
+    const { wallet, title, description, imageUrl, imagePath } = req.body;
     
-    if (!wallet || !title || !ipfsHash) {
+    if (!wallet || !title || !imageUrl || !imagePath) {
       return res.status(400).json({ 
-        error: 'Wallet address, title, and IPFS hash are required',
+        error: 'Wallet address, title, and image information are required',
         success: false 
       });
     }
@@ -56,10 +56,10 @@ export default async function handler(req, res) {
       });
     }
     
-    // IPFS 해시 유효성 검사 (간단한 검사)
-    if (!ipfsHash.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|bafy[a-zA-Z0-9]{55})$/)) {
+    // 이미지 URL 유효성 검사 (간단한 검사)
+    if (!imageUrl.startsWith('https://')) {
       return res.status(400).json({ 
-        error: 'Invalid IPFS hash format',
+        error: 'Invalid image URL format',
         success: false 
       });
     }
@@ -91,13 +91,14 @@ export default async function handler(req, res) {
     // 트랜잭션 생성
     const transaction = new Transaction();
     
-    // 메타데이터 구성 (타이틀 + 설명)
+    // 메타데이터 구성 (타이틀 + 설명 + 이미지 URL)
     const titleBuffer = Buffer.from(title.slice(0, 50)); // 최대 50자 제한
     const descriptionBuffer = Buffer.from(description ? description.slice(0, 200) : ""); // 최대 200자 제한
-    const ipfsHashBuffer = Buffer.from(ipfsHash);
+    const imageUrlBuffer = Buffer.from(imageUrl);
+    const imagePathBuffer = Buffer.from(imagePath);
     
     // 명령어 데이터 구성
-    const dataSize = SUBMIT_MEME_DISCRIMINATOR.length + 4 + titleBuffer.length + 4 + descriptionBuffer.length + 4 + ipfsHashBuffer.length;
+    const dataSize = SUBMIT_MEME_DISCRIMINATOR.length + 4 + titleBuffer.length + 4 + descriptionBuffer.length + 4 + imageUrlBuffer.length + 4 + imagePathBuffer.length;
     const data = Buffer.alloc(dataSize);
     let offset = 0;
     
@@ -117,10 +118,16 @@ export default async function handler(req, res) {
     descriptionBuffer.copy(data, offset);
     offset += descriptionBuffer.length;
     
-    // IPFS 해시 쓰기 (길이 + 문자열)
-    data.writeUInt32LE(ipfsHashBuffer.length, offset);
+    // 이미지 URL 쓰기 (길이 + 문자열)
+    data.writeUInt32LE(imageUrlBuffer.length, offset);
     offset += 4;
-    ipfsHashBuffer.copy(data, offset);
+    imageUrlBuffer.copy(data, offset);
+    offset += imageUrlBuffer.length;
+    
+    // 이미지 경로 쓰기 (길이 + 문자열)
+    data.writeUInt32LE(imagePathBuffer.length, offset);
+    offset += 4;
+    imagePathBuffer.copy(data, offset);
     
     // 계정 배열 구성
     const accounts = [
@@ -152,13 +159,39 @@ export default async function handler(req, res) {
       verifySignatures: false 
     });
     
+    // Supabase에도 밈 정보 저장
+    try {
+      const { error: dbError } = await supabase
+        .from('contest_memes')
+        .insert({
+          title: title,
+          description: description,
+          image_url: imageUrl,
+          image_path: imagePath,
+          wallet_address: wallet,
+          pda: memePDA.toString(),
+          status: 'pending', // 트랜잭션 완료 후 'published'로 업데이트될 수 있음
+          votes: 0,
+          created_at: new Date().toISOString()
+        });
+      
+      if (dbError) {
+        console.error('밈 정보 데이터베이스 저장 오류:', dbError);
+        // 데이터베이스 오류가 있어도 트랜잭션은 계속 진행
+      }
+    } catch (dbError) {
+      console.error('Supabase 저장 중 오류:', dbError);
+      // 데이터베이스 오류가 있어도 트랜잭션은 계속 진행
+    }
+
     // 응답
     return res.status(200).json({
       success: true,
       transactionBase64: serializedTransaction.toString('base64'),
       votingPower: governanceSummary.votingPower,
       transactionExpiry: lastValidBlockHeight + 150,
-      memePDA: memePDA.toString()
+      memePDA: memePDA.toString(),
+      imageUrl: imageUrl
     });
   } catch (error) {
     console.error('밈 제출 트랜잭션 생성 중 오류:', error);

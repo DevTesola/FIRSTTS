@@ -124,19 +124,44 @@ export function getNFTImageUrl(nft) {
     if (nftId && nftId !== 'unknown') {
       console.log(`🔍 IPFS URL 누락, ID로 생성 시도: ${nftId}`);
       
-      // ID에서 숫자 추출 - 더 강력하게 만듦
+      // ID에서 숫자 추출 - 더 정확한 방식으로 개선
       let numericId = null;
       if (typeof nftId === 'string') {
-        // 더 강력한 정규식으로 숫자 추출 (모든, 심지어 중간에 포함된 숫자도 찾아봄)
-        let allMatches = nftId.match(/\d+/g);
-        if (allMatches && allMatches.length > 0) {
-          // 가장 긴 숫자 시퀀스를 사용 (보통 실제 ID에 해당)
-          let longestMatch = allMatches.reduce((a, b) => a.length > b.length ? a : b);
-          numericId = longestMatch;
-          console.log(`🔍 ID에서 숫자열 다수 발견, 가장 긴 시퀀스 선택: ${numericId}`);
+        // 1. 먼저 "#숫자" 패턴 검색 (가장 정확한 방법)
+        const hashPattern = /#\s*(\d+)/;
+        const hashMatch = nftId.match(hashPattern);
+        if (hashMatch && hashMatch[1]) {
+          numericId = hashMatch[1];
+          console.log(`🎯 NFT ID에서 "#숫자" 패턴 발견: ${numericId}`);
+        } 
+        // 2. 파일명 패턴 검색 (예: "0019.png")
+        else if (nftId.includes('.')) {
+          const filePattern = /(\d+)\.\w+$/;
+          const fileMatch = nftId.match(filePattern);
+          if (fileMatch && fileMatch[1]) {
+            numericId = fileMatch[1];
+            console.log(`🎯 NFT ID에서 파일명 패턴 발견: ${numericId}`);
+          }
+        }
+        // 3. 이전 방식: 모든 숫자 시퀀스 추출 (정확도 낮음)
+        else {
+          let allMatches = nftId.match(/\d+/g);
+          if (allMatches && allMatches.length > 0) {
+            // 4자리 숫자 패턴 우선 (SOLARA NFT ID 형식)
+            const fourDigitMatch = allMatches.find(match => match.length === 4);
+            if (fourDigitMatch) {
+              numericId = fourDigitMatch;
+              console.log(`🎯 NFT ID에서 4자리 숫자 패턴 발견: ${numericId}`);
+            } else {
+              // 가장 앞쪽에 있는 숫자 시퀀스 선택 (위치 기반)
+              numericId = allMatches[0];
+              console.log(`🔍 ID에서 숫자열 다수 발견, 첫 번째 시퀀스 선택: ${numericId}`);
+            }
+          }
         }
       } else if (typeof nftId === 'number') {
         numericId = nftId.toString();
+        console.log(`🔢 숫자형 NFT ID 사용: ${numericId}`);
       }
       
       // Mint 주소에서 추출 시도
@@ -402,11 +427,37 @@ export function getFallbackImage(nft) {
         numericPart = parseInt(nameMatch[1]);
       }
       
-      // Then try to extract from ID
+      // Then try to extract from ID - improved pattern matching
       if (numericPart === null) {
-        const idMatch = String(id).match(/(\d+)/);
-        if (idMatch && idMatch[1]) {
-          numericPart = parseInt(idMatch[1]);
+        const id_str = String(id);
+        
+        // Check for "#number" pattern
+        const hashPattern = /#\s*(\d+)/;
+        const hashMatch = id_str.match(hashPattern);
+        if (hashMatch && hashMatch[1]) {
+          numericPart = parseInt(hashMatch[1]);
+        }
+        // Check for filename pattern (e.g., "0019.png")
+        else if (id_str.includes('.')) {
+          const filePattern = /(\d+)\.\w+$/;
+          const fileMatch = id_str.match(filePattern);
+          if (fileMatch && fileMatch[1]) {
+            numericPart = parseInt(fileMatch[1]);
+          }
+        }
+        // Fallback to simple number extraction
+        else {
+          const idMatches = id_str.match(/\d+/g);
+          if (idMatches && idMatches.length > 0) {
+            // Prefer 4-digit numbers (SOLARA NFT format)
+            const fourDigitMatch = idMatches.find(match => match.length === 4);
+            if (fourDigitMatch) {
+              numericPart = parseInt(fourDigitMatch);
+            } else {
+              // Use first number found
+              numericPart = parseInt(idMatches[0]);
+            }
+          }
         }
       }
       

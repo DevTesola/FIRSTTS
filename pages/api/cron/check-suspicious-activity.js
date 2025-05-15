@@ -1,71 +1,21 @@
 // pages/api/cron/check-suspicious-activity.js
 import { detectSuspiciousActivity } from '../../../utils/adminLogger';
 
-// Mock email transport for Vercel compatibility (remove nodemailer dependency)
-const mockTransporter = {
-  async sendMail(options) {
-    console.log(`[MOCK EMAIL] Would send email to ${options.to} with subject: ${options.subject}`);
-    return { messageId: `mock-${Date.now()}`, response: 'Mock email sent' };
-  }
-};
-
-// Use mock transport
-const transporter = mockTransporter;
-
-// Configure Telegram bot (if enabled)
-const TELEGRAM_ENABLED = process.env.TELEGRAM_ENABLED === 'true';
+// Configure Telegram bot
+const TELEGRAM_ENABLED = true; // Always enabled
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "@tesolachat"; // Default to main channel
 
 /**
- * Send alert via email
- * 
- * @param {Object} data - Alert data
- * @returns {Promise} - Result of sending email
+ * DEPRECATED: Email alerts have been replaced with Telegram notifications
+ * This function is kept for historical reference but is no longer used
  */
 async function sendEmailAlert(data) {
-  const adminList = data.admins.map(admin => 
-    `- ${admin.admin_wallet.slice(0, 6)}...${admin.admin_wallet.slice(-4)}: ${admin.count} actions`
-  ).join('\n');
-  
-  const mailOptions = {
-    from: process.env.ALERT_FROM_EMAIL || process.env.SMTP_USER,
-    to: process.env.ALERT_TO_EMAIL,
-    subject: '🚨 SOLARA - Suspicious Admin Activity Detected',
-    text: `Suspicious admin activity has been detected on the SOLARA platform!
-
-Time window: Last ${data.timeWindow.minutes} minutes
-Threshold: ${data.threshold} actions
-
-Suspicious admins:
-${adminList}
-
-Please check the admin audit logs at: ${process.env.NEXT_PUBLIC_APP_URL}/admin/audit-logs
-
-This is an automated alert.`,
-    html: `
-      <h2>🚨 Suspicious Admin Activity Detected</h2>
-      <p>Suspicious admin activity has been detected on the SOLARA platform!</p>
-      
-      <ul>
-        <li><strong>Time window:</strong> Last ${data.timeWindow.minutes} minutes</li>
-        <li><strong>Threshold:</strong> ${data.threshold} actions</li>
-      </ul>
-      
-      <h3>Suspicious admins:</h3>
-      <ul>
-        ${data.admins.map(admin => 
-          `<li><strong>${admin.admin_wallet.slice(0, 6)}...${admin.admin_wallet.slice(-4)}:</strong> ${admin.count} actions</li>`
-        ).join('')}
-      </ul>
-      
-      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/audit-logs">Check the admin audit logs</a></p>
-      
-      <p><em>This is an automated alert.</em></p>
-    `,
-  };
-  
-  return transporter.sendMail(mailOptions);
+  console.log('[DEPRECATED] Email alerts have been replaced with Telegram notifications');
+  return Promise.resolve({
+    deprecated: true,
+    message: 'Email alerts have been replaced with Telegram notifications'
+  });
 }
 
 /**
@@ -120,31 +70,19 @@ Check audit logs: ${process.env.NEXT_PUBLIC_APP_URL}/admin/audit-logs
 }
 
 /**
- * Send alerts through all configured channels
+ * Send alerts through Telegram
  * 
  * @param {Object} data - Alert data
  * @returns {Promise} - Result of sending alerts
  */
 async function sendAlerts(data) {
-  const promises = [];
-  
-  // Send email alert if configured
-  if (process.env.ALERT_TO_EMAIL) {
-    promises.push(sendEmailAlert(data).catch(error => {
-      console.error('Error sending email alert:', error);
-      return null;
-    }));
+  // Only send Telegram alerts now
+  try {
+    return await sendTelegramAlert(data);
+  } catch (error) {
+    console.error('Error sending Telegram alert:', error);
+    return null;
   }
-  
-  // Send Telegram alert if configured
-  if (TELEGRAM_ENABLED) {
-    promises.push(sendTelegramAlert(data).catch(error => {
-      console.error('Error sending Telegram alert:', error);
-      return null;
-    }));
-  }
-  
-  return Promise.all(promises);
 }
 
 /**

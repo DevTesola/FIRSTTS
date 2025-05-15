@@ -50,6 +50,9 @@ export default function HomePage({ initialMintedCount = 0 }) {
   const [showRefundPolicy, setShowRefundPolicy] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [mintAttempts, setMintAttempts] = useState(0);
+  
+  // 디버깅용 로그
+  console.log("HomePage render - current minted count:", minted);
 
   // Client-side initialization
   useEffect(() => {
@@ -75,16 +78,28 @@ export default function HomePage({ initialMintedCount = 0 }) {
         if (!res.ok) {
           throw new Error(`Failed to fetch minted count: ${res.statusText}`);
         }
-        const { count } = await res.json();
-        setMinted(count);
+        const data = await res.json();
+        console.log("API response:", data);
+        
+        // 응답 데이터에서 count 값 가져오기
+        if (data && data.data && typeof data.data.count === 'number') {
+          console.log("Setting minted count to:", data.data.count);
+          setMinted(data.data.count);
+        } else if (data && typeof data.count === 'number') {
+          console.log("Setting minted count to:", data.count);
+          setMinted(data.count);
+        } else {
+          console.error("Unexpected API response format:", data);
+        }
       } catch (err) {
         console.error("Failed to fetch minted count:", err);
       }
     };
+    
     fetchMintedCount();
     
     // Set up interval to refresh minted count periodically
-    const countInterval = setInterval(fetchMintedCount, 60000); // Refresh every minute
+    const countInterval = setInterval(fetchMintedCount, 30000); // 30초마다 갱신
     
     return () => clearInterval(countInterval);
   }, []);
@@ -116,8 +131,17 @@ export default function HomePage({ initialMintedCount = 0 }) {
       try {
         const countRes = await fetch("/api/getMintedCount");
         if (countRes.ok) {
-          const { count } = await countRes.json();
-          setMinted(count);
+          const data = await countRes.json();
+          console.log("Updated API response:", data);
+          
+          // 응답 데이터에서 count 값 가져오기
+          if (data && data.data && typeof data.data.count === 'number') {
+            console.log("Updating minted count to:", data.data.count);
+            setMinted(data.data.count);
+          } else if (data && typeof data.count === 'number') {
+            console.log("Updating minted count to:", data.count);
+            setMinted(data.count);
+          }
         }
       } catch (error) {
         console.error("Error updating count:", error);

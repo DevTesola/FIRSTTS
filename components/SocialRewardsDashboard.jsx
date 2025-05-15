@@ -5,7 +5,7 @@ import ErrorMessage from "./ErrorMessage";
 
 /**
  * SocialRewardsDashboard Component
- * 소셜 공유 및 게임 활동 등 외부 활동을 통해 얻은 보상을 표시하는 대시보드
+ * Dashboard displaying rewards earned through external activities such as social sharing and game participation
  */
 const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) => {
   const [animateStats, setAnimateStats] = useState(false);
@@ -13,7 +13,7 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
   const [error, setError] = useState(null);
   const { publicKey, connected } = useWallet();
   
-  // 보상 활동 카테고리별 분류
+  // Categorization of reward activities
   const [rewardStats, setRewardStats] = useState({
     total: 0,
     twitter: 0,
@@ -21,11 +21,11 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
     gameplay: 0,
     staking: 0,
     other: 0,
-    // 최근 활동
+    // Recent activities
     recent: []
   });
   
-  // 보상 기록 분석 및 통계 작성
+  // Analyze reward history and generate statistics
   useEffect(() => {
     if (!rewardHistory || rewardHistory.length === 0) {
       setRewardStats({
@@ -47,12 +47,12 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
     let staking = 0;
     let other = 0;
     
-    // 최근 활동 (최대 5개)
+    // Recent activities (max 5)
     const recentActivities = [...rewardHistory]
       .sort((a, b) => new Date(b.created_at || Date.now()) - new Date(a.created_at || Date.now()))
       .slice(0, 5);
     
-    // 카테고리별 집계
+    // Aggregation by category
     rewardHistory.forEach(reward => {
       const amount = Number(reward.amount) || 0;
       total += amount;
@@ -80,18 +80,18 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
       recent: recentActivities
     });
     
-    // 통계 업데이트 시 애니메이션 효과
+    // Animation effect when statistics are updated
     setAnimateStats(true);
     const timer = setTimeout(() => setAnimateStats(false), 1500);
     return () => clearTimeout(timer);
     
   }, [rewardHistory]);
   
-  // 보상 타입에 따른 아이콘 및 색상 정의
+  // Define icons and colors based on reward type
   const getRewardTypeInfo = (type) => {
     if (!type) return { 
       icon: "🎁", 
-      label: "기타 보상", 
+      label: "Other Rewards", 
       color: "text-gray-400",
       bgColor: "bg-gray-700"
     };
@@ -101,35 +101,35 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
     if (lowerType.includes('tweet') || lowerType.includes('twitter')) {
       return { 
         icon: "🐦", 
-        label: "트위터 공유", 
+        label: "Twitter Share", 
         color: "text-blue-400",
         bgColor: "bg-blue-900/30"
       };
     } else if (lowerType.includes('telegram')) {
       return { 
         icon: "📱", 
-        label: "텔레그램 공유", 
+        label: "Telegram Share", 
         color: "text-cyan-400",
         bgColor: "bg-cyan-900/30"
       };
     } else if (lowerType.includes('game') || lowerType.includes('play')) {
       return { 
         icon: "🎮", 
-        label: "게임 보상", 
+        label: "Game Rewards", 
         color: "text-green-400",
         bgColor: "bg-green-900/30"
       };
     } else if (lowerType.includes('stake') || lowerType.includes('staking')) {
       return { 
         icon: "🔒", 
-        label: "스테이킹 보상", 
+        label: "Staking Rewards", 
         color: "text-purple-400",
         bgColor: "bg-purple-900/30"
       };
     } else if (lowerType.includes('community')) {
       return { 
         icon: "👥", 
-        label: "커뮤니티 활동", 
+        label: "Community Activity", 
         color: "text-yellow-400",
         bgColor: "bg-yellow-900/30"
       };
@@ -137,15 +137,15 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
     
     return { 
       icon: "🎁", 
-      label: "기타 보상", 
+      label: "Other Rewards", 
       color: "text-gray-400",
       bgColor: "bg-gray-700"
     };
   };
   
-  // 날짜 포맷 함수
+  // Date formatting function
   const formatDate = (dateString) => {
-    if (!dateString) return "날짜 정보 없음";
+    if (!dateString) return "No date information";
     
     const date = new Date(dateString);
     const now = new Date();
@@ -158,32 +158,32 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
     if (diffDay > 30) {
       return date.toLocaleDateString();
     } else if (diffDay > 0) {
-      return `${diffDay}일 전`;
+      return `${diffDay} days ago`;
     } else if (diffHour > 0) {
-      return `${diffHour}시간 전`;
+      return `${diffHour} hours ago`;
     } else if (diffMin > 0) {
-      return `${diffMin}분 전`;
+      return `${diffMin} minutes ago`;
     } else {
-      return "방금 전";
+      return "Just now";
     }
   };
   
-  // 지갑이 연결되지 않았을 때 표시
+  // Display when wallet is not connected
   if (!connected) {
     return (
       <div className="bg-gray-800/50 border border-purple-500/20 rounded-xl p-6 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
         </svg>
-        <h3 className="text-lg font-semibold text-white mb-2">지갑 연결 필요</h3>
+        <h3 className="text-lg font-semibold text-white mb-2">Wallet Connection Required</h3>
         <p className="text-gray-400 mb-4">
-          소셜 보상 및 활동 기록을 보려면 지갑을 연결해주세요.
+          Connect your wallet to view social rewards and activity history.
         </p>
       </div>
     );
   }
   
-  // 에러 메시지 표시
+  // Display error message
   if (error) {
     return (
       <ErrorMessage 
@@ -195,38 +195,38 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
     );
   }
   
-  // 로딩 중일 때 표시
+  // Display while loading
   if (isLoading) {
     return (
       <div className="bg-gray-800/50 border border-purple-500/20 rounded-xl p-6 flex flex-col items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-        <p className="text-gray-300">소셜 보상 정보를 불러오는 중...</p>
+        <p className="text-gray-300">Loading social reward information...</p>
       </div>
     );
   }
   
-  // 보상이 없을 때 표시할 컴포넌트
+  // Component to display when there are no rewards
   if (!rewardHistory || rewardHistory.length === 0) {
     return (
       <div className="bg-gray-800/50 border border-purple-500/20 rounded-xl p-6 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v13m0-13V6a4 4 0 00-4-4H5.45a4 4 0 00-2.83 1.17l-1.9 1.9a4 4 0 00-1.17 2.83V12h6.17a4 4 0 012.83 1.17l1.9 1.9a4 4 0 002.83 1.17H20" />
         </svg>
-        <h3 className="text-lg font-semibold text-white mb-2">아직 보상 기록이 없습니다</h3>
+        <h3 className="text-lg font-semibold text-white mb-2">No Reward History Yet</h3>
         <p className="text-gray-400 mb-4">
-          NFT를 소셜 미디어에 공유하거나 게임 활동에 참여하여 TESOLA 토큰을 획득하세요.
+          Share your NFT on social media or participate in game activities to earn TESOLA tokens.
         </p>
         <div className="flex justify-center space-x-3">
           <SecondaryButton onClick={onRefresh}>
-            새로고침
+            Refresh
           </SecondaryButton>
           <GlassButton
             onClick={() => {
-              // '컬렉션' 탭으로 이동
+              // Navigate to 'Collection' tab
               document.querySelector('[aria-controls="collection"]')?.click();
             }}
           >
-            내 NFT 보러가기
+            View My NFTs
           </GlassButton>
         </div>
       </div>
@@ -235,7 +235,7 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
 
   return (
     <div className="space-y-6">
-      {/* 초기 사용자를 위한 환영 가이드 */}
+      {/* Welcome guide for new users */}
       {showWelcomeGuide && (
         <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-xl p-4 border border-blue-500/30 relative">
           <button 
@@ -268,7 +268,7 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
         </div>
       )}
       
-      {/* 통계 카드 (애니메이션 효과 포함) */}
+      {/* Statistics cards (with animation effects) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-5 border border-purple-500/20 backdrop-blur-sm">
           <div className="flex items-start">
@@ -278,11 +278,11 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-400">총 획득 TESOLA</p>
+              <p className="text-sm text-gray-400">Total TESOLA Earned</p>
               <p className={`text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
                 {rewardStats.total.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-500">모든 소셜 보상 합계</p>
+              <p className="text-xs text-gray-500">Sum of all social rewards</p>
             </div>
           </div>
         </div>
@@ -295,16 +295,16 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-400">소셜 공유 보상</p>
+              <p className="text-sm text-gray-400">Social Sharing Rewards</p>
               <p className={`text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
                 {(rewardStats.twitter + rewardStats.telegram).toLocaleString()}
               </p>
               <div className="flex flex-wrap gap-1 mt-1">
                 <span className="text-xs px-1.5 py-0.5 bg-blue-900/50 text-blue-300 rounded-full">
-                  트위터: {rewardStats.twitter}
+                  Twitter: {rewardStats.twitter}
                 </span>
                 <span className="text-xs px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 rounded-full">
-                  텔레그램: {rewardStats.telegram}
+                  Telegram: {rewardStats.telegram}
                 </span>
               </div>
             </div>
@@ -320,16 +320,16 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-400">기타 보상</p>
+              <p className="text-sm text-gray-400">Other Rewards</p>
               <p className={`text-2xl font-bold text-white ${animateStats ? 'animate-count' : ''}`}>
                 {(rewardStats.gameplay + rewardStats.other).toLocaleString()}
               </p>
               <div className="flex flex-wrap gap-1 mt-1">
                 <span className="text-xs px-1.5 py-0.5 bg-green-900/50 text-green-300 rounded-full">
-                  게임: {rewardStats.gameplay}
+                  Games: {rewardStats.gameplay}
                 </span>
                 <span className="text-xs px-1.5 py-0.5 bg-yellow-900/50 text-yellow-300 rounded-full">
-                  기타: {rewardStats.other}
+                  Other: {rewardStats.other}
                 </span>
               </div>
             </div>
@@ -337,14 +337,14 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
         </div>
       </div>
 
-      {/* 최근 보상 활동 섹션 */}
+      {/* Recent reward activities section */}
       <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
           <h3 className="text-xl font-bold text-white flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
             </svg>
-            최근 보상 활동
+            Recent Reward Activities
           </h3>
           
           <div className="flex items-center">
@@ -357,7 +357,7 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
                 </svg>
               }
             >
-              새로고침
+              Refresh
             </GlassButton>
           </div>
         </div>
@@ -377,7 +377,7 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
                         <div>
                           <h4 className={`font-medium ${color}`}>{label}</h4>
                           <p className="text-sm text-gray-400">
-                            {reward.description || `${reward.reward_type?.replace('_', ' ') || '보상'}`}
+                            {reward.description || `${reward.reward_type?.replace('_', ' ') || 'Reward'}`}
                           </p>
                         </div>
                         <div className="mt-2 sm:mt-0 text-right">
@@ -386,11 +386,11 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
                         </div>
                       </div>
                       
-                      {/* 참조 ID가 있으면 표시 (예: NFT ID) */}
+                      {/* Show reference ID if exists (e.g. NFT ID) */}
                       {reward.reference_id && (
                         <div className="mt-2 pt-2 border-t border-gray-800">
                           <p className="text-xs text-gray-500">
-                            참조 ID: <span className="text-gray-400 font-mono">{reward.reference_id}</span>
+                            Reference ID: <span className="text-gray-400 font-mono">{reward.reference_id}</span>
                           </p>
                         </div>
                       )}
@@ -405,83 +405,83 @@ const SocialRewardsDashboard = ({ rewardHistory = [], isLoading, onRefresh }) =>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h4 className="text-lg font-medium text-gray-400 mb-1">최근 보상 기록이 없습니다</h4>
+            <h4 className="text-lg font-medium text-gray-400 mb-1">No Recent Reward History</h4>
             <p className="text-gray-500 max-w-md mx-auto">
-              NFT 공유, 게임 참여 등 다양한 활동을 통해 TESOLA 토큰을 획득해 보세요.
+              Earn TESOLA tokens through various activities such as NFT sharing, game participation, and more.
             </p>
           </div>
         )}
       </div>
 
-      {/* 보상 활동 가이드 */}
+      {/* Reward activities guide */}
       <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-6">
         <h3 className="text-lg font-bold text-white mb-4 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
-          TESOLA 토큰 획득 가이드
+          TESOLA Token Earning Guide
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-500/10">
             <h4 className="font-medium text-blue-300 flex items-center mb-2">
               <span className="mr-2">🐦</span>
-              트위터에 공유하기
+              Share on Twitter
             </h4>
             <p className="text-sm text-gray-300 mb-2">
-              당신의 NFT를 트위터에 공유하고 5 TESOLA 토큰을 받으세요. 
+              Share your NFT on Twitter and receive 5 TESOLA tokens.
             </p>
             <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
-              <li>컬렉션 탭에서 NFT 선택</li>
-              <li>"공유하기" 버튼 클릭</li>
-              <li>트위터 공유 완료 후 보상 획득</li>
+              <li>Select an NFT from the Collection tab</li>
+              <li>Click the "Share" button</li>
+              <li>Complete Twitter sharing to receive rewards</li>
             </ol>
           </div>
           
           <div className="bg-cyan-900/20 rounded-lg p-4 border border-cyan-500/10">
             <h4 className="font-medium text-cyan-300 flex items-center mb-2">
               <span className="mr-2">📱</span>
-              텔레그램에 공유하기
+              Share on Telegram
             </h4>
             <p className="text-sm text-gray-300 mb-2">
-              당신의 NFT를 텔레그램에 공유하고 5 TESOLA 토큰을 받으세요.
+              Share your NFT on Telegram and receive 5 TESOLA tokens.
             </p>
             <ol className="text-xs text-gray-400 list-decimal list-inside space-y-1">
-              <li>컬렉션 탭에서 NFT 선택</li>
-              <li>"공유하기" 버튼 클릭</li>
-              <li>텔레그램 공유 완료 후 보상 획득</li>
+              <li>Select an NFT from the Collection tab</li>
+              <li>Click the "Share" button</li>
+              <li>Complete Telegram sharing to receive rewards</li>
             </ol>
           </div>
           
           <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/10">
             <h4 className="font-medium text-green-300 flex items-center mb-2">
               <span className="mr-2">🎮</span>
-              게임 참여하기
+              Participate in Games
             </h4>
             <p className="text-sm text-gray-300 mb-2">
-              TESOLA 게임에 참여하고 토큰을 획득하세요.
+              Participate in TESOLA games and earn tokens.
             </p>
             <p className="text-xs text-gray-400">
-              곧 출시될 미니게임에 참여하여 추가 토큰을 획득할 수 있습니다. 자세한 내용은 곧 공개됩니다.
+              You can earn additional tokens by participating in upcoming mini-games. More details will be announced soon.
             </p>
           </div>
           
           <div className="bg-yellow-900/20 rounded-lg p-4 border border-yellow-500/10">
             <h4 className="font-medium text-yellow-300 flex items-center mb-2">
               <span className="mr-2">👥</span>
-              커뮤니티 활동
+              Community Activities
             </h4>
             <p className="text-sm text-gray-300 mb-2">
-              TESOLA 커뮤니티 활동에 참여하고 보상을 받으세요.
+              Participate in TESOLA community activities and receive rewards.
             </p>
             <p className="text-xs text-gray-400">
-              디스코드 서버와 텔레그램 그룹에 참여하여 다양한 이벤트에 참여하고 보상을 받을 수 있습니다. 자세한 내용은 공식 채널을 확인하세요.
+              Join our Discord server and Telegram group to participate in various events and receive rewards. Check official channels for more details.
             </p>
           </div>
         </div>
       </div>
       
-      {/* 애니메이션 스타일 */}
+      {/* Animation styles */}
       <style jsx>{`
         @keyframes countUp {
           from { opacity: 0.5; transform: translateY(10px); }

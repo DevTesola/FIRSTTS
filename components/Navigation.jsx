@@ -195,12 +195,12 @@ export default function Navigation() {
                                        -translate-x-1/2 transition-all duration-300"></span>
                     )}
                     
-                    {/* "NEW" badge for highlighted items with animation */}
+                    {/* "SOON" badge for highlighted items with animation */}
                     {item.highlight && !isActive(item.href) && (
-                      <span className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-400 
-                                       text-[10px] px-1.5 py-0.5 rounded-full text-black font-bold shadow-md 
+                      <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-400 to-purple-400 
+                                       text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold shadow-md 
                                        animate-pulse-slow">
-                        NEW
+                        SOON
                       </span>
                     )}
                   </Link>
@@ -280,10 +280,10 @@ export default function Navigation() {
                     </span>
                     <span className="font-medium">{item.name}</span>
                     
-                    {/* "NEW" badge for mobile */}
+                    {/* "SOON" badge for mobile */}
                     {item.highlight && !isActive(item.href) && (
-                      <span className="ml-auto bg-gradient-to-r from-yellow-400 to-orange-400 text-[10px] px-1.5 py-0.5 rounded-full text-black font-bold shadow-md animate-pulse-slow">
-                        NEW
+                      <span className="ml-auto bg-gradient-to-r from-blue-400 to-purple-400 text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold shadow-md animate-pulse-slow">
+                        SOON
                       </span>
                     )}
                   </Link>

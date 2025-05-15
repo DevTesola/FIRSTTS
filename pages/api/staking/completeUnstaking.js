@@ -57,11 +57,18 @@ export default async function handler(req, res) {
       );
     }
     
+    // NFT ID 처리 - onchain_ 접두사 제거
+    const processedStakingId = stakingId && typeof stakingId === 'string' && stakingId.startsWith('onchain_')
+      ? stakingId.replace('onchain_', '')
+      : stakingId;
+    
+    console.log('처리된 stakingId:', { original: stakingId, processed: processedStakingId });
+    
     // 스테이킹 레코드 조회
     const { data: stakingData, error: fetchError } = await supabase
       .from('nft_staking')
       .select('*')
-      .eq('id', stakingId)
+      .eq('id', processedStakingId)
       .eq('wallet_address', wallet)
       .eq('mint_address', mintAddress)
       .eq('status', 'staked')
@@ -167,7 +174,7 @@ export default async function handler(req, res) {
         final_reward: penaltyInfo.finalReward,
         updated_at: currentDate.toISOString()
       })
-      .eq('id', stakingId)
+      .eq('id', processedStakingId)
       .select()
       .single();
     

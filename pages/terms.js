@@ -108,7 +108,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-bold text-purple-400 mb-3">11. Contact Information</h2>
               <p className="text-gray-300 mb-3">For any questions regarding these Terms, please contact us at:</p>
-              <p><a href="mailto:legal@tesola.xyz" className="text-purple-400 hover:text-purple-300 transition-colors">legal@tesola.xyz</a></p>
+              <p><a href="https://t.me/tesolachat" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">@TESOLACHAT</a></p>
             </section>
           </div>
 
