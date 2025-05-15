@@ -10,14 +10,14 @@ import {
   preloadImage,
 } from "../utils/mediaUtils";
 
-// 이미지 객체 풀
-// 메모리 누수 방지를 위해 사용한 후 메모리에서 해제
-// 이미지 로딩 성능 개선을 위한 기능
+// Image object pool
+// Prevents memory leaks by releasing objects after use
+// Improves image loading performance
 const imagePool = {
   images: new Map(),
-  maxSize: 20, // 최대 이미지 객체 수
+  maxSize: 20, // Maximum number of image objects
   getImage: function() {
-    // 이미 생성된 사용 가능한 이미지 이용
+    // Use already created available images
     for (const [key, img] of this.images.entries()) {
       if (!img.inUse) {
         img.inUse = true;
@@ -25,7 +25,7 @@ const imagePool = {
       }
     }
     
-    // 새 이미지 객체 생성
+    // Create new image object
     if (this.images.size < this.maxSize) {
       const id = `img_${this.images.size}`;
       const img = new Image();
@@ -33,15 +33,15 @@ const imagePool = {
       return img;
     }
     
-    // 풀이 가득 차면 새 객체 생성
+    // Create new object if the pool is full
     return new Image();
   },
   releaseImage: function(img) {
-    // 이미지 사용 해제
+    // Release image after use
     for (const [key, imgData] of this.images.entries()) {
       if (imgData.element === img) {
         imgData.inUse = false;
-        // 클린업
+        // Cleanup
         img.onload = null;
         img.onerror = null;
         img.src = '';
@@ -54,11 +54,11 @@ const imagePool = {
   }
 };
 
-// IPFS 게이트웨이 목록 정의
+// IPFS gateway list definition
 const IPFS_GATEWAYS = [
-  'https://tesola.mypinata.cloud/ipfs/',  // 개인 게이트웨이 (최우선)
-  'https://gateway.pinata.cloud/ipfs/',    // Pinata 게이트웨이 
-  'https://nftstorage.link/ipfs/',         // NFT.Storage (안정적)
+  'https://tesola.mypinata.cloud/ipfs/',  // Private gateway (highest priority)
+  'https://gateway.pinata.cloud/ipfs/',    // Pinata gateway
+  'https://nftstorage.link/ipfs/',         // NFT.Storage (stable)
   'https://ipfs.io/ipfs/',                 // IPFS.io
   'https://dweb.link/ipfs/',               // Protocol Labs
   'https://cloudflare-ipfs.com/ipfs/'      // Cloudflare
@@ -79,7 +79,7 @@ function EnhancedProgressiveImage({
   className = "",
   ...props
 }) {
-  // 로딩 인디케이터 특수 URL 처리 (loading:indicator)
+  // Loading indicator special URL handling (loading:indicator)
   if (src === "loading:indicator") {
     return (
       <div className={`relative overflow-hidden ${className}`} {...props}>
