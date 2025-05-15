@@ -71,7 +71,7 @@ export default function WalletWrapper({ children }) {
   //    .catch(err => console.error('Error loading wallet adapter styles:', err));
   // }, []);
 
-  // 월렛 에러 상태 관리
+  // Wallet error state management
   const [walletError, setWalletError] = useState(null);
   const [walletStatus, setWalletStatus] = useState({
     status: 'idle', // idle, connecting, connected, disconnecting, error
@@ -132,7 +132,7 @@ export default function WalletWrapper({ children }) {
   const onWalletError = (error) => {
     console.error("Wallet connection error:", error);
     
-    // 특정 에러 유형에 따른 처리
+    // Process based on specific error types
     let errorMessage = '';
     let errorType = 'error';
     let fixSuggestion = '';

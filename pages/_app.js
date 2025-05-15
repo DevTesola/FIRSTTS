@@ -35,19 +35,19 @@ const OfflineDetector = dynamic(() => import("../components/OfflineDetector").ca
 });
 
 // Preload wallet adapter styles to avoid CSP issues
-// 병렬 로드를 위해 미리 스타일시트 로드
+// Preload stylesheets for parallel loading
 import "@solana/wallet-adapter-react-ui/styles.css";
 
-// 지갑 래퍼 정적 임포트 - 동적 임포트 오류 방지
+// Static import of wallet wrapper - prevents dynamic import errors
 import WalletWrapperComponent from "../components/WalletWrapper";
 
-// 간단한 래퍼 생성 (에러 처리 포함)
+// Create simple wrapper (including error handling)
 const WalletWrapper = ({ children }) => {
   try {
     return <WalletWrapperComponent>{children}</WalletWrapperComponent>;
   } catch (err) {
     console.error("Error rendering WalletWrapper:", err);
-    // 에러 발생시 children만 렌더링
+    // Render only children if error occurs
     return <>{children}</>;
   }
 };

@@ -5,23 +5,23 @@ const nextConfig = {
   // Disable font optimization - prevents automatic Google Font preloading
   optimizeFonts: false,
   
-  // 빌드 프로세스에서 특정 파일 제외
+  // Exclude specific files from the build process
   pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'md', 'mdx'],
   poweredByHeader: false,
   
-  // SSR 설정 - getInitialProps 관련 동작 최적화
+  // SSR settings - optimize behaviors related to getInitialProps
   swcMinify: true,
   compiler: {
-    // 서버 렌더링 중 이벤트 핸들러 에러 방지
+    // Prevent event handler errors during server rendering
     reactRemoveProperties: process.env.NODE_ENV === 'production',
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Vercel 호환성을 위한 런타임 설정
+  // Runtime settings for Vercel compatibility
   experimental: {
-    // 서버 컴포넌트 비활성화
+    // Disable server components
     serverComponents: false,
-    // Edge 런타임 대신 Node.js 사용
+    // Use Node.js instead of Edge runtime
     runtime: 'nodejs',
   },
   
@@ -101,7 +101,7 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
 
-  // 파일 감시 설정 최적화 - WSL 환경에서 발생하는 문제 해결
+  // Optimize file watching settings - solve issues occurring in WSL environment
   webpack: (config, { isServer }) => {
     config.watchOptions = {
       ignored: [
@@ -110,13 +110,13 @@ const nextConfig = {
         '**/*.Zone.Identifier'
       ],
       followSymlinks: false,
-      poll: 1000, // 폴링 사용, 1초마다 확인
-      aggregateTimeout: 800 // 변경 후 리빌드 지연시간
+      poll: 1000, // Use polling, check every 1 second
+      aggregateTimeout: 800 // Delay time before rebuild after changes
     };
     
-    // SSR 최적화와 오류 방지를 위한 설정
+    // Settings for SSR optimization and error prevention
     if (isServer) {
-      // 서버 사이드 렌더링 중 window/document 객체 참조 문제 해결
+      // Resolve window/document object reference issues during server-side rendering
       const originalEntry = config.entry;
       
       config.entry = async () => {
