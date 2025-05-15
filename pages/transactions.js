@@ -514,7 +514,7 @@ export default function Transactions() {
     window.addEventListener('offline', handleOffline);
     window.addEventListener('online', handleOnline);
     
-    // 클린업
+    // Cleanup
     return () => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('online', handleOnline);

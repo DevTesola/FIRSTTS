@@ -14,7 +14,7 @@ import { debugLog, debugError, isDev } from "../../utils/debugUtils";
  * StakedNFTCard Component - 개선된 UI/UX
  * Displays information about a staked NFT and allows for unstaking
  * 
- * React.memo로 최적화하여 불필요한 리렌더링 방지
+ * React.memo로 최적화하여 Prevent unnecessary re-rendering
  */
 // StakedNFTCard 컴포넌트 정의
 const StakedNFTCard = ({ stake, onRefresh }) => {
@@ -692,7 +692,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
         {/* NFT Image - EnhancedProgressiveImage 컴포넌트로 개선 */}
         <div className="w-16 h-16 rounded-lg overflow-hidden mr-3 border border-white/10 flex-shrink-0">
           {imageLoadError ? (
-            // 이미지 로드 실패 시 오류 대신 일관된 대체 이미지 표시
+            // Image load failed 시 오류 대신 일관된 대체 이미지 표시
             <div className="w-full h-full overflow-hidden">
               {nftId ? (
                 // NFT ID가 있으면 대체 이미지 생성 (ID 기반 결정론적 선택)
@@ -731,7 +731,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
               _source="StakedNFTCard-thumbnail"
               disableCacheBusting={false} // Enable smart caching with stable keys
               onError={() => {
-                debugLog('StakedNFTCard', `이미지 로드 실패: ${imageUrl}`);
+                debugLog('StakedNFTCard', `Image load failed: ${imageUrl}`);
                 setImageLoadError(true);
               }}
             />
@@ -845,7 +845,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
           {/* Enlarged NFT Image - EnhancedProgressiveImage로 개선 */}
           <div className="aspect-square w-full max-w-[180px] mx-auto rounded-lg overflow-hidden border border-white/10 mb-4 relative">
             {imageLoadError ? (
-              // 이미지 로드 실패 시 오류 대신 대체 이미지와 정보 표시
+              // Image load failed 시 오류 대신 대체 이미지와 정보 표시
               <div className="w-full h-full overflow-hidden">
                 {nftId ? (
                   // 실패한 경우 NFT ID 기반 대체 이미지 표시
@@ -872,7 +872,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
                   // NFT ID가 없는 경우 단순 그라데이션 배경
                   <div className="w-full h-full bg-gradient-to-r from-purple-800/70 to-blue-800/70 flex flex-col items-center justify-center p-4">
                     <span className="text-white font-bold mb-2">SOLARA NFT</span>
-                    <span className="text-xs text-white/80 text-center">이미지 로드 실패</span>
+                    <span className="text-xs text-white/80 text-center">Image load failed</span>
                     <span className="text-xs text-white/60 text-center mt-2">민트 주소:
                       <br />{stake.mint_address?.slice(0, 8)}...{stake.mint_address?.slice(-6)}
                     </span>
@@ -897,7 +897,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
                 disableCacheBusting={false} // Enable smart caching with stable keys
                 forceDesktop={true} // Force desktop version for enlarged view
                 onError={() => {
-                  debugLog('StakedNFTCard', `확대 이미지 로드 실패: ${imageUrl}`);
+                  debugLog('StakedNFTCard', `확대 Image load failed: ${imageUrl}`);
                   setImageLoadError(true);
                 }}
               />
@@ -1046,9 +1046,9 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
   );
 };
 
-// React.memo로 컴포넌트 최적화 - 불필요한 리렌더링 방지
+// React.memo로 컴포넌트 최적화 - Prevent unnecessary re-rendering
 const MemoizedStakedNFTCard = React.memo(StakedNFTCard, (prevProps, nextProps) => {
-  // 중요 속성만 비교하여 불필요한 리렌더링 방지
+  // 중요 속성만 비교하여 Prevent unnecessary re-rendering
   
   // 1. stake ID가 다르면 리렌더링 필요 (완전히 다른 NFT)
   if (prevProps.stake.id !== nextProps.stake.id) {

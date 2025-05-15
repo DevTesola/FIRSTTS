@@ -39,9 +39,9 @@ export function generateStableCacheKey(id, alt, source) {
  * 다양한 백업 게이트웨이를 제공하여 안정성 향상
  */
 export const IPFS_GATEWAYS = [
-  'https://tesola.mypinata.cloud/ipfs/',  // 개인 게이트웨이 (최우선)
-  'https://gateway.pinata.cloud/ipfs/',    // Pinata 게이트웨이 
-  'https://nftstorage.link/ipfs/',         // NFT.Storage (안정적)
+  'https://tesola.mypinata.cloud/ipfs/',  // Private gateway (highest priority)
+  'https://gateway.pinata.cloud/ipfs/',    // Pinata gateway 
+  'https://nftstorage.link/ipfs/',         // NFT.Storage (stable)
   'https://ipfs.io/ipfs/',                 // IPFS.io
   'https://dweb.link/ipfs/',               // Protocol Labs
   'https://cloudflare-ipfs.com/ipfs/'      // Cloudflare
@@ -241,7 +241,7 @@ export function createNftImageUrl(nftId, options = {}) {
 
 /**
  * 대체 이미지 URL 생성 함수
- * 이미지 로드 실패 시 사용할 대체 이미지 URL을 생성합니다.
+ * Image load failed 시 사용할 대체 이미지 URL을 생성합니다.
  * @param {string} nftId - NFT ID 또는 이미지 식별자
  * @returns {string} 대체 이미지 URL
  */

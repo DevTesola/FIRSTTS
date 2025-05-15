@@ -401,13 +401,13 @@ const StakingRewards = ({ stats, isLoading }) => {
                   <div className="w-10 h-10 rounded overflow-hidden mr-3 border border-gray-700">
                     <EnhancedProgressiveImage
                       src={(() => {
-                        // API에서 직접 제공한 이미지 URL 사용
+                        // Use image URL directly provided by the API
                         let imageUrl = stake.nft_image || stake.image_url || stake.image;
 
-                        // URL이 제공되고 http/https로 시작하는 경우
+                        // If URL is provided and starts with http/https
                         if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
                           try {
-                            // URL이 유효한지 확인
+                            // Verify URL validity
                             const url = new URL(imageUrl);
                             // 캐시 버스팅 파라미터 추가
                             url.searchParams.set('_t', Date.now().toString());
@@ -419,7 +419,7 @@ const StakingRewards = ({ stats, isLoading }) => {
                           }
                         }
 
-                        // NFT ID 추출
+                        // Extract NFT ID
                         let nftId = null;
 
                         // 1. stake.id에서 숫자 추출 시도

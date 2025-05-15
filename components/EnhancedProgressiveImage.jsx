@@ -182,7 +182,7 @@ function EnhancedProgressiveImage({
     }
   }, [src, priority, highQuality, quality]);
   
-  // Load thumbnail image - 성능 개선된 썸네일 로딩 처리
+  // Load thumbnail image - Improved thumbnail loading process
   const loadThumbnail = useCallback(async (processSrc, containerWidth, isIpfs = false) => {
     // Calculate optimal thumbnail size based on container and device
     const thumbnailSize = getOptimalImageSize(Math.min(containerWidth / 2, 300), { 
@@ -195,7 +195,7 @@ function EnhancedProgressiveImage({
       width: thumbnailSize,
       quality: Math.min(quality, 30),
       optimizeFormat: true,
-      useCache: true, // 캐싱 활성화하여 성능 개선
+      useCache: true, // Improved performance with caching enabled
       gatewayIndex: isIpfs ? currentGatewayIndex.current : null,
       preferLocalFiles: false,
       preferRemote: true
@@ -275,8 +275,8 @@ function EnhancedProgressiveImage({
           }
         }
 
-        // 병렬 로딩 전략 - 썸네일과 풀 이미지를 동시에 로딩
-        // 사용자에게 더 빠른 경험 제공
+        // Parallel loading strategy - Load thumbnail and full image simultaneously
+        // Provides faster experience to the user
         const loadBothVersions = async () => {
           try {
             // 썸네일과 풀 이미지 URL 동시에 준비 (병렬 처리)
@@ -354,7 +354,7 @@ function EnhancedProgressiveImage({
                 
                 // Critical error logging
                 if (src.includes('tesola.mypinata.cloud') && src.includes('forcereload')) {
-                  console.error(`❌ 이미지 로드 실패 (Critical Pinata URL): ${src}`);
+                  console.error(`❌ Image load failed (Critical Pinata URL): ${src}`);
                 }
                 
                 // 다음 게이트웨이 시도
@@ -378,7 +378,7 @@ function EnhancedProgressiveImage({
             
           } catch (error) {
             if (!isMounted) return;
-            console.error('이미지 로딩 중 오류:', error);
+            console.error('Error loading image:', error);
             tryNextGateway();
           }
         };
@@ -433,7 +433,7 @@ function EnhancedProgressiveImage({
               
               // Critical error logging
               if (src.includes('tesola.mypinata.cloud') && src.includes('forcereload')) {
-                console.error(`❌ 이미지 로드 실패 (Critical Pinata URL): ${src}`);
+                console.error(`❌ Image load failed (Critical Pinata URL): ${src}`);
               }
               
               // Try next gateway for IPFS URLs
@@ -587,14 +587,14 @@ function EnhancedProgressiveImage({
     return () => {
       isMounted = false;
       
-      // 리소스 정리 및 메모리 해제 개선
+      // Improved resource cleanup and memory release
       if (thumbnailRef.current) {
-        imagePool.releaseImage(thumbnailRef.current); // 풀로 돌려보내기
+        imagePool.releaseImage(thumbnailRef.current); // Return to pool
         thumbnailRef.current = null;
       }
       
       if (fullImageRef.current) {
-        imagePool.releaseImage(fullImageRef.current); // 풀로 돌려보내기
+        imagePool.releaseImage(fullImageRef.current); // Return to pool
         fullImageRef.current = null;
       }
       
@@ -687,9 +687,9 @@ function EnhancedProgressiveImage({
   );
 }
 
-// React.memo를 이용한 최적화 - 불필요한 리렌더링 방지
+// Optimization using React.memo - Prevent unnecessary re-rendering
 // 이미지 소스나 새 클래스 이름이 추가되었을 때만 리렌더링
-// 기본 리액트 코드 방식을 유지하기 위해 외부에서 memo 적용
+// Applied memo externally to maintain standard React code pattern
 export default React.memo(EnhancedProgressiveImage, (prevProps, nextProps) => {
   // src가 변경되었을 때는 반드시 리렌더링
   if (prevProps.src !== nextProps.src) return false;

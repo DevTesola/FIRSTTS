@@ -117,7 +117,7 @@ export default function MyCollection() {
       return;
     }
     
-    // NFT ID 추출
+    // Extract NFT ID
     const nftId = selectedNFT.name?.match(/#(\d+)/)?.[1] || '0';
     const formattedId = String(nftId).padStart(4, '0');
     
@@ -143,7 +143,7 @@ export default function MyCollection() {
   const checkNftFullyShared = useCallback((nft) => {
     if (!rewardHistory || !rewardHistory.length || !nft) return false;
     
-    // NFT ID 추출
+    // Extract NFT ID
     let nftId = "";
     if (nft.name) {
       const match = nft.name.match(/#(\d+)/);
@@ -203,7 +203,7 @@ export default function MyCollection() {
   const checkNftPartiallyShared = useCallback((nft) => {
     if (!rewardHistory || !rewardHistory.length || !nft) return false;
     
-    // NFT ID 추출
+    // Extract NFT ID
     let nftId = "";
     if (nft.name) {
       const match = nft.name.match(/#(\d+)/);
@@ -398,7 +398,7 @@ export default function MyCollection() {
   
   // NFT 클릭 핸들러
   const handleNFTClick = (nft) => {
-    // NFT ID 추출 (이름이나 mint 주소 사용)
+    // Extract NFT ID (이름이나 mint 주소 사용)
     let nftId;
     if (nft.name) {
       // "#123"과 같은 패턴에서 숫자 추출
@@ -506,7 +506,7 @@ export default function MyCollection() {
   const updateShareButtonStates = (nft) => {
     if (!nft) return;
     
-    // NFT ID 추출
+    // Extract NFT ID
     let nftId = "";
     if (nft.name) {
       const match = nft.name.match(/#(\d+)/);
@@ -884,7 +884,7 @@ export default function MyCollection() {
     window.addEventListener('offline', handleOffline);
     window.addEventListener('online', handleOnline);
     
-    // 클린업
+    // Cleanup
     return () => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('online', handleOnline);

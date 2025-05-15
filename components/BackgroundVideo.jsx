@@ -149,7 +149,7 @@ const BackgroundVideo = () => {
       handleVisibilityChange
     );
     
-    // 클린업
+    // Cleanup
     return () => {
       if (video) {
         video.removeEventListener('canplay', handleCanPlay);
@@ -229,5 +229,5 @@ const BackgroundVideo = () => {
   );
 };
 
-// memo로 감싸 불필요한 리렌더링 방지
+// memo로 감싸 Prevent unnecessary re-rendering
 export default memo(BackgroundVideo);

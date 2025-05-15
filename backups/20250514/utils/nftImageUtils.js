@@ -159,7 +159,7 @@ export function getNFTImageUrl(nft) {
         // TESOLA 컬렉션의 IPFS CID - 환경 변수에서 가져오기
         const COLLECTION_IPFS_HASH = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
         
-        // 스테이킹 페이지에는 직접 Pinata 게이트웨이 URL 사용 (IPFS 프로토콜 건너뛰기)
+        // 스테이킹 페이지에는 직접 Pinata gateway URL 사용 (IPFS 프로토콜 건너뛰기)
         const directGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${COLLECTION_IPFS_HASH}/${formattedId}.png`;
         
         // 캐시 버스팅 추가

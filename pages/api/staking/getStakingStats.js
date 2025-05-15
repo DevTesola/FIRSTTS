@@ -665,7 +665,7 @@ export default async function handler(req, res) {
       )?.value || stake.nft_tier || 'Common';
       
       // 계산된 필드가 추가된 스테이킹 정보 반환
-      // 최종 반환 전에 null 확인 - null이면 이미지 로드 실패 처리
+      // 최종 반환 전에 null 확인 - null이면 Image load failed 처리
       if (!resolvedNftId) {
         console.error(`[getStakingStats] 오류: NFT ID를 찾을 수 없음 (mint=${stake.mint_address})`);
         return {

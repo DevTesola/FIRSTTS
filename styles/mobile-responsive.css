@@ -402,3 +402,61 @@
       display: none;
     }
   }
+/* Standardized mobile optimizations - Added by script */
+@media (max-width: 640px) {
+  /* Ensure accessible touch targets (44px minimum) */
+  button, a, input, select, [role="button"], .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improved touch scrolling */
+  .scrollable, [data-scrollable], div[class*="overflow-auto"], div[class*="overflow-y-auto"], div[class*="overflow-x-auto"] {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+  }
+  
+  /* Improve tap target spacing */
+  .space-y-2 {
+    margin-top: 0.625rem;
+    margin-bottom: 0.625rem;
+  }
+  
+  /* Better form inputs */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    padding: 12px !important;
+  }
+  
+  /* Improved scrolling containers */
+  .snap-container {
+    scroll-snap-type: x mandatory;
+    scroll-padding: 1rem;
+  }
+  
+  .snap-item {
+    scroll-snap-align: start;
+  }
+  
+  /* Fix iOS 100vh issue */
+  .h-screen {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .h-screen {
+    height: -webkit-fill-available;
+  }
+  
+  .ios-vh-fix {
+    height: 100%;
+    position: fixed;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+}

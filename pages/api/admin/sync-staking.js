@@ -299,7 +299,7 @@ export default async function handler(req, res) {
 
     // 데이터베이스에 스테이킹 정보 추가 또는 업데이트
     const upsertStakingRecord = async (onchainData) => {
-      // NFT ID 추출 또는 생성
+      // Extract NFT ID 또는 생성
       let nftId = null;
       
       // mint_nfts 테이블에서 실제 NFT 데이터 조회
@@ -875,7 +875,7 @@ export default async function handler(req, res) {
           .eq('mint_address', mintAddress)
           .single();
         
-        // NFT ID 추출 또는 생성
+        // Extract NFT ID 또는 생성
         let nftId;
         let needsNewMetadata = false;
         

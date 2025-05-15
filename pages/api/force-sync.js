@@ -229,16 +229,16 @@ function createImageUrl(id) {
   }
 }
 
-// 온체인 데이터만 사용해 민트 주소에서 일관되게 NFT ID 추출
+// 온체인 데이터만 사용해 민트 주소에서 일관되게 Extract NFT ID
 async function extractNftId(mintAddress) {
   try {
     // resolveNftId 함수를 사용해 민트 주소에서 결정론적으로 ID 추출
     // 중요: await 추가 - resolveNftId는 비동기 함수임
     const id = await resolveNftId(mintAddress);
-    console.log(`민트 주소 ${mintAddress}에서 결정론적으로 NFT ID 추출: ${id}`);
+    console.log(`민트 주소 ${mintAddress}에서 결정론적으로 Extract NFT ID: ${id}`);
     return id;
   } catch (error) {
-    console.error(`NFT ID 추출 중 오류 (${mintAddress}):`, error);
+    console.error(`Extract NFT ID 중 오류 (${mintAddress}):`, error);
     
     // 오류 발생시 기본 해시 기반 생성 사용
     let hash = 0;
@@ -416,7 +416,7 @@ export default async function handler(req, res) {
           continue;
         }
         
-        // NFT ID 추출
+        // Extract NFT ID
         const nftId = await extractNftId(mintAddress);
         console.log(`Processing stake for NFT ID: ${nftId}, mint: ${mintAddress}`);
         

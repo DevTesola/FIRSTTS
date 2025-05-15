@@ -1,7 +1,7 @@
 /**
  * 통합 NFT 스테이킹 완료 API 엔드포인트
  * 스테이킹 트랜잭션 성공 후 내부 데이터베이스에 기록
- * NFT ID 추출 로직 개선 및 보상 계산 수정
+ * Extract NFT ID 로직 개선 및 보상 계산 수정
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -122,7 +122,7 @@ export default async function handler(req, res) {
     } else {
       console.log('새 스테이킹 기록 생성 중');
       
-      // NFT ID 추출 로직 개선 (실제 NFT 고유 식별자 추출)
+      // Extract NFT ID 로직 개선 (실제 NFT 고유 식별자 추출)
       let nftId = null;
       
       // 1. NFT 이름에서 ID 추출 시도 (가장 정확한 방법)

@@ -97,7 +97,7 @@ const VideoLandingPage = () => {
     video.addEventListener('play', handleVideoPlay);
     video.addEventListener('error', handleError);
 
-    // 클린업 함수
+    // Cleanup 함수
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('canplay', handleCanPlay);

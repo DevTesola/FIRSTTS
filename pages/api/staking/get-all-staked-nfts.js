@@ -313,7 +313,7 @@ export default async function handler(req, res) {
             
             console.log(`민트 ${mintAddress}의 최종 NFT ID: ${nftId}`);
             
-            // 온체인 데이터만을 사용해 이미지 URL 생성 (안정적인 캐시 키 사용)
+            // 온체인 데이터만을 사용해 이미지 URL 생성 (Use stable cache key)
             // 안정적인 캐시 키: 민트 주소 해시를 기반으로 하여 항상 같은 URL이 생성되도록 함
             const stableCacheKey = mintAddress.slice(0, 8); // 민트 주소의 첫 8자를 캐시 키로 사용
             

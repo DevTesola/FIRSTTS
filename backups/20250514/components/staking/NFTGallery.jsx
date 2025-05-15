@@ -46,7 +46,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
   
   // Filter NFTs based on tier and search term
   const filteredNFTs = nfts.filter((nft) => {
-    // 먼저 이미 스테이킹된 NFT 제외 (API에서 미리 필터링되었지만 추가 확인)
+    // First exclude already staked NFTs (API에서 미리 필터링되었지만 추가 확인)
     if (nft.isStaked) return false;
     
     // Get NFT tier from attributes
@@ -390,16 +390,16 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                   {/* NFT Image with hover effect */}
                   <div className="aspect-square w-full bg-gray-800 relative">
                     <div className="w-full h-full relative">
-                      {/* my-collection 페이지 방식으로 변경된 이미지 로딩 로직 */}
+                      {/* Image loading logic modified to match my-collection page approach */}
                       <EnhancedProgressiveImage
                         src={(() => {
-                          // API에서 직접 제공한 이미지 URL 사용
+                          // Use image URL directly provided by the API
                           let imageUrl = nft.nft_image || nft.image_url || nft.image;
 
-                          // URL이 제공되고 http/https로 시작하는 경우
+                          // If URL is provided and starts with http/https
                           if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
                             try {
-                              // URL이 유효한지 확인
+                              // Verify URL validity
                               const url = new URL(imageUrl);
                               // 캐시 버스팅 파라미터 추가
                               url.searchParams.set('_t', Date.now().toString());
@@ -412,12 +412,12 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                             }
                           }
 
-                          // NFT ID 추출
+                          // Extract NFT ID
                           const nftId = nft.id ||
                             (nft.name?.match(/#(\d+)/) ? nft.name?.match(/#(\d+)/)[1] : null);
 
                           if (nftId) {
-                            // IPFS 게이트웨이에서 직접 URL 생성
+                            // Create URL directly from IPFS gateway
                             const formattedId = String(nftId).padStart(4, '0');
                             const IMAGES_CID = process.env.NEXT_PUBLIC_IMAGES_CID || 'bafybeihq6qozwmf4t6omeyuunj7r7vdj26l4akuzmcnnu5pgemd6bxjike';
                             const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
@@ -426,7 +426,7 @@ const NFTGallery = ({ nfts = [], isLoading, onSelectNFT, onRefresh }) => {
                             return gatewayUrl;
                           }
 
-                          // 마지막 수단: getNFTImageUrl 사용
+                          // Last resort: getNFTImageUrl 사용
                           return getNFTImageUrl({
                             ...nft,
                             id: nftId,

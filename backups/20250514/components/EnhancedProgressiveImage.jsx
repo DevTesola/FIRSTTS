@@ -23,11 +23,11 @@ import {
  * @param {function} onError - Callback function when image loading fails
  * @param {Object} props - Other image attributes
  */
-// 공통으로 사용할 IPFS 게이트웨이 목록 정의
+// 공통으로 사용할 IPFS gateway list definition
 const IPFS_GATEWAYS = [
-  'https://tesola.mypinata.cloud/ipfs/',  // 개인 게이트웨이 (최우선)
-  'https://gateway.pinata.cloud/ipfs/',    // Pinata 게이트웨이 
-  'https://nftstorage.link/ipfs/',         // NFT.Storage (안정적)
+  'https://tesola.mypinata.cloud/ipfs/',  // Private gateway (highest priority)
+  'https://gateway.pinata.cloud/ipfs/',    // Pinata gateway 
+  'https://nftstorage.link/ipfs/',         // NFT.Storage (stable)
   'https://ipfs.io/ipfs/',                 // IPFS.io
   'https://dweb.link/ipfs/',               // Protocol Labs
   'https://cloudflare-ipfs.com/ipfs/'      // Cloudflare
@@ -48,7 +48,7 @@ export default function EnhancedProgressiveImage({
   className = "",
   ...props
 }) {
-  // 로딩 인디케이터 특수 URL 처리 (loading:indicator)
+  // Loading indicator special URL handling (loading:indicator)
   if (src === "loading:indicator") {
     // 로딩 인디케이터만 표시하고 이미지는 로드하지 않음
     return (
@@ -220,7 +220,7 @@ export default function EnhancedProgressiveImage({
             // ipfs:// 제거하고 게이트웨이 URL 생성
             const hashAndPath = src.replace('ipfs://', '');
             
-            // 항상 Tesola Pinata 게이트웨이 사용 (테솔라 프로젝트 전용)
+            // 항상 Tesola Pinata gateway 사용 (테솔라 프로젝트 전용)
             let gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${hashAndPath}`;
             
             // 스테이킹 페이지 컴포넌트 감지 및 캐시 버스팅 추가
@@ -471,7 +471,7 @@ export default function EnhancedProgressiveImage({
             if (!isMounted) return;
             
             // 오류 로깅 강화 - 특히 스테이킹 페이지용
-            console.error(`❌ 이미지 로드 실패: ${fullImageRef.current.src}`);
+            console.error(`❌ Image load failed: ${fullImageRef.current.src}`);
             console.error(`요청 URL: ${fullImageRef.current.src}`);
             console.error(`원본 SRC: ${src}`);
             console.error(`컴포넌트 소스: ${props.__source || 'unknown'}`);

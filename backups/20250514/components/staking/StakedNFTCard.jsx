@@ -383,13 +383,13 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
           {/* 유틸리티 함수를 사용한 이미지 로딩 - /my-collection 페이지와 동일한 패턴 */}
           <EnhancedProgressiveImage
             src={(() => {
-              // API에서 직접 제공한 이미지 URL 사용
+              // Use image URL directly provided by the API
               let imageUrl = stake.nft_image || stake.image;
 
               // 캐시 버스팅 파라미터 추가
               if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
                 try {
-                  // URL이 유효한지 확인
+                  // Verify URL validity
                   const url = new URL(imageUrl);
                   // 캐시 버스팅 파라미터 추가
                   url.searchParams.set('_t', Date.now().toString());
@@ -523,13 +523,13 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
             {/* 확대 이미지도 EnhancedProgressiveImage 사용 */}
             <EnhancedProgressiveImage
               src={(() => {
-                // API에서 직접 제공한 이미지 URL 사용
+                // Use image URL directly provided by the API
                 let imageUrl = stake.nft_image || stake.image;
 
                 // 캐시 버스팅 파라미터 추가
                 if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
                   try {
-                    // URL이 유효한지 확인
+                    // Verify URL validity
                     const url = new URL(imageUrl);
                     // 캐시 버스팅 파라미터 추가
                     url.searchParams.set('_t', Date.now().toString());

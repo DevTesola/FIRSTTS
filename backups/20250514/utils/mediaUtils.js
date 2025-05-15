@@ -240,18 +240,18 @@ function processImageUrl(url, options = {}) {
     
     // 직접 IPFS 프로토콜 URL인 경우 (ipfs://)
     if (url.startsWith('ipfs://')) {
-      // 테솔라 Pinata 게이트웨이로 강제 변환
+      // 테솔라 Pinata gateway로 강제 변환
       const hashAndPath = url.replace('ipfs://', '');
       
-      // NFT ID 추출 시도 (스테이킹 컴포넌트 지원 강화)
+      // Extract NFT ID 시도 (스테이킹 컴포넌트 지원 강화)
       let nftId = null;
       const nftIdMatch = hashAndPath.match(/\/(\d{4})\.png$/);
       if (nftIdMatch && nftIdMatch[1]) {
         nftId = nftIdMatch[1];
-        console.log(`🔢 IPFS URL에서 NFT ID 추출됨: ${nftId}`);
+        console.log(`🔢 IPFS URL에서 Extract NFT ID됨: ${nftId}`);
       }
       
-      // 항상 테솔라 Pinata 게이트웨이 사용
+      // 항상 테솔라 Pinata gateway 사용
       const gatewayUrl = `https://tesola.mypinata.cloud/ipfs/${hashAndPath}`;
       
       // 스테이킹 컴포넌트 판별 (options.__source 확인) - 더 많은 케이스 추가
@@ -284,7 +284,7 @@ function processImageUrl(url, options = {}) {
         // CID와 경로 추출
         const { cid, path } = extractIPFSCid(url);
         if (cid) {
-          // 항상 테솔라 Pinata 게이트웨이 사용
+          // 항상 테솔라 Pinata gateway 사용
           const tesolaGatewayUrl = `https://tesola.mypinata.cloud/ipfs/${cid}${path || ''}`;
           
           // 스테이킹 컴포넌트 판별 (options.__source 확인)
@@ -356,9 +356,9 @@ function processImageUrl(url, options = {}) {
     // NFT 미리보기 폴더의 이미지인지 확인 (/nft-previews/)
     const isNftPreview = url.includes('/nft-previews/');
     
-    // 파일 경로에서 NFT ID 추출 시도
+    // 파일 경로에서 Extract NFT ID 시도
     try {
-      // 파일 이름에서 NFT ID 추출
+      // 파일 이름에서 Extract NFT ID
       const filenameParts = url.split('/');
       const filename = filenameParts[filenameParts.length - 1];
       const nftIdMatch = filename.match(/(\d+)/);

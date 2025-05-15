@@ -241,7 +241,7 @@ export default async function handler(req, res) {
               const nameMatch = nftData.name.match(/#\s*(\d+)/);
               if (nameMatch && nameMatch[1]) {
                 realNftId = String(nameMatch[1]).padStart(4, '0');
-                console.log(`\u2776-3 이름에서 NFT ID 추출: ${realNftId}`);
+                console.log(`\u2776-3 이름에서 Extract NFT ID: ${realNftId}`);
               }
             }
             // 메타데이터 처리
@@ -254,7 +254,7 @@ export default async function handler(req, res) {
                   const metaNameMatch = metadata.name.match(/#\s*(\d+)/);
                   if (metaNameMatch && metaNameMatch[1]) {
                     realNftId = String(metaNameMatch[1]).padStart(4, '0');
-                    console.log(`\u2776-4 메타데이터 이름에서 NFT ID 추출: ${realNftId}`);
+                    console.log(`\u2776-4 메타데이터 이름에서 Extract NFT ID: ${realNftId}`);
                   }
                 }
               } catch (metaError) {
@@ -285,7 +285,7 @@ export default async function handler(req, res) {
         console.log(`\u2777 해시 기반 NFT ID 생성: ${realNftId}`);
       }
     } catch (nftError) {
-      console.warn('전체 NFT ID 추출 과정 오류:', nftError.message);
+      console.warn('전체 Extract NFT ID 과정 오류:', nftError.message);
       // 오류 발생시 기본값으로 추출
       realNftId = mintAddress.slice(0, 6);
       console.log(`오류 발생으로 민트 주소 앞부분을 ID로 사용: ${realNftId}`);

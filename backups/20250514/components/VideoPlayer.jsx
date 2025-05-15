@@ -103,7 +103,7 @@ export default function VideoPlayer({ src }) {
       handleCanPlay();
     }
     
-    // 클린업 함수
+    // Cleanup 함수
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('canplay', handleCanPlay);

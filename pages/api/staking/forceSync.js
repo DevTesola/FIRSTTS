@@ -227,7 +227,7 @@ function createImageUrl(id) {
   }
 }
 
-// NFT ID 추출
+// Extract NFT ID
 function extractNftId(mintAddress, minted_nfts) {
   // 민트 주소로 minted_nfts에서 검색
   const nftRecord = minted_nfts.find(nft => nft.mint_address === mintAddress);
@@ -352,7 +352,7 @@ export default async function handler(req, res) {
           continue;
         }
         
-        // NFT ID 추출
+        // Extract NFT ID
         const nftId = extractNftId(mintAddress, minted_nfts);
         console.log(`Processing stake for NFT ID: ${nftId}, mint: ${mintAddress}`);
         

@@ -16,7 +16,7 @@ const IPFS_GATEWAYS = [
   'https://cloudflare-ipfs.com/ipfs/',
   'https://gateway.pinata.cloud/ipfs/',
   'https://dweb.link/ipfs/',
-  'https://nftstorage.link/ipfs/'     // 추가: NFT.Storage (안정적)
+  'https://nftstorage.link/ipfs/'     // 추가: NFT.Storage (stable)
 ];
 
 /**
