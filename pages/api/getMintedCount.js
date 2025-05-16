@@ -46,7 +46,7 @@ async function handler(req, res) {
       return sendError(res, "Database configuration is missing", 500, "CONFIG_ERROR");
     }
     
-    // 실제 NFT 민팅만 카운트 (프리세일 토큰 제외, 인덱스 있는 것만)
+    // Count only actual NFT minting (excluding presale tokens, only indexed ones)
     const { count, error } = await supabase
       .from("minted_nfts")
       .select("*", { count: "exact", head: true })

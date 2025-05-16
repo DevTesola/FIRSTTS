@@ -63,7 +63,7 @@ const MobileBottomNav = () => {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-lg border-t border-purple-900/30 z-50 px-2 py-1 shadow-lg">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-lg border-t border-purple-900/30 z-40 px-2 py-1 shadow-lg">
       <ul className="flex justify-between items-center">
         {navItems.map((item) => (
           <li key={item.name} className="w-1/5">
@@ -78,8 +78,8 @@ const MobileBottomNav = () => {
               <div className="relative">
                 {item.icon}
                 {item.badge && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-400 to-purple-400 
-                                  text-[8px] px-1 py-0.5 rounded-full text-white font-bold">
+                  <span className="absolute -top-0 -right-0 bg-gradient-to-r from-blue-400 to-purple-400 
+                                  text-[5px] px-0.5 py-0 rounded-md text-white font-bold">
                     {item.badge}
                   </span>
                 )}

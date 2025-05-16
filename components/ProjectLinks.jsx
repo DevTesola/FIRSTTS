@@ -41,7 +41,7 @@ const ProjectLinks = () => {
           href="/presale"
           className={`px-4 py-2 rounded-lg transition-colors ${
             router.pathname === '/presale' 
-              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium' 
               : 'text-gray-400 hover:text-white hover:bg-gray-700'
           }`}
         >

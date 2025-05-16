@@ -126,7 +126,7 @@ const EnhancedStakingButtonV2 = ({
     }
     
     try {
-      // 상태 및 에러 초기화
+      // Initialize state and error
       setStatus("preparing");
       setError(null);
       setProgress(0);
@@ -279,7 +279,7 @@ const EnhancedStakingButtonV2 = ({
         enhancedErrorMessage = "계정 구조 문제가 발생했습니다. 비상 언스테이킹을 시도해보세요.";
       }
       
-      // 에러 콜백 호출
+      // Call error callback
       if (onError) {
         onError({
           message: enhancedErrorMessage,

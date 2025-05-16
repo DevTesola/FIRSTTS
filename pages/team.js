@@ -178,7 +178,7 @@ const Team = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TeamMember 
-              name="Dev" 
+              name="Dev: Zeus" 
               role="Lead Developer & Creator"
               emoji={
                 <div className="w-16 h-16 relative transform hover:scale-110 transition-transform duration-500 group">
@@ -197,7 +197,7 @@ const Team = () => {
             />
             
             <TeamMember 
-              name="TESOLA-1" 
+              name="TESOLA-1: Viki" 
               role="Frontend Developer"
               emoji={
                 <div className="w-16 h-16 relative transform hover:scale-110 transition-transform duration-500 group">
@@ -233,7 +233,7 @@ const Team = () => {
             />
             
             <TeamMember 
-              name="TESOLA-2" 
+              name="TESOLA-2: Rion" 
               role="Backend Developer"
               emoji={
                 <div className="w-16 h-16 relative transform hover:scale-110 transition-transform duration-500 group">
@@ -316,6 +316,31 @@ const Team = () => {
               description="Creative digital artist bringing TESOLA's visual identity to life. Specializes in futuristic UI/UX design and creates promotional materials that blend crypto aesthetics with Tesla-inspired elements."
               skills={["Digital Art", "UI/UX Design", "Visual Identity", "Motion Graphics"]}
               glowColor="rgba(249,115,22,0.5)"
+            />
+          </div>
+        </div>
+
+        {/* Customer Support Team */}
+        <div className="mb-16 relative">
+          <div className="absolute top-0 -left-20 w-40 h-40 bg-purple-500/5 rounded-full blur-[100px] -z-10"></div>
+          <div className="absolute bottom-0 -right-20 w-40 h-40 bg-pink-500/5 rounded-full blur-[100px] -z-10"></div>
+          
+          <div className="text-center mb-10 relative">
+            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 inline-block [background-size:200%]">
+              Customer Support Team
+            </h2>
+            <div className="mt-2 h-1 w-24 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full animate-pulse-slow"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            <TeamMember 
+              name="Support Hero" 
+              role="Community Support Manager & Moderator"
+              emoji="🛡️"
+              description="We're looking for a dedicated support specialist to be our community's guardian angel. This role involves providing 24/7 customer support and moderating our growing ecosystem. Currently interviewing candidates."
+              status="Hiring"
+              skills={["Customer Support", "Community Management", "Discord/Telegram Moderation", "Multi-language Support"]}
+              glowColor="rgba(219,39,119,0.5)"
             />
           </div>
         </div>

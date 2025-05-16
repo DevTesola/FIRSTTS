@@ -8,6 +8,8 @@
       line-height: 1.2 !important; /* Tighter line height for better fit */
     }
     
+    /* Keep original gradient styling - mobile view */
+    
     /* Buttons */
     .mint-button {
       font-size: 1.25rem !important;
@@ -258,6 +260,29 @@
     min-height: 44px; /* Minimum recommended touch target size */
   }
   
+  /* 컨테이너 그라데이션 배경 복원 */
+  .bg-gradient-to-br.from-gray-900.to-purple-900\/50,
+  .bg-gradient-to-br.from-gray-900.to-indigo-900\/50,
+  .bg-gradient-to-br.from-gray-900.to-blue-900\/50 {
+    background: linear-gradient(to bottom right, rgba(17, 24, 39, 0.8), rgba(88, 28, 135, 0.3)) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    backdrop-filter: blur(4px) !important;
+  }
+  
+  /* 컨테이너 스타일 복원 - 메인 */
+  .bg-purple-900\/10, .bg-indigo-900\/10, .bg-blue-900\/10 {
+    background-color: rgba(88, 28, 135, 0.1) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+  }
+  
+  /* 컨테이너 배경 복원 - 섹션별 */
+  .bg-gradient-to-r.from-purple-900\/30, 
+  .bg-gradient-to-r.from-blue-900\/30,
+  .bg-gradient-to-r.from-blue-900\/30.to-purple-900\/30 {
+    background: linear-gradient(to right, rgba(88, 28, 135, 0.3), rgba(67, 56, 202, 0.2)) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+  }
+  
   /* Improve tap area for close buttons */
   .fixed.inset-0 button[aria-label="Close modal"],
   .fixed.inset-0 button[aria-label="Close"],
@@ -402,7 +427,7 @@
       display: none;
     }
   }
-/* Standardized mobile optimizations - Added by script */
+/* Enhanced mobile optimizations */
 @media (max-width: 640px) {
   /* Ensure accessible touch targets (44px minimum) */
   button, a, input, select, [role="button"], .clickable {
@@ -443,6 +468,34 @@
   .h-screen {
     height: 100vh;
     height: -webkit-fill-available;
+  }
+  
+  /* Improve text contrast and readability */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em !important;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.7) !important;
+  }
+  
+  /* Enhance gradient text visibility on mobile */
+  .bg-clip-text.text-transparent {
+    filter: brightness(1.6) contrast(1.1) !important;
+  }
+  
+  /* Improve container margins and paddings */
+  .container, .content-container, main > div {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Reduce excessive margins in stacked layouts */
+  .space-y-6 > *+*, .space-y-8 > *+* {
+    margin-top: 1.25rem !important;
+  }
+  
+  /* Make text slightly larger and more readable on small screens */
+  p, li, span:not(.text-xs):not(.text-sm) {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
   }
 }
 

@@ -3,12 +3,17 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState, createContext, useContext, useRef } from "react";
 import Head from "next/head";
+
+// 스타일 import
 import "../styles/globals.css";
 import "../styles/wallet.css"; // Wallet custom styles
-import "../styles/mobile-responsive.css"; // Mobile optimization styles
+import "../styles/mobile-responsive.css"; // Mobile optimization styles - re-enabled
 import "../styles/community.css"; // Community page styles
+
+// 불필요한 인라인 스타일 제거
 import { AnalyticsProvider, PageViewTracker } from "../components/AnalyticsProvider";
 import ErrorBoundary from "../components/ErrorBoundary";
+import FallbackLoading from "../components/FallbackLoading";
 import { NotificationProvider } from "../components/Notifications";
 
 // Context for managing application-wide network and error states
@@ -22,8 +27,7 @@ export const AppStateContext = createContext({
 
 export const useAppState = () => useContext(AppStateContext);
 
-// Import the fallback component
-import FallbackLoading from "../components/FallbackLoading";
+// Use previously imported fallback component
 
 // Dynamically load offline detector component
 const OfflineDetector = dynamic(() => import("../components/OfflineDetector").catch(err => {
@@ -38,11 +42,25 @@ const OfflineDetector = dynamic(() => import("../components/OfflineDetector").ca
 // Preload stylesheets for parallel loading
 import "@solana/wallet-adapter-react-ui/styles.css";
 
-// Static import of wallet wrapper - prevents dynamic import errors
-import WalletWrapperComponent from "../components/WalletWrapper";
+// Dynamic import of wallet wrapper to prevent SSR issues
+const WalletWrapperComponent = dynamic(
+  () => import("../components/WalletWrapper").catch(err => {
+    console.error("Failed to load WalletWrapper:", err);
+    return ({ children }) => <>{children}</>; // Fallback component
+  }),
+  {
+    ssr: false, // Critical: ensures component only renders client-side
+    loading: () => null // No loading state for this component
+  }
+);
 
 // Create simple wrapper (including error handling)
 const WalletWrapper = ({ children }) => {
+  // Only render on client side
+  if (typeof window === 'undefined') {
+    return <>{children}</>;
+  }
+  
   try {
     return <WalletWrapperComponent>{children}</WalletWrapperComponent>;
   } catch (err) {
@@ -71,6 +89,9 @@ export default function MyApp({ Component, pageProps }) {
     // Removed font blocking code - we now use direct Google Fonts URLs
     if (typeof window !== 'undefined') {
       console.log('Application initialized');
+      
+      // 행성 애니메이션 관련 코드 제거
+      console.log('Application initialized - custom styles removed');
     }
     
     // Check analytics disable setting

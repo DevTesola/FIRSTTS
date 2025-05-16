@@ -20,6 +20,7 @@ import { getNFTImageUrl } from "../utils/nftImageUtils";
 import { fetchAPI, getErrorMessage } from "../utils/apiClient";
 import { getStakingStats as fetchEnhancedStakingStats } from "../services/stakingService";
 import EnhancedStakingButton from "../components/staking/EnhancedStakingButton";
+import LaunchAnnouncementModal from "../components/LaunchAnnouncementModal";
 
 // Simple loading placeholder component
 const LoadingPlaceholder = ({ height = "200px", text = "Loading..." }) => (
@@ -872,11 +873,11 @@ export default function StakingPage() {
         
         {/* Navigation Tabs */}
         <div className="flex justify-center mb-6">
-          <div className="bg-gray-800/60 rounded-lg p-1">
-            <div className="flex flex-wrap space-x-1">
+          <div className="bg-gray-800/60 rounded-lg p-1 w-full max-w-2xl">
+            <div className="grid grid-cols-2 md:flex md:flex-wrap gap-1">
               <button
                 onClick={() => setActiveTab("dashboard")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "dashboard" 
                     ? "bg-purple-600 text-white" 
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
@@ -886,7 +887,7 @@ export default function StakingPage() {
               </button>
               <button
                 onClick={() => setActiveTab("analytics")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "analytics" 
                     ? "bg-purple-600 text-white" 
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
@@ -896,7 +897,7 @@ export default function StakingPage() {
               </button>
               <button
                 onClick={() => setActiveTab("nfts")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "nfts" 
                     ? "bg-purple-600 text-white" 
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
@@ -906,7 +907,7 @@ export default function StakingPage() {
               </button>
               <button
                 onClick={() => setActiveTab("leaderboard")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "leaderboard" 
                     ? "bg-purple-600 text-white" 
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
@@ -916,7 +917,7 @@ export default function StakingPage() {
               </button>
               <button
                 onClick={() => setActiveTab("governance")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "governance" 
                     ? "bg-purple-600 text-white" 
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
@@ -927,7 +928,7 @@ export default function StakingPage() {
               {selectedNFT && (
                 <button
                   onClick={() => setActiveTab("stake")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeTab === "stake" 
                       ? "bg-purple-600 text-white" 
                       : "text-gray-300 hover:text-white hover:bg-gray-700"

@@ -42,7 +42,7 @@ export default function HomePage({ initialMintedCount = 0 }) {
   const [minted, setMinted] = useState(initialMintedCount);
   const [showWalletGuide, setShowWalletGuide] = useState(false);
   const [showCollectionStory, setShowCollectionStory] = useState(false);
-  const [mintPrice] = useState("1.5 SOL");
+  const [mintPrice] = useState("3 SOL");
   const [isClient, setIsClient] = useState(false);
   const [mintResult, setMintResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -68,6 +68,18 @@ export default function HomePage({ initialMintedCount = 0 }) {
         setShowPreview(true);
       }, 3000); // Show NFT preview after 3 seconds on site
     }
+    
+    // NFT Preview 버튼 이벤트 리스너 추가
+    const handleShowPreviewEvent = () => {
+      console.log("Preview event received");
+      setShowPreview(true);
+    };
+    
+    window.addEventListener('show-preview-nft', handleShowPreviewEvent);
+    
+    return () => {
+      window.removeEventListener('show-preview-nft', handleShowPreviewEvent);
+    };
   }, []);
 
   // Fetch minted count on load
@@ -153,19 +165,9 @@ export default function HomePage({ initialMintedCount = 0 }) {
     setMintAttempts(0); // Reset mint attempts counter on successful mint
   };
 
-  // Handle mint button click from the preview
+  // Handle mint button click from the preview - now just closes the preview
   const handleMintFromPreview = () => {
     handleClosePreview();
-    setMintAttempts(prevAttempts => prevAttempts + 1);
-    
-    // Focus the main mint button after closing preview (if possible)
-    setTimeout(() => {
-      const mintButton = document.querySelector(".mint-section .mint-button");
-      if (mintButton) {
-        mintButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        mintButton.focus();
-      }
-    }, 500);
   };
 
   // Handle retry after error
@@ -345,13 +347,27 @@ export default function HomePage({ initialMintedCount = 0 }) {
       <div className="flex justify-center mt-4 mb-6">
         <button
           onClick={() => setShowCollectionStory(true)}
-          className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2.5 rounded-full flex items-center transition-all shadow-lg hover:shadow-[0_0_20px_rgba(147,51,234,0.3)] transform hover:scale-105"
+          className="group relative overflow-hidden bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-600 hover:from-purple-700 hover:via-fuchsia-600 hover:to-pink-700 text-white px-8 py-3.5 rounded-full flex items-center transition-all shadow-xl hover:shadow-[0_0_30px_rgba(147,51,234,0.6)] transform hover:scale-105 border-2 border-yellow-300/50"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <span className="font-medium">Discover the SOLARA Universe</span>
-          <span className="ml-2 bg-white/20 text-xs px-1.5 py-0.5 rounded-full">NEW</span>
+          {/* 화려한 배경 효과 */}
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-300/20 via-transparent to-yellow-300/20 animate-pulse"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-yellow-300/0 via-yellow-300/30 to-yellow-300/0 blur-sm opacity-70 animate-[shimmer_3s_infinite]"></div>
+          
+          {/* 아이콘 및 텍스트 (상대적 위치) */}
+          <div className="relative flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 group-hover:animate-pulse text-yellow-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            
+            <div>
+              <span className="font-bold text-lg">Discover the SOLARA Universe</span>
+              <span className="ml-2 bg-gradient-to-r from-yellow-300 to-amber-500 text-black font-bold text-xs px-2 py-1 rounded-full inline-block animate-pulse">NEW</span>
+            </div>
+          </div>
+          
+          {/* 별 효과 - 버튼 주위에 반짝이는 효과 */}
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-300 rounded-full animate-ping"></div>
+          <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping animation-delay-700"></div>
         </button>
       </div>
       
@@ -389,19 +405,6 @@ export default function HomePage({ initialMintedCount = 0 }) {
       {/* Footer links */}
       <FooterLinks onShowHowItWorks={handleShowHowItWorks} />
       
-      {/* Preview button - bottom right */}
-      {!showPreview && (
-        <button
-          onClick={() => setShowPreview(true)}
-          className="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-full shadow-lg z-20 flex items-center transform hover:scale-105 transition-transform"
-          aria-label="Show NFT previews"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="ml-2 hidden md:inline">Preview NFTs</span>
-        </button>
-      )}
     </div>
   );
 }

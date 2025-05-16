@@ -197,8 +197,8 @@ export default function Navigation() {
                     
                     {/* "SOON" badge for highlighted items with animation */}
                     {item.highlight && !isActive(item.href) && (
-                      <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-400 to-purple-400 
-                                       text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold shadow-md 
+                      <span className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-400 to-purple-400 
+                                       text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold shadow-lg 
                                        animate-pulse-slow">
                         SOON
                       </span>
@@ -282,7 +282,7 @@ export default function Navigation() {
                     
                     {/* "SOON" badge for mobile */}
                     {item.highlight && !isActive(item.href) && (
-                      <span className="ml-auto bg-gradient-to-r from-blue-400 to-purple-400 text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold shadow-md animate-pulse-slow">
+                      <span className="ml-auto bg-gradient-to-r from-blue-400 to-purple-400 text-[8px] px-1 py-0.5 rounded-full text-white font-bold shadow-sm animate-pulse-slow">
                         SOON
                       </span>
                     )}
@@ -293,7 +293,7 @@ export default function Navigation() {
               <li className="mt-3 pt-3 border-t border-purple-800/30 animate-fade-up" style={{ animationDelay: `${navItems.length * 50 + 100}ms` }}>
                 <div className="px-3 relative">
                   <div className="absolute -inset-1 bg-purple-600/20 rounded-lg blur-md animate-pulse-slow opacity-70"></div>
-                  <div className="relative">
+                  <div className="relative z-10 mb-4"> {/* Added z-index and bottom margin */}
                     <WalletMultiButton />
                   </div>
                 </div>

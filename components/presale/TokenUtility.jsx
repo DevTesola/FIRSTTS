@@ -252,7 +252,7 @@ const TokenUtility = () => {
             <div className="text-indigo-200 text-sm">Unique utility functions</div>
           </div>
           <div className="bg-gradient-to-br from-gray-800/70 to-gray-900/70 p-5 rounded-xl border border-blue-500/20 hover:border-blue-500/40 hover:shadow-[0_5px_15px_rgba(96,165,250,0.15)] transform transition-all duration-300 hover:translate-y-[-2px] group">
-            <div className="text-blue-400 font-bold text-3xl mb-2 group-hover:text-blue-300 transition-colors">15%</div>
+            <div className="text-blue-400 font-bold text-3xl mb-2 group-hover:text-blue-300 transition-colors">210%+</div>
             <div className="text-indigo-200 text-sm">Max annual staking APY</div>
           </div>
           <div className="bg-gradient-to-br from-gray-800/70 to-gray-900/70 p-5 rounded-xl border border-pink-500/20 hover:border-pink-500/40 hover:shadow-[0_5px_15px_rgba(244,114,182,0.15)] transform transition-all duration-300 hover:translate-y-[-2px] group">

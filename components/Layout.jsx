@@ -362,6 +362,14 @@ const Layout = ({ children }) => {
 
   return (
     <div className="relative min-h-screen overflow-hidden text-white" style={{ fontFamily: "'Orbitron', sans-serif !important" }}>
+      {/* 배경 레이어 1: 사이드 그라데이션 - 가운데는 투명하고 사이드로 갈수록 진한 보라색 */}
+      <div className="fixed inset-0 -z-50 pointer-events-none">
+        <div className="absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-purple-900/30 to-transparent"></div>
+        <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-purple-900/30 to-transparent"></div>
+        <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
+        <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-purple-900/20 to-transparent"></div>
+      </div>
+      
       {/* Background Video */}
       <BackgroundVideo />
 
@@ -369,14 +377,14 @@ const Layout = ({ children }) => {
       {activeModal === 'value' && <ValueModal onClose={() => setActiveModal(null)} />}
       {activeModal === 'roadmap' && <RoadmapModal onClose={() => setActiveModal(null)} />}
       
-      {/* Background image */}
+      {/* Background image - 투명도 조정 */}
       <div className="fixed inset-0 -z-40">
         <Image
           src="/stars.jpg"
           alt="Stars"
           fill
-          className={`object-cover opacity-${imageLoaded ? '20' : '0'} transition-opacity duration-1000`}
-          priority={false}
+          className="object-cover opacity-30 transition-opacity duration-1000"
+          priority={true}
           onLoad={() => setImageLoaded(true)}
           onError={() => {
             console.error('Failed to load background image');
@@ -384,15 +392,6 @@ const Layout = ({ children }) => {
           }}
         />
       </div>
-      
-      {/* Gradient overlay - modified as a single layer */}
-      <div
-        className="fixed inset-0 -z-20 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(circle at center, transparent 0%, rgba(25,25,112,0.05) 50%, rgba(75,0,130,0.1) 75%, rgba(0,0,0,0.2) 100%)",
-        }}
-      />
       
       <div className="relative z-10">
         {/* Navigation */}
@@ -405,37 +404,37 @@ const Layout = ({ children }) => {
           {children}
         </main>
         
-        {/* Quick Links */}
+        {/* Quick Links - Responsive for mobile */}
         <div className="flex justify-center mt-8 mb-4">
-          <div className="bg-black/30 backdrop-blur-sm rounded-full px-2 py-1 border border-white/10">
-            <div className="flex space-x-1">
+          <div className="bg-black/30 backdrop-blur-sm rounded-2xl px-2 py-1 border border-white/10 max-w-md mx-auto">
+            <div className="flex flex-wrap justify-center gap-1 p-1">
               <button
                 onClick={() => setActiveModal('value')}
-                className="px-4 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                className="px-3 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               >
                 Token Info
               </button>
               <button
                 onClick={() => setActiveModal('roadmap')}
-                className="px-4 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                className="px-3 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               >
                 Roadmap
               </button>
               <Link
                 href="/whitepaper"
-                className="px-4 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                className="px-3 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               >
                 Whitepaper
               </Link>
               <Link
                 href="/audit-report"
-                className="px-4 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                className="px-3 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               >
                 Audit Report
               </Link>
               <Link
                 href="/team"
-                className="px-4 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                className="px-3 py-2 text-sm text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               >
                 Team
               </Link>

@@ -1,20 +1,20 @@
 /**
  * Emergency Unstake Result Modal
  * 
- * 비상 언스테이킹 결과 모달 컴포넌트
- * 사용자에게 언스테이킹 결과와 상세 정보를 보여줌
+ * Result modal component for emergency unstaking
+ * Shows the unstaking result and detailed information to the user
  */
 
 import React from 'react';
 
 /**
- * 비상 언스테이킹 결과 모달 컴포넌트
+ * Emergency unstaking result modal component
  * 
- * @param {Object} props - 컴포넌트 속성
- * @param {boolean} props.isOpen - 모달 표시 여부
- * @param {Function} props.onClose - 닫기 버튼 클릭 시 호출되는 콜백 함수
- * @param {Object} props.result - 언스테이킹 결과 정보
- * @param {string} props.signature - 트랜잭션 서명
+ * @param {Object} props - Component properties
+ * @param {boolean} props.isOpen - Modal display status
+ * @param {Function} props.onClose - Callback function called on close button click
+ * @param {Object} props.result - Unstaking result information
+ * @param {string} props.signature - Transaction signature
  */
 export const EmergencyUnstakeResultModal = ({ 
   isOpen, 
@@ -118,36 +118,36 @@ export const EmergencyUnstakeResultModal = ({
     <div style={modalOverlayStyle} onClick={onClose}>
       <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
         <div style={modalHeaderStyle}>
-          <h3>언스테이킹 완료</h3>
+          <h3>Unstaking Complete</h3>
           <button style={closeButtonStyle} onClick={onClose}>×</button>
         </div>
 
         <div style={successBlockStyle}>
-          <h4 style={{ color: '#2ecc71', marginTop: 0 }}>성공적으로 언스테이킹되었습니다!</h4>
-          <p>NFT가 지갑으로 반환되었습니다.</p>
+          <h4 style={{ color: '#2ecc71', marginTop: 0 }}>Successfully Unstaked!</h4>
+          <p>Your NFT has been returned to your wallet.</p>
         </div>
 
         <div style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span>스테이킹 완료율:</span>
+            <span>Staking Completion:</span>
             <span>{completionPercentage}%</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span>페널티 요율:</span>
+            <span>Penalty Rate:</span>
             <span>{result.unstaking?.fee?.percent?.toFixed(2) || 0}%</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span>페널티 금액:</span>
-            <span>{formattedPenalty} 토큰</span>
+            <span>Penalty Amount:</span>
+            <span>{formattedPenalty} Tokens</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span>최종 보상:</span>
-            <span style={{ fontWeight: 'bold' }}>{formattedRewards} 토큰</span>
+            <span>Final Rewards:</span>
+            <span style={{ fontWeight: 'bold' }}>{formattedRewards} Tokens</span>
           </div>
         </div>
 
         <div style={infoBlockStyle}>
-          <h4 style={{ marginTop: 0 }}>트랜잭션 정보</h4>
+          <h4 style={{ marginTop: 0 }}>Transaction Information</h4>
           <a 
             href={explorerUrl} 
             target="_blank" 
@@ -159,7 +159,7 @@ export const EmergencyUnstakeResultModal = ({
           </a>
         </div>
 
-        <button style={buttonStyle} onClick={onClose}>확인</button>
+        <button style={buttonStyle} onClick={onClose}>Confirm</button>
       </div>
     </div>
   );

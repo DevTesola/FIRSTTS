@@ -7,7 +7,7 @@
  */
 
 // Fix import path to use correct middleware location
-import { withCache, optimizedRateLimit, errorHandler } from '../../api-middlewares';
+import { withCache, optimizedRateLimiter, errorHandler } from '../../lib/api-middleware';
 import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import path from 'path';
@@ -42,7 +42,7 @@ setInterval(() => {
  */
 async function handler(req, res) {
   // Apply rate limiting
-  optimizedRateLimit(req, res, async (error) => {
+  optimizedRateLimiter(req, res, async (error) => {
     if (error) return errorHandler(error, req, res);
     
     // Set default security headers

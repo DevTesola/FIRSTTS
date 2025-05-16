@@ -552,7 +552,7 @@ const Leaderboard = ({ stats, isLoading, onRefresh }) => {
                                       return url.toString();
                                     } catch (e) {
                                       // URL 생성 실패 시 원본 URL에 쿼리 매개변수 추가
-                                      console.log(`⚠️ Leaderboard Top: URL 파싱 실패, 원본 URL 사용: ${entry.nft_image}`);
+                                      console.log(`⚠️ Leaderboard Top: URL parsing failed, using original URL: ${entry.nft_image}`);
                                       return `${entry.nft_image}?_t=${Date.now()}`;
                                     }
                                   } else {

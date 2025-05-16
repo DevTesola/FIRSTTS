@@ -5,6 +5,7 @@ import CollectionBonus from "./CollectionBonus";
 import useStakingEvents from "../../utils/hooks/useStakingEvents";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { resolveStakedNftId } from "../../utils/staking-helpers/nft-id-resolver";
+import ScrollableTabs from "../common/ScrollableTabs";
 
 // Reducer function definition - located outside the component
 const stakingReducer = (state, action) => {
@@ -19,6 +20,8 @@ const stakingReducer = (state, action) => {
       return { ...state, expandedView: action.payload };
     case 'SET_LIVE_UPDATE_ENABLED':
       return { ...state, liveUpdateEnabled: action.payload };
+    case 'SET_ACTIVE_SECTION':
+      return { ...state, activeSection: action.payload };
     case 'SET_STAKES_WITH_IDS':
       return { ...state, stakesWithIds: action.payload };
     case 'ADD_REALTIME_UPDATE':
@@ -88,14 +91,15 @@ const initialState = {
   expandedView: null,
   realtimeUpdates: [],
   liveUpdateEnabled: true,
-  stakesWithIds: [] // 비동기 ID 해결을 위한 state
+  stakesWithIds: [], // 비동기 ID 해결을 위한 state
+  activeSection: "staked" // Active section for mobile tabs: 'staked', 'stats', 'tiers'
 };
 
 /**
  * Enhanced Staking Dashboard Component
  * Displays user's staking statistics and currently staked NFTs with improved UX
  * 
- * 최적화된 상태 관리를 위해 useReducer 사용
+ * Uses useReducer for optimized state management
  */
 const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
   // useReducer를 사용하여 관련 상태를 하나로 통합
@@ -109,22 +113,23 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
     expandedView, 
     realtimeUpdates, 
     liveUpdateEnabled, 
-    stakesWithIds 
+    stakesWithIds,
+    activeSection 
   } = state;
   const { publicKey } = useWallet();
   
   // 스테이킹 NFT의 실제 ID 해결을 위한 useEffect - 무한 렌더링 방지를 위해 최적화
   useEffect(() => {
     if (stats?.activeStakes && stats.activeStakes.length > 0 && !isLoading) {
-      console.log(`받은 스테이킹 NFT ${stats.activeStakes.length}개 중 유효한 데이터 필터링`);
+      console.log(`Filtering valid data from ${stats.activeStakes.length} received staking NFTs`);
       
-      // 민트 주소가 있는 NFT만 필터링 - 데이터 일관성 유지
+      // Filter only NFTs with mint addresses - maintain data consistency
       const validStakes = stats.activeStakes.filter(stake => 
         stake.mint_address && stake.mint_address.length > 30
       );
       
       if (validStakes.length !== stats.activeStakes.length) {
-        console.log(`유효하지 않은 스테이킹 NFT ${stats.activeStakes.length - validStakes.length}개 제외`);
+        console.log(`Excluded ${stats.activeStakes.length - validStakes.length} invalid staking NFTs`);
       }
       
       // 초기 상태 설정: 기존 ID 또는 null로 설정
@@ -147,7 +152,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           
           initialStakes.forEach(async (stake, index) => {
             try {
-              // 중복 처리 방지
+              // Prevent duplicate processing
               if (processedMints[stake.mint_address]) return;
               processedMints[stake.mint_address] = true;
               
@@ -155,7 +160,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
               const realId = await resolveStakedNftId(stake);
               
               // NFT ID 해결 로깅 추가
-              console.log(`스테이킹 NFT 처리 완료: 민트=${stake.mint_address}, 해결ID=${realId}`);
+              console.log(`Staking NFT processed: mint=${stake.mint_address}, resolvedID=${realId}`);
               
               // 실제 ID가 조회되면 state 업데이트 - 컴포넌트가 마운트되어 있는지 확인
               if (realId && document.body.contains(document.getElementById('staking-dashboard'))) {
@@ -178,7 +183,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                 }
               }
             } catch (err) {
-              console.error(`NFT ID 해결 중 오류: ${stake.mint_address}`, err);
+              console.error(`Error resolving NFT ID: ${stake.mint_address}`, err);
             }
           });
         }, 100); // 약간의 지연으로 초기 렌더링 완료 후 실행
@@ -272,7 +277,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
         const newMints = mintAddresses.filter(mint => !currentMints.includes(mint));
   
         if (newMints.length > 0) {
-          // 구독 작업을 setTimeout으로 분리하여 렌더링 사이클과 분리
+          // Separate subscription work with setTimeout to separate from rendering cycle
           setTimeout(() => {
             subscribeToMultipleNFTs(newMints);
           }, 100);
@@ -345,7 +350,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
     // stakesWithIds에 데이터가 있으면 사용하고, 그렇지 않으면 원본 사용
     const stakesToUse = stakesWithIds.length > 0 ? stakesWithIds : (stats.activeStakes || []);
     
-    console.log(`처리된 스테이킹 NFT ID들: ${stakesToUse.map(s => s.nft_id || 'null').join(', ')}`);
+    console.log(`Processed staking NFT IDs: ${stakesToUse.map(s => s.nft_id || 'null').join(', ')}`);
     
     // 정렬은 stakesToUse 사용 (최신 ID 정보 포함)
     switch(sortBy) {
@@ -428,10 +433,52 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
   // Memoized sorted stakes for better performance with optimized dependencies
   const sortedStakes = useMemo(() => getSortedStakes(), [stakesWithIds.length, stats?.activeStakes?.length, sortBy]);
   
+  // Mobile section tabs configuration
+  const mobileSectionTabs = [
+    { 
+      id: "staked", 
+      label: "Staked",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+        </svg>
+      ) 
+    },
+    { 
+      id: "stats", 
+      label: "Stats",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+          <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+        </svg>
+      ) 
+    },
+    { 
+      id: "tiers", 
+      label: "Tiers",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+        </svg>
+      ) 
+    }
+  ];
+  
   return (
     <div id="staking-dashboard" className="space-y-6">
+      {/* Mobile section tabs - only visible on small screens */}
+      <div className="md:hidden mb-4">
+        <ScrollableTabs
+          tabs={mobileSectionTabs}
+          activeTab={activeSection}
+          onTabChange={(tabId) => dispatch({ type: 'SET_ACTIVE_SECTION', payload: tabId })}
+          colorFrom="purple-600"
+          colorTo="blue-600"
+        />
+      </div>
       {/* Welcome guide for first-time users */}
-      {showWelcomeGuide && totalStaked > 0 && (
+      {showWelcomeGuide && totalStaked > 0 && (activeSection === "staked" || typeof window !== "undefined" && window.innerWidth >= 768) && (
         <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded-xl p-4 border border-green-500/30 relative">
           <button 
             className="absolute top-2 right-2 text-gray-400 hover:text-white"
@@ -463,9 +510,10 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
         </div>
       )}
       
-      {/* Stats Cards with Animation */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-4 sm:p-5 border border-purple-500/20 backdrop-blur-sm">
+      {/* Stats Cards with Animation - visible always on desktop, but only on stats tab for mobile */}
+      {(activeSection === "stats" || activeSection === "staked" || typeof window !== "undefined" && window.innerWidth >= 768) && (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 card-grid">
+        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-4 sm:p-5 border border-purple-500/20 backdrop-blur-sm stat-card">
           <div className="flex items-start">
             <div className="bg-purple-500/20 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
@@ -505,7 +553,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-xl p-4 sm:p-5 border border-blue-500/20 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-xl p-4 sm:p-5 border border-blue-500/20 backdrop-blur-sm stat-card">
           <div className="flex items-start">
             <div className="bg-blue-500/20 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
@@ -523,7 +571,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-pink-900/30 to-red-900/30 rounded-xl p-4 sm:p-5 border border-pink-500/20 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-pink-900/30 to-red-900/30 rounded-xl p-4 sm:p-5 border border-pink-500/20 backdrop-blur-sm stat-card">
           <div className="flex items-start">
             <div className="bg-pink-500/20 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-pink-400" viewBox="0 0 20 20" fill="currentColor">
@@ -540,11 +588,15 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Collection Bonus Component */}
-      <CollectionBonus stats={stats} />
+      {/* Collection Bonus Component - visible on stats tab on mobile, always on desktop */}
+      {(activeSection === "stats" || typeof window !== "undefined" && window.innerWidth >= 768) && (
+        <CollectionBonus stats={stats} />
+      )}
 
-      {/* Active Staking Section with Enhanced UI */}
+      {/* Active Staking Section with Enhanced UI - visible on staked tab on mobile, always on desktop */}
+      {(activeSection === "staked" || typeof window !== "undefined" && window.innerWidth >= 768) && (
       <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
           <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
@@ -557,11 +609,11 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           {/* Controls wrapping properly on mobile */}
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
             {/* Sort dropdown */}
-            <div className="relative w-full sm:w-auto mb-2 sm:mb-0">
+            <div className="relative w-full sm:w-auto mb-2 sm:mb-0 select-wrapper">
               <select
                 value={sortBy}
                 onChange={(e) => dispatch({ type: 'SET_SORT_BY', payload: e.target.value })}
-                className="bg-gray-900 border border-gray-700 rounded-lg py-2.5 pl-3 pr-8 text-xs sm:text-sm text-white appearance-none focus:outline-none focus:ring-2 focus:ring-purple-500 w-full min-h-[44px]"
+                className="bg-gray-900 border border-gray-700 rounded-lg py-2.5 pl-3 pr-8 text-xs sm:text-sm text-white appearance-none focus:outline-none focus:ring-2 focus:ring-purple-500 w-full min-h-[44px] interactive-element"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -576,7 +628,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 scrollable-x">
               <GlassButton
                 size="small"
                 onClick={onRefresh}
@@ -608,11 +660,11 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                     dispatch({ type: 'SET_ANIMATE_STATS', payload: true });
                     
                     // 동기화 전 현재 상태 기록
-                    console.log('현재 표시된 스테이킹 NFT:', stats?.activeStakes?.length || 0);
+                    console.log('Currently displayed staking NFTs:', stats?.activeStakes?.length || 0);
                     
                     // 현재 표시된 NFT들의 ID 정보 출력
                     if (stats?.activeStakes && stats.activeStakes.length > 0) {
-                      console.log('현재 표시된 NFT 정보:', stats.activeStakes.map(stake => ({
+                      console.log('Currently displayed NFT info:', stats.activeStakes.map(stake => ({
                         id: stake.id,
                         mint: stake.mint_address,
                         nft_id: stake.nft_id,
@@ -637,10 +689,10 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                     console.log("강제 동기화 결과:", data);
                     
                     if (data.success) {
-                      console.log(`성공적으로 ${data.stakedCount}개의 NFT를 동기화했습니다`);
-                      console.log('동기화된 NFT 정보:', data.stakedNFTs);
+                      console.log(`Successfully synchronized ${data.stakedCount} NFTs`);
+                      console.log('Synchronized NFT info:', data.stakedNFTs);
                     } else {
-                      console.error('동기화 중 오류 발생:', data.error || '알 수 없는 오류');
+                      console.error('Error during synchronization:', data.error || 'Unknown error');
                       alert('동기화 중 오류가 발생했습니다. 다시 시도해주세요.');
                     }
                     
@@ -649,7 +701,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
                       // 약간의 지연 후 새로고침 (DB 업데이트가 완료되도록)
                       setTimeout(() => {
                         onRefresh();
-                        console.log('데이터 새로고침 완료');
+                        console.log('Data refresh completed');
                       }, 1000);
                     }
                   } catch (err) {
@@ -707,7 +759,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             <div className="text-sm text-gray-400 animate-pulse">Loading staked NFTs...</div>
           </div>
         ) : sortedStakes.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 card-grid">
             {sortedStakes.map((stake) => {
               // 정적 값 사용하여 무한 렌더링 방지
               const stakeId = stake.id;
@@ -762,8 +814,10 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
           </div>
         )}
       </div>
+      )}
 
-      {/* Live Updates Feed Section - 항상 표시 */}
+      {/* Live Updates Feed Section - visible on stats tab on mobile, always on desktop */}
+      {(activeSection === "stats" || typeof window !== "undefined" && window.innerWidth >= 768) && (
         <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
             <h3 className="text-base sm:text-lg font-bold text-white flex items-center">
@@ -879,6 +933,229 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             <p>Real-time updates are enabled for your staked NFTs. You'll see live data when values change on the blockchain.</p>
           </div>
         </div>
+      )}
+
+      {/* Staking Tiers Info with Visual Enhancement - visible on tiers tab on mobile, always on desktop */}
+      {(activeSection === "tiers" || typeof window !== "undefined" && window.innerWidth >= 768) && (
+        <div className="bg-gray-800/50 rounded-xl border border-purple-500/20 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            Staking Rewards by NFT Tier
+          </h3>
+          
+          {/* Mobile swipe hint - only shown on small screens */}
+          <div className="swipe-hint md:hidden flex items-center text-xs text-gray-400 mb-3 py-2 px-3 bg-gray-800/30 rounded-lg interactive-element">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            <span>Swipe horizontally to see all data</span>
+          </div>
+          
+          {/* Mobile card view - visible on mobile only */}
+          <div className="block md:hidden space-y-4 mb-4 mobile-cards">
+            {/* Legendary Tier Card */}
+            <div className="bg-gray-900/40 rounded-lg border border-yellow-500/20 overflow-hidden">
+              <div className="bg-yellow-900/30 p-3 border-b border-yellow-500/20">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                  <span className="font-medium text-yellow-300">Legendary</span>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-800">
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Daily:</span>
+                  <span className="font-medium text-white">200</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Weekly:</span>
+                  <span className="text-gray-300">1,400</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Monthly:</span>
+                  <span className="text-gray-300">6,000</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Yearly:</span>
+                  <span className="text-gray-300">73,000</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Epic Tier Card */}
+            <div className="bg-gray-900/40 rounded-lg border border-purple-500/20 overflow-hidden">
+              <div className="bg-purple-900/30 p-3 border-b border-purple-500/20">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+                  <span className="font-medium text-purple-300">Epic</span>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-800">
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Daily:</span>
+                  <span className="font-medium text-white">100</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Weekly:</span>
+                  <span className="text-gray-300">700</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Monthly:</span>
+                  <span className="text-gray-300">3,000</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Yearly:</span>
+                  <span className="text-gray-300">36,500</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Rare Tier Card */}
+            <div className="bg-gray-900/40 rounded-lg border border-blue-500/20 overflow-hidden">
+              <div className="bg-blue-900/30 p-3 border-b border-blue-500/20">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                  <span className="font-medium text-blue-300">Rare</span>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-800">
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Daily:</span>
+                  <span className="font-medium text-white">50</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Weekly:</span>
+                  <span className="text-gray-300">350</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Monthly:</span>
+                  <span className="text-gray-300">1,500</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Yearly:</span>
+                  <span className="text-gray-300">18,250</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Common Tier Card */}
+            <div className="bg-gray-900/40 rounded-lg border border-green-500/20 overflow-hidden">
+              <div className="bg-green-900/30 p-3 border-b border-green-500/20">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                  <span className="font-medium text-green-300">Common</span>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-800">
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Daily:</span>
+                  <span className="font-medium text-white">25</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Weekly:</span>
+                  <span className="text-gray-300">175</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Monthly:</span>
+                  <span className="text-gray-300">750</span>
+                </div>
+                <div className="flex justify-between p-3">
+                  <span className="text-gray-400">Yearly:</span>
+                  <span className="text-gray-300">9,125</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Desktop table view - hidden on mobile */}
+          <div className="hidden md:block overflow-x-auto table-container scrollable-x">
+            <table className="w-full text-sm keep-structure">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">NFT Tier</th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Daily</th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Weekly</th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Monthly</th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Yearly</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-800 hover:bg-gray-700/20 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                      <span className="font-medium text-yellow-300">Legendary</span>
+                    </div>
+                  </td>
+                  <td className="text-right py-3 px-4 text-white font-medium">200</td>
+                  <td className="text-right py-3 px-4 text-gray-300">1,400</td>
+                  <td className="text-right py-3 px-4 text-gray-300">6,000</td>
+                  <td className="text-right py-3 px-4 text-gray-300">73,000</td>
+                </tr>
+                <tr className="border-b border-gray-800 hover:bg-gray-700/20 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+                      <span className="font-medium text-purple-300">Epic</span>
+                    </div>
+                  </td>
+                  <td className="text-right py-3 px-4 text-white font-medium">100</td>
+                  <td className="text-right py-3 px-4 text-gray-300">700</td>
+                  <td className="text-right py-3 px-4 text-gray-300">3,000</td>
+                  <td className="text-right py-3 px-4 text-gray-300">36,500</td>
+                </tr>
+                <tr className="border-b border-gray-800 hover:bg-gray-700/20 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                      <span className="font-medium text-blue-300">Rare</span>
+                    </div>
+                  </td>
+                  <td className="text-right py-3 px-4 text-white font-medium">50</td>
+                  <td className="text-right py-3 px-4 text-gray-300">350</td>
+                  <td className="text-right py-3 px-4 text-gray-300">1,500</td>
+                  <td className="text-right py-3 px-4 text-gray-300">18,250</td>
+                </tr>
+                <tr className="hover:bg-gray-700/20 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                      <span className="font-medium text-green-300">Common</span>
+                    </div>
+                  </td>
+                  <td className="text-right py-3 px-4 text-white font-medium">25</td>
+                  <td className="text-right py-3 px-4 text-gray-300">175</td>
+                  <td className="text-right py-3 px-4 text-gray-300">750</td>
+                  <td className="text-right py-3 px-4 text-gray-300">9,125</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-purple-900/20 rounded-lg border border-purple-500/10">
+            <h4 className="text-xs sm:text-sm font-semibold text-white mb-1.5 sm:mb-2 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
+              </svg>
+              Bonus Rewards
+            </h4>
+            <div className="flex flex-wrap gap-2 sm:gap-3 scrollable-x">
+              <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[100px] sm:min-w-[140px]">
+                <p className="text-xxs sm:text-xs text-gray-400 mb-0.5 sm:mb-1">First 7 days</p>
+                <div className="text-xs sm:text-sm font-medium text-green-300">+100% (2x rewards)</div>
+              </div>
+              <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[100px] sm:min-w-[140px]">
+                <p className="text-xxs sm:text-xs text-gray-400 mb-0.5 sm:mb-1">Long-term (30+ days)</p>
+                <div className="text-xs sm:text-sm font-medium text-green-300">+20% to +100% bonus</div>
+              </div>
+              <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[100px] sm:min-w-[140px]">
+                <p className="text-xxs sm:text-xs text-gray-400 mb-0.5 sm:mb-1">Monthly airdrops</p>
+                <div className="text-xs sm:text-sm font-medium text-green-300">For 30+ day stakers</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
         <style jsx>{`
           .text-xxs {
@@ -915,7 +1192,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
         </h3>
         
         {/* Mobile swipe hint - only shown on small screens */}
-        <div className="swipe-hint md:hidden flex items-center text-xs text-gray-400 mb-3 py-2 px-3 bg-gray-800/30 rounded-lg">
+        <div className="swipe-hint md:hidden flex items-center text-xs text-gray-400 mb-3 py-2 px-3 bg-gray-800/30 rounded-lg interactive-element">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
@@ -923,7 +1200,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
         </div>
         
         {/* Mobile card view - visible on mobile only */}
-        <div className="block md:hidden space-y-4 mb-4">
+        <div className="block md:hidden space-y-4 mb-4 mobile-cards">
           {/* Legendary Tier Card */}
           <div className="bg-gray-900/40 rounded-lg border border-yellow-500/20 overflow-hidden">
             <div className="bg-yellow-900/30 p-3 border-b border-yellow-500/20">
@@ -1038,7 +1315,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
         </div>
         
         {/* Desktop table view - hidden on mobile */}
-        <div className="hidden md:block overflow-x-auto table-container">
+        <div className="hidden md:block overflow-x-auto table-container scrollable-x">
           <table className="w-full text-sm keep-structure">
             <thead>
               <tr className="border-b border-gray-700">
@@ -1108,7 +1385,7 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
             </svg>
             Bonus Rewards
           </h4>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 scrollable-x">
             <div className="bg-gray-800/50 p-2 rounded flex-1 min-w-[100px] sm:min-w-[140px]">
               <p className="text-xxs sm:text-xs text-gray-400 mb-0.5 sm:mb-1">First 7 days</p>
               <div className="text-xs sm:text-sm font-medium text-green-300">+100% (2x rewards)</div>
@@ -1164,6 +1441,68 @@ const StakingDashboard = ({ stats, isLoading, onRefresh }) => {
 
         .animate-highlight-purple {
           animation: highlightPurple 5s ease-out forwards;
+        }
+        
+        /* Enhanced mobile optimization */
+        @media (max-width: 640px) {
+          button, a, select, input, .interactive-element {
+            min-height: 44px;
+            min-width: 44px;
+          }
+          
+          /* Not all buttons/links should be flex containers */
+          button:not(.no-flex), a:not(.no-flex), .interactive-element:not(.no-flex) {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .table-container {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            overflow-x: auto;
+            width: 100%;
+            position: relative;
+          }
+          
+          .swipe-hint {
+            padding: 8px 12px;
+            background: rgba(75, 85, 99, 0.3);
+            border-radius: 8px;
+            margin-bottom: 12px;
+          }
+          
+          .card-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          
+          .stat-card {
+            padding: 14px;
+          }
+          
+          /* Improve scrollable containers */
+          .scrollable-x {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+            margin-bottom: -4px; /* Compensate for padding */
+          }
+          
+          .scrollable-x > * {
+            scroll-snap-align: start;
+          }
+          
+          /* Hide scrollbars on mobile for cleaner UI */
+          .scrollable-x::-webkit-scrollbar {
+            display: none;
+          }
+          
+          .scrollable-x {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
         }
       `}</style>
     </div>

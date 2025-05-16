@@ -20,6 +20,7 @@ import Tokenomics from "./Tokenomics";
 import Roadmap from "./Roadmap";
 import TokenUtility from "./TokenUtility";
 import FAQ from "./FAQ";
+import ScrollableTabs from "../common/ScrollableTabs";
 
 // Client-only component wrapper
 const ClientOnly = ({ children }) => {
@@ -48,7 +49,7 @@ const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "http
 // Default purchase amount
 const DEFAULT_PURCHASE_AMOUNT = 20000;
 
-// Custom styles for extra small text
+// Custom styles for extra small text and mobile optimization
 const TEXT_XXS_STYLE = `
   .text-xxs {
     font-size: 0.65rem;
@@ -60,6 +61,84 @@ const TEXT_XXS_STYLE = `
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* Animation for scroll hint */
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+  
+  /* Adds subtle pulsing animation for scroll hint */
+  .scroll-hint {
+    animation: fadeInOut 2s ease-in-out infinite;
+  }
+  
+  /* Horizontal tabs specific styles */
+  .horizontal-tabs {
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+
+  /* Horizontal tabs subtle gradient indicators */
+  .horizontal-tabs::before,
+  .horizontal-tabs::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .horizontal-tabs::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0));
+  }
+
+  .horizontal-tabs::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0));
+  }
+  
+  /* Enhanced mobile optimization */
+  @media (max-width: 640px) {
+    /* All interactive elements have minimum touch target size */
+    button, a, select, input, .interactive-element {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Preset button sizes for consistent UI */
+    .tab-button {
+      min-width: 90px; /* Minimum width for tab buttons */
+    }
+    
+    /* Help with horizontal scrolling */
+    .scrollable-x {
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+      margin-bottom: -4px;
+    }
+    
+    .scrollable-x > * {
+      scroll-snap-align: start;
+    }
+    
+    /* Improved spacing for mobile */
+    .mobile-spacing {
+      margin-bottom: 0.5rem;
+    }
+    
+    /* Better touch area for small buttons */
+    .touch-friendly {
+      padding: 0.5rem 0.75rem;
+    }
   }
 `;
 
@@ -465,7 +544,7 @@ export default function PresalePage({ initialSupply = 0 }) {
       </div>
       
       {/* Combined Section: Presale Info and Purchase Form */}
-      <div className="mt-6 bg-gray-800/50 rounded-xl border border-purple-500/30 shadow-xl overflow-hidden">
+      <div className="mt-6 container-purple rounded-xl border border-purple-500/30 shadow-xl overflow-hidden">
         {/* Wallet Info & Purchase Form at the top */}
         <div className="border-b border-purple-500/20 p-6">
           <ClientOnly>
@@ -698,83 +777,34 @@ export default function PresalePage({ initialSupply = 0 }) {
         <div className="p-6">
           {/* Navigation tabs at the top of presale info box */}
           <div className="mb-6">
-            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-1.5 sm:p-2 border border-purple-500/20 shadow-lg presale-tabs">
-              <div className="flex flex-wrap gap-1 overflow-x-auto pb-0.5 scrollbar-hide">
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('Setting activeTab to: presale');
-                    setActiveTab('presale');
-                  }}
-                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
-                    activeTab === 'presale' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
-                  }`}
-                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
-                >
-                  Presale
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('Setting activeTab to: tokenomics');
-                    setActiveTab('tokenomics');
-                  }}
-                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
-                    activeTab === 'tokenomics' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
-                  }`}
-                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
-                >
-                  Tokenomics
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('Setting activeTab to: roadmap');
-                    setActiveTab('roadmap');
-                  }}
-                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
-                    activeTab === 'roadmap' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
-                  }`}
-                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
-                >
-                  Roadmap
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('Setting activeTab to: utility');
-                    setActiveTab('utility');
-                  }}
-                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
-                    activeTab === 'utility' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
-                  }`}
-                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
-                >
-                  Utility
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('Setting activeTab to: faq');
-                    setActiveTab('faq');
-                  }}
-                  className={`flex-1 min-w-[80px] py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 whitespace-nowrap ${
-                    activeTab === 'faq' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
-                  }`}
-                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
-                >
-                  FAQ
-                </button>
+            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-1.5 border border-purple-500/20 shadow-lg">
+              {/* 수평 스크롤 가능한 탭 컨테이너 */}
+              <div className="overflow-x-auto scrollbar-hide horizontal-tabs relative" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {/* 스냅 스크롤링을 위한 내부 컨테이너 */}
+                <div className="flex gap-2 py-2 px-4 min-w-max md:justify-center">
+                  {[
+                    { id: 'presale', label: 'Presale' },
+                    { id: 'tokenomics', label: 'Tokenomics' },
+                    { id: 'roadmap', label: 'Roadmap' },
+                    { id: 'utility', label: 'Utility' },
+                    { id: 'faq', label: 'FAQ' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        console.log(`Setting activeTab to: ${tab.id}`);
+                        setActiveTab(tab.id);
+                      }}
+                      className={`py-3 px-4 sm:px-5 rounded-lg text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 tab-button ${activeTab === tab.id 
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl' 
+                        : 'text-gray-300 hover:bg-gray-700/50 hover:text-white bg-gray-800/70'}`}
+                      style={{ fontFamily: "'Orbitron', sans-serif" }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

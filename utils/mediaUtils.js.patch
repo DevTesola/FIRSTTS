@@ -1,3 +1,0 @@
-/const isStakingComponent = options && options.__source &&/,/options.__source.includes('staking'));/ {
-  s/options.__source.includes('staking'));/options.__source.includes('Leaderboard') || options.__source.includes('staking'));/
-}

@@ -25,7 +25,6 @@ export default function Whitepaper() {
             <p className="text-xl md:text-2xl text-gray-300 mb-4">The First Tesla-Inspired Meme Coin That Actually Works™</p>
             <p className="text-purple-400 bg-purple-900/30 px-3 py-1 rounded-lg text-sm">🚀 To The Moon Edition | May 2025 🌙</p>
             <div className="mt-8 text-gray-400 text-sm">
-              gm@tesola.xyz<br />
               https://tesola.xyz<br />
               "Wen Tesla? Soon™"
             </div>
@@ -1300,7 +1299,128 @@ export default function Whitepaper() {
             </div>
 
             <h3 className="text-xl font-semibold text-white mb-3">Vesting Schedule</h3>
-            <div className="overflow-x-auto mb-6 -mx-4 sm:mx-0">
+            
+            {/* Mobile swipe hint - only shown on small screens */}
+            <div className="swipe-hint md:hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+              <span>Swipe horizontally to see all data</span>
+            </div>
+            
+            {/* Mobile card view - visible on mobile only */}
+            <div className="block md:hidden space-y-4 mb-4">
+              <div className="bg-gray-900/50 p-3 rounded-lg">
+                <h4 className="text-lg font-medium text-white">Team</h4>
+                <ul className="mt-2 space-y-2">
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Allocation</span>
+                    <span className="text-white">15%</span>
+                  </li>
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Initial</span>
+                    <span className="text-white">0%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-400">Vesting</span>
+                    <span className="text-white">12m cliff, 36m linear</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-900/50 p-3 rounded-lg">
+                <h4 className="text-lg font-medium text-white">Presale</h4>
+                <ul className="mt-2 space-y-2">
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Allocation</span>
+                    <span className="text-white">10%</span>
+                  </li>
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Initial</span>
+                    <span className="text-white">25%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-400">Vesting</span>
+                    <span className="text-white">3m linear (75%)</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-900/50 p-3 rounded-lg">
+                <h4 className="text-lg font-medium text-white">Marketing</h4>
+                <ul className="mt-2 space-y-2">
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Allocation</span>
+                    <span className="text-white">10%</span>
+                  </li>
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Initial</span>
+                    <span className="text-white">Gradual</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-400">Vesting</span>
+                    <span className="text-white">As needed</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-900/50 p-3 rounded-lg">
+                <h4 className="text-lg font-medium text-white">HODL</h4>
+                <ul className="mt-2 space-y-2">
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Allocation</span>
+                    <span className="text-white">40%</span>
+                  </li>
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Initial</span>
+                    <span className="text-white">0%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-400">Vesting</span>
+                    <span className="text-white">24-48m phased</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-900/50 p-3 rounded-lg">
+                <h4 className="text-lg font-medium text-white">Liquidity</h4>
+                <ul className="mt-2 space-y-2">
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Allocation</span>
+                    <span className="text-white">20%</span>
+                  </li>
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Initial</span>
+                    <span className="text-white">30%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-400">Vesting</span>
+                    <span className="text-white">12m gradual</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-900/50 p-3 rounded-lg">
+                <h4 className="text-lg font-medium text-white">DAO</h4>
+                <ul className="mt-2 space-y-2">
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Allocation</span>
+                    <span className="text-white">5%</span>
+                  </li>
+                  <li className="flex justify-between border-b border-gray-700 pb-2">
+                    <span className="text-gray-400">Initial</span>
+                    <span className="text-white">0%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-400">Vesting</span>
+                    <span className="text-white">Community gov.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            
+            {/* Desktop table view - hidden on mobile */}
+            <div className="hidden md:block overflow-x-auto table-container mb-6 -mx-4 sm:mx-0">
               <div className="min-w-[700px] p-4 sm:p-0">
                 <table className="w-full">
                   <thead>

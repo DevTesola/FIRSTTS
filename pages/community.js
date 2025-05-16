@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
 import CommunityPage from '../components/community/CommunityPage';
+import LaunchAnnouncementModal from '../components/LaunchAnnouncementModal';
 
 /**
  * Community Hub page
@@ -18,6 +19,7 @@ export default function Community() {
 
       <Layout>
         <CommunityPage />
+        <LaunchAnnouncementModal />
       </Layout>
     </>
   );

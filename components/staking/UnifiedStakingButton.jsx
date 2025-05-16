@@ -98,7 +98,7 @@ const UnifiedStakingButton = ({
       // 블록체인 상태 업데이트 대기
       setStatus("confirming");
       const waitTime = phase === "setup" ? 2000 : 2000;
-      console.log(`${phase} 트랜잭션 확인 대기 중... (${waitTime}ms)`);
+      console.log(`Waiting for ${phase} transaction confirmation... (${waitTime}ms)`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       
       // 상태 업데이트
@@ -110,7 +110,7 @@ const UnifiedStakingButton = ({
         skipped: false
       };
     } catch (err) {
-      console.error(`${phase} 트랜잭션 오류:`, err);
+      console.error(`${phase} transaction error:`, err);
       setError(`${description}: ${err.message}`);
       setStatus("error");
       return { success: false, error: err };
@@ -125,7 +125,7 @@ const UnifiedStakingButton = ({
     }
     
     try {
-      // 상태 및 에러 초기화
+      // Initialize state and error
       setStatus("preparing");
       setError(null);
       setProgress(0);
@@ -136,9 +136,9 @@ const UnifiedStakingButton = ({
       
       // API 요청을 통해 스테이킹 준비
       const tierAttr = nft.attributes?.find(attr => attr.trait_type?.toLowerCase() === "tier");
-      console.log("NFT 티어 정보:", tierAttr);
+      console.log("NFT tier information:", tierAttr);
       
-      console.log("향상된 스테이킹 준비 API 요청...");
+      console.log("Enhanced staking preparation API request...");
       // 향상된 스테이킹 API 엔드포인트 사용
       const prepareResponse = await fetch("/api/staking/enhanced-staking", {
         method: "POST",
@@ -164,7 +164,7 @@ const UnifiedStakingButton = ({
         throw new Error(prepareData.message || "스테이킹 준비 실패");
       }
       
-      console.log("스테이킹 준비 데이터:", prepareData.data);
+      console.log("Staking preparation data:", prepareData.data);
       
       const { 
         transactions, 
@@ -177,7 +177,7 @@ const UnifiedStakingButton = ({
       
       // 모든 계정이 이미 초기화되어 있는지 확인
       if (accountInitialization.allReady) {
-        console.log("모든 계정이 이미 초기화되어 있습니다. 스테이킹 단계로 직접 진행합니다.");
+        console.log("All accounts are already initialized. Proceeding directly to staking phase.");
         setStatus("signing");
       } else {
         // 1. 계정 초기화 트랜잭션 처리
@@ -195,7 +195,7 @@ const UnifiedStakingButton = ({
             return; // 실패 시 중단
           }
         } else {
-          console.log("계정 초기화가 필요 없음, 스테이킹으로 진행");
+          console.log("Account initialization not needed, proceeding to staking");
           setStatus("signing");
         }
       }
@@ -220,7 +220,7 @@ const UnifiedStakingButton = ({
       
       // 4. 스테이킹 완료 기록
       try {
-        console.log("스테이킹 완료 기록 중...");
+        console.log("Recording staking completion...");
         const completeResponse = await fetch("/api/staking/completeStaking-unified", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -240,10 +240,10 @@ const UnifiedStakingButton = ({
         });
         
         if (!completeResponse.ok) {
-          console.warn("스테이킹 완료 기록 중 오류가 발생했지만, 블록체인 트랜잭션은 성공했습니다.");
+          console.warn("Error occurred while recording staking completion, but blockchain transaction was successful.");
         }
       } catch (completeError) {
-        console.warn("스테이킹 완료 기록 중 오류:", completeError);
+        console.warn("Error while recording staking completion:", completeError);
       }
       
       // 성공 콜백 호출
@@ -262,7 +262,7 @@ const UnifiedStakingButton = ({
       }
       
     } catch (err) {
-      console.error("스테이킹 오류:", err);
+      console.error("Staking error:", err);
       setStatus("error");
       setError(err.message || "Unknown error during staking");
       
@@ -278,7 +278,7 @@ const UnifiedStakingButton = ({
         enhancedErrorMessage = "계정 구조 문제가 발생했습니다. 비상 언스테이킹을 시도해보세요.";
       }
       
-      // 에러 콜백 호출
+      // Call error callback
       if (onError) {
         onError({
           message: enhancedErrorMessage,

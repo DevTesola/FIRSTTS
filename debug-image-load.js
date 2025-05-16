@@ -53,11 +53,11 @@ function testLoadImage(url, type) {
   const img = new Image();
   
   img.onload = function() {
-    console.log(`✅ ${type} 로드 성공: ${url} (크기: ${img.width}x${img.height})`);
+    console.log(`✅ ${type} loaded successfully: ${url} (size: ${img.width}x${img.height})`);
   };
   
   img.onerror = function() {
-    console.error(`❌ ${type} 로드 실패: ${url}`);
+    console.error(`❌ ${type} load failed: ${url}`);
   };
   
   // 캐시 방지
@@ -69,15 +69,15 @@ console.log('이미지 로딩 테스트를 시작합니다...');
 testImageLoading();
 
 // 교차 출처 정책 문제 확인
-console.log('\n교차 출처 정책 확인:');
+console.log('\nChecking CORS policy:');
 fetch('https://tesola.mypinata.cloud/ipfs/QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco/test', { mode: 'cors' })
   .then(response => {
-    console.log('게이트웨이 CORS 상태:', response.status, response.statusText);
+    console.log('Gateway CORS status:', response.status, response.statusText);
   })
   .catch(error => {
-    console.error('게이트웨이 CORS 오류:', error);
+    console.error('Gateway CORS error:', error);
   });
 
 // 사용자 안내 메시지
 console.log('\n이 스크립트는 브라우저에서 IPFS 이미지 로딩 문제를 진단합니다.');
-console.log('콘솔 창에서 에러 메시지를 확인하세요.');
+console.log('Check error messages in the console window.');

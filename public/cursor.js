@@ -172,11 +172,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start animation
     animateCursor();
     
-    // Hide default cursor in the entire document
+    // Hide default cursor only (no additional styling)
     const style = document.createElement('style');
     style.textContent = `
-      * {
-        cursor: none !important;
+      html {
+        cursor: none;
       }
     `;
     document.head.appendChild(style);

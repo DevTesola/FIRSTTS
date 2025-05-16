@@ -13,21 +13,21 @@ export default function LandingPage() {
   return (
     <div className="w-full max-w-6xl mx-auto font-orbitron">
       {/* Hero Section */}
-      <div className="text-center mb-12 md:mb-16 px-4 md:px-0">
-        <div className="flex justify-center mb-4">
+      <div className="text-center mb-8 md:mb-16 px-4 md:px-0">
+        <div className="flex justify-center mb-3 md:mb-4">
           <Image 
             src="/logo2.png" 
             alt="Logo" 
-            width={100} 
-            height={100} 
-            className="animate-pulse" 
+            width={80} 
+            height={80} 
+            className="animate-pulse w-16 h-16 md:w-[100px] md:h-[100px]" 
             priority
           />
         </div>
-        <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-4 md:mb-6 bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-500 bg-clip-text text-transparent leading-tight">
+        <h1 className="text-2xl sm:text-3xl md:text-6xl font-extrabold mb-3 md:mb-6 bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-500 bg-clip-text text-transparent leading-tight">
           Welcome to the Future of Solana
         </h1>
-        <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6 md:mb-8">
+        <p className="text-base md:text-xl text-gray-300 max-w-3xl mx-auto mb-4 md:mb-8">
           Explore our unique NFT collection and participate in our token presale — two distinct ways to join our thriving ecosystem.
         </p>
         
@@ -35,17 +35,17 @@ export default function LandingPage() {
         
         {/* Stats */}
         <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-10 md:mb-12">
-          <div className="bg-gray-800 px-4 md:px-6 py-3 rounded-lg">
-            <div className="text-2xl md:text-3xl font-bold text-purple-400">1,000</div>
-            <div className="text-xs md:text-sm text-gray-400">Unique NFTs</div>
+          <div className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/20 px-3 md:px-6 py-2 md:py-3 rounded-lg shadow-md">
+            <div className="text-xl md:text-3xl font-bold text-purple-400">1,000</div>
+            <div className="text-xs md:text-sm text-gray-200">Unique NFTs</div>
           </div>
-          <div className="bg-gray-800 px-4 md:px-6 py-3 rounded-lg">
-            <div className="text-2xl md:text-3xl font-bold text-pink-400">1B</div>
-            <div className="text-xs md:text-sm text-gray-400">Total Supply</div>
+          <div className="bg-gradient-to-r from-pink-900/40 to-purple-900/40 border border-pink-500/20 px-3 md:px-6 py-2 md:py-3 rounded-lg shadow-md">
+            <div className="text-xl md:text-3xl font-bold text-pink-400">1B</div>
+            <div className="text-xs md:text-sm text-gray-200">Total Supply</div>
           </div>
-          <div className="bg-gray-800 px-4 md:px-6 py-3 rounded-lg">
-            <div className="text-2xl md:text-3xl font-bold text-blue-400">18K+</div>
-            <div className="text-xs md:text-sm text-gray-400">Community</div>
+          <div className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/20 px-3 md:px-6 py-2 md:py-3 rounded-lg shadow-md">
+            <div className="text-xl md:text-3xl font-bold text-blue-400">18K+</div>
+            <div className="text-xs md:text-sm text-gray-200">Community</div>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function LandingPage() {
             <div className="flex justify-between items-center">
               <div>
                 <span className="text-sm text-gray-400">Price:</span>
-                <div className="text-xl font-bold text-white">1.5 SOL</div>
+                <div className="text-xl font-bold text-white">3.0 SOL</div>
               </div>
               <Link 
                 href="/nft" 
@@ -175,7 +175,7 @@ export default function LandingPage() {
       
       {/* Project Overview */}
       <div className="text-center mb-12 md:mb-16 px-4 md:px-0">
-        <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+        <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-indigo-400 via-purple-500 to-blue-400 bg-clip-text text-transparent">
           A Complete Ecosystem on Solana
         </h2>
         <p className="text-base md:text-lg text-gray-300 max-w-3xl mx-auto mb-6 md:mb-8">
@@ -184,38 +184,38 @@ export default function LandingPage() {
         
         {/* Features */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <div className="bg-purple-900/30 w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4">
+          <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 p-6 rounded-lg border border-purple-500/20 shadow-md hover:shadow-purple-500/20 transition-all">
+            <div className="bg-purple-900/50 w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Fast & Affordable</h3>
-            <p className="text-gray-400">
+            <p className="text-gray-200">
               Built on Solana for lightning-fast transactions and minimal fees, making our ecosystem accessible to everyone.
             </p>
           </div>
           
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <div className="bg-blue-900/30 w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4">
+          <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 p-6 rounded-lg border border-blue-500/20 shadow-md hover:shadow-blue-500/20 transition-all">
+            <div className="bg-blue-900/50 w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Secure & Audited</h3>
-            <p className="text-gray-400">
+            <p className="text-gray-200">
               All smart contracts are rigorously audited by leading security firms, ensuring your assets remain safe.
             </p>
           </div>
           
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <div className="bg-pink-900/30 w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4">
+          <div className="bg-gradient-to-br from-pink-900/30 to-purple-900/30 p-6 rounded-lg border border-pink-500/20 shadow-md hover:shadow-pink-500/20 transition-all">
+            <div className="bg-pink-900/50 w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Community Governed</h3>
-            <p className="text-gray-400">
+            <p className="text-gray-200">
               Our DAO puts decision-making power in the hands of TESOLA holders, ensuring true decentralization.
             </p>
           </div>
@@ -233,25 +233,25 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap md:justify-center gap-3 md:gap-4">
           <Link 
             href="/promotion-gallery" 
-            className="px-5 py-3 md:px-6 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
+            className="px-3 py-2 md:px-6 md:py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors text-xs md:text-base"
           >
             Promotion Gallery
           </Link>
           <Link 
             href="/character-introduction" 
-            className="px-5 py-3 md:px-6 bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
+            className="px-3 py-2 md:px-6 md:py-3 bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white font-medium rounded-lg transition-colors text-xs md:text-base"
           >
             Main Character
           </Link>
           <Link 
             href="/love-story" 
-            className="px-5 py-3 md:px-6 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
+            className="px-3 py-2 md:px-6 md:py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium rounded-lg transition-colors text-xs md:text-base"
           >
             Love Story
           </Link>
           <Link 
             href="/developer-space" 
-            className="px-5 py-3 md:px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium rounded-lg transition-colors text-sm md:text-base"
+            className="px-3 py-2 md:px-6 md:py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium rounded-lg transition-colors text-xs md:text-base"
           >
             Developer's Space
           </Link>
@@ -259,10 +259,10 @@ export default function LandingPage() {
           {/* The REAL Story button - now full width on mobile and with arrow indicator */}
           <Link 
             href="/introduction" 
-            className="col-span-full px-5 py-3 md:px-6 bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 text-white font-medium rounded-lg transition-colors text-sm md:text-base flex justify-center items-center space-x-2"
+            className="col-span-full px-3 py-2 md:px-6 md:py-3 bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 text-white font-medium rounded-lg transition-colors text-xs md:text-base flex justify-center items-center space-x-1 md:space-x-2"
           >
             <span>The REAL Story</span>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </Link>

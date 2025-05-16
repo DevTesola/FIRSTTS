@@ -2,758 +2,386 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import mobile optimizations */
-@import './mobile-optimized.css';
-
+/* 기본 스타일 및 배경 설정 */
 :root {
   font-family: 'Orbitron', sans-serif !important;
-  /* 애니메이션 설정 - prefers-reduced-motion 지원 */
-  --animation-duration: 1;
 }
 
-/* 애니메이션 감소 설정 지원 */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --animation-duration: 0.01;
+/* 모든 요소의 기본 배경을 투명하게 설정 - !important 제거하여 컨테이너 스타일 허용 */
+body, html, #__next {
+  background-color: transparent;
+}
+
+/* 컨테이너 배경색 설정 (특정 컴포넌트에서 오버라이드 가능) */
+.bg-gradient-container {
+  background-color: rgba(30, 20, 60, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(100, 90, 255, 0.2);
+  box-shadow: 0 0 15px rgba(76, 29, 149, 0.3);
+}
+
+/* 페이지별 컨테이너 스타일 */
+.container-purple {
+  background: linear-gradient(to bottom, rgba(88, 28, 135, 0.4), rgba(67, 56, 202, 0.3));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+}
+
+.container-blue {
+  background: linear-gradient(to bottom, rgba(30, 58, 138, 0.4), rgba(37, 99, 235, 0.3));
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  box-shadow: 0 0 15px rgba(96, 165, 250, 0.2);
+}
+
+.container-indigo {
+  background: linear-gradient(to bottom, rgba(49, 46, 129, 0.4), rgba(79, 70, 229, 0.3));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+}
+
+/* 모달 및 콘텐츠 영역 배경 */
+.bg-gradient-to-br.from-gray-900.to-purple-900\/50,
+.bg-gradient-to-br.from-gray-900.to-indigo-900\/50,
+.bg-gradient-to-br.from-gray-900.to-blue-900\/50 {
+  background: linear-gradient(to bottom right, rgba(17, 24, 39, 0.8), rgba(88, 28, 135, 0.5)) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* 유틸리티 요소 배경 컬러 */
+.bg-purple-900\/10, .bg-indigo-900\/10, .bg-blue-900\/10 {
+  background-color: rgba(88, 28, 135, 0.2) !important;
+  border: 1px solid rgba(139, 92, 246, 0.2) !important;
+}
+
+/* 배너 배경 */
+.bg-gradient-to-r.from-purple-900\/30, 
+.bg-gradient-to-r.from-blue-900\/30,
+.bg-gradient-to-r.from-blue-900\/30.to-purple-900\/30 {
+  background: linear-gradient(to right, rgba(88, 28, 135, 0.5), rgba(67, 56, 202, 0.4)) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  box-shadow: 0 0 20px rgba(79, 70, 229, 0.3) !important;
+}
+
+/* 레이아웃 기본 스타일 */
+body {
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  color: white;
+}
+
+/* 텍스트 그림자 조정 - 명암 개선 */
+.text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.text-shadow-md {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.text-shadow-lg {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* 글씨 그라디언트용 텍스트 밝기 조정 */
+.bg-gradient-to-r.from-purple-400.to-pink-500.bg-clip-text,
+.bg-gradient-to-r.from-blue-400.to-purple-500.bg-clip-text,
+.bg-gradient-to-r.from-amber-400.to-orange-500.bg-clip-text,
+.bg-gradient-to-r.from-yellow-400.via-orange-500.to-amber-300.bg-clip-text,
+.bg-gradient-to-r.from-purple-400.via-pink-500.to-yellow-500.bg-clip-text,
+.bg-gradient-to-r.from-indigo-400.via-purple-500.to-pink-400.bg-clip-text,
+.bg-gradient-to-r.from-cyan-400.via-blue-500.to-indigo-400.bg-clip-text,
+.bg-gradient-to-r.bg-clip-text {
+  filter: saturate(1.1) contrast(1.1);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Wallet 버튼 모바일 조정 */
+@media (max-width: 768px) {
+  .wallet-adapter-button {
+    z-index: 40;
+    font-size: 14px !important;
+    padding: 0 14px !important;
   }
   
+  /* 모달 버튼이 가려지지 않도록 함 */
+  .wallet-adapter-modal-container {
+    z-index: 60 !important;
+  }
+}
+
+/* ===== 행성 애니메이션 통합 정의 ===== */
+
+/* 행성 진입 애니메이션 - 왼쪽에서 진입 */
+@keyframes planetFromLeft {
+  0% { transform: translate(-3000px, 800px) scale(0.01); opacity: 0; }
+  30% { transform: translate(-1800px, 480px) scale(0.2); opacity: 0.3; }
+  60% { transform: translate(-900px, 240px) scale(0.5); opacity: 0.6; }
+  100% { transform: translate(0, 0) scale(0.9); opacity: 1; }
+}
+
+/* 행성 진입 애니메이션 - 오른쪽에서 진입 */
+@keyframes planetFromRight {
+  0% { transform: translate(3000px, 800px) scale(0.01); opacity: 0; }
+  30% { transform: translate(1800px, 480px) scale(0.2); opacity: 0.3; }
+  60% { transform: translate(900px, 240px) scale(0.5); opacity: 0.6; }
+  100% { transform: translate(0, 0) scale(0.9); opacity: 1; }
+}
+
+/* 행성 진입 애니메이션 - 아래에서 진입 */
+@keyframes planetFromBottom {
+  0% { transform: translate(0, 3000px) scale(0.01); opacity: 0; }
+  30% { transform: translate(0, 1800px) scale(0.2); opacity: 0.3; }
+  60% { transform: translate(0, 900px) scale(0.5); opacity: 0.6; }
+  100% { transform: translate(0, 0) scale(0.9); opacity: 1; }
+}
+
+/* 행성 바운스 애니메이션 - 무한 반복 */
+@keyframes planetBounce {
+  0%, 100% { transform: translate(0, 0) scale(0.9); }
+  50% { transform: translate(0, -20px) scale(0.9); }
+}
+
+/* 행성 트레일 효과 애니메이션 */
+@keyframes planetTrail {
+  0% { width: 0; opacity: 0; }
+  30% { width: 100px; opacity: 0.8; }
+  100% { width: 200px; opacity: 0; }
+}
+
+/* 행성 도착 폭발 효과 애니메이션 */
+@keyframes planetBurst {
+  0% { transform: scale(0.7); opacity: 0.15; filter: blur(8px); }
+  15% { transform: scale(0.9); opacity: 0.4; filter: blur(10px); }
+  30% { transform: scale(1.1); opacity: 0.6; filter: blur(12px); }
+  50% { transform: scale(1.2); opacity: 0.7; filter: blur(15px); }
+  75% { transform: scale(0.9); opacity: 0.4; filter: blur(10px); }
+  100% { transform: scale(0.5); opacity: 0; filter: blur(5px); }
+}
+
+/* 별 반짝임 애니메이션 */
+@keyframes sparkle {
+  0% { opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+/* 별 영구 반짝임 애니메이션 - 회전 포함 */
+@keyframes sparkleForever {
+  0% { transform: scale(0.5) rotate(0deg); opacity: 0.3; }
+  15% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+  30% { transform: scale(0.9) rotate(90deg); opacity: 0.7; }
+  45% { transform: scale(1.1) rotate(135deg); opacity: 0.9; }
+  60% { transform: scale(0.7) rotate(180deg); opacity: 0.5; }
+  75% { transform: scale(1.0) rotate(225deg); opacity: 0.8; }
+  90% { transform: scale(0.8) rotate(315deg); opacity: 0.6; }
+  100% { transform: scale(0.5) rotate(360deg); opacity: 0.3; }
+}
+
+/* 추가 애니메이션 */
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes logo-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.05); filter: brightness(1.2); }
+}
+
+/* Evolution System Button Enhancements */
+.text-shadow-glow {
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.8),
+               0 0 20px rgba(251, 191, 36, 0.6),
+               0 0 30px rgba(251, 146, 60, 0.4),
+               0 0 40px rgba(236, 72, 153, 0.3);
+}
+
+/* Evolution button animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(251, 146, 60, 0.6),
+                0 0 40px rgba(251, 146, 60, 0.4),
+                0 0 60px rgba(236, 72, 153, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(251, 146, 60, 0.8),
+                0 0 60px rgba(251, 146, 60, 0.6),
+                0 0 80px rgba(236, 72, 153, 0.5);
+  }
+}
+
+.evolution-button {
+  animation: pulse-glow 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.evolution-button::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, 
+    #fb923c, #f97316, #ec4899, #f43f5e, 
+    #fb923c, #f97316, #ec4899, #f43f5e);
+  background-size: 400% 400%;
+  z-index: -1;
+  border-radius: inherit;
+  animation: gradient-rotate 3s ease infinite;
+  opacity: 0.7;
+}
+
+@keyframes gradient-rotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Blog-specific mobile optimizations */
+
+/* Small mobile devices (max-width: 640px) */
+@media (max-width: 640px) {
+  /* Improve readability on small screens */
+  .prose p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+  
+  /* Better touch targets for inline links */
+  .prose a {
+    padding: 0.125rem 0.25rem;
+    margin: -0.125rem -0.25rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Reduce header sizes on mobile */
+  .prose h1 { 
+    font-size: 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .prose h2 { 
+    font-size: 1.25rem;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .prose h3 { 
+    font-size: 1.125rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Mobile-friendly code blocks */
+  .prose pre {
+    font-size: 0.875rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .prose code {
+    font-size: 0.875rem;
+    padding: 0.125rem 0.375rem;
+  }
+  
+  /* Better image handling */
+  .prose img {
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Improved list spacing */
+  .prose ul li, 
+  .prose ol li {
+    margin-bottom: 0.5rem;
+    padding-left: 0.25rem;
+  }
+  
+  .prose ul, 
+  .prose ol {
+    padding-left: 1.5rem;
+  }
+  
+  /* Blockquote adjustments */
+  .prose blockquote {
+    margin: 1rem 0;
+    padding-left: 1rem;
+  }
+  
+  /* Touch target optimizations */
+  .touch-manipulation {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Extra small devices (max-width: 380px) */
+@media (max-width: 380px) {
+  /* Further reduce text sizes */
+  .prose {
+    font-size: 0.9rem;
+  }
+  
+  .prose h1 { font-size: 1.375rem; }
+  .prose h2 { font-size: 1.125rem; }
+  .prose h3 { font-size: 1rem; }
+  
+  .prose p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  /* Smaller code blocks */
+  .prose pre {
+    font-size: 0.8rem;
+    padding: 0.75rem;
+  }
+}
+
+/* Touch and interaction optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Better button interactions */
+  button, 
+  a {
+    -webkit-tap-highlight-color: rgba(139, 92, 246, 0.1);
+  }
+  
+  /* Prevent zoom on input focus */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Performance optimizations */
+@media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-/* Ensure font is applied globally */
-html, body, div, span, h1, h2, h3, h4, h5, h6, p, button, a, input, textarea, select {
-  font-family: 'Orbitron', sans-serif !important;
-}
-
-/* Special button handling for tabs */
-.presale-tabs button {
-  font-family: 'Orbitron', sans-serif !important;
-  font-weight: 500 !important;
-}
-
-/* YouTube video container styles for square ratio (1:1) */
-.video-wrapper-square {
-  position: relative;
-  width: 100%;
-  max-width: 600px;
-}
-
-.video-container-square {
-  position: relative;
-  width: 100%;
-  padding-bottom: 100%; /* Creates a 1:1 aspect ratio */
-  background: #000;
-  overflow: hidden;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-}
-
-.video-container-square iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .video-wrapper-square {
-    max-width: 90vw;
-  }
-}
-
-/* Force font application to wallet adapter components */
-.wallet-adapter-button,
-.wallet-adapter-dropdown-list,
-.wallet-adapter-dropdown-list-item,
-.wallet-adapter-modal-wrapper,
-.wallet-adapter-modal-title,
-.wallet-adapter-modal-content,
-.wallet-adapter-modal-button,
-.wallet-adapter-modal-button-close,
-[class*="wallet-adapter"] {
-  font-family: 'Orbitron', sans-serif !important;
-}
-
-.wallet-adapter-button *,
-.wallet-adapter-dropdown-list *,
-.wallet-adapter-dropdown-list-item *,
-.wallet-adapter-modal-wrapper *,
-.wallet-adapter-modal-title *,
-.wallet-adapter-modal-content *,
-.wallet-adapter-modal-button *,
-.wallet-adapter-modal-button-close *,
-[class*="wallet-adapter"] * {
-  font-family: 'Orbitron', sans-serif !important;
-}
-
-/* Google Fonts Integration - No local files needed */
-/* 
-  We no longer store local font files since they were corrupted.
-  Instead, we load Orbitron from Google Fonts in _document.js with:
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-  <link 
-    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" 
-    rel="stylesheet"
-    media="print" 
-    onLoad="this.media='all'" 
-  />
-*/
-
-/* Base body styles */
-@layer base {
-  html {
-    @apply font-orbitron;
-    font-family: 'Orbitron', sans-serif !important;
-  }
-  
-  body {
-    @apply bg-black text-white;
-    font-family: 'Orbitron', sans-serif !important;
-  }
-
-  *, *::before, *::after {
-    font-family: 'Orbitron', sans-serif !important;
-  }
-
-  /* Custom Cursor Styles */
-  .cursor-dot,
-  .cursor-outline {
-    @apply fixed top-0 left-0 transform -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none z-[9999];
-    will-change: transform;
-    transition: opacity 0.2s ease;
-  }
-
-  .cursor-dot {
-    @apply w-3 h-3 bg-purple-500;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 
-                0 0 20px rgba(168, 85, 247, 0.6), 
-                0 0 30px rgba(168, 85, 247, 0.4);
-    mix-blend-mode: screen;
-  }
-
-  .cursor-outline {
-    @apply w-8 h-8 border-2 border-blue-400;
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 
-                0 0 25px rgba(59, 130, 246, 0.3);
-    mix-blend-mode: exclusion;
-  }
-
-  /* Use normal cursors by default */
-  a, button, input, textarea, select, [role="button"] {
-    @apply cursor-pointer;
-  }
-
-  a:hover ~ .cursor-dot,
-  button:hover ~ .cursor-dot,
-  [role="button"]:hover ~ .cursor-dot {
-    @apply bg-blue-400;
-    transform: scale(1.5) translate(-33%, -33%);
-  }
-
-  a:hover ~ .cursor-outline,
-  button:hover ~ .cursor-outline,
-  [role="button"]:hover ~ .cursor-outline {
-    @apply border-purple-500;
-    transform: scale(1.2) translate(-40%, -40%);
-  }
-}
-
-@layer utilities {
-  /* Modal overlay styles - make darker */
-  .modal-overlay,
-  .fixed.inset-0.z-50,
-  .fixed.inset-0.flex.items-center.justify-center.z-50 {
-    background-color: rgba(0, 0, 0, 0.85) !important;
-    backdrop-filter: blur(4px) !important;
-  }
-  
-  /* Error Modal styles - make borders thicker */
-  .error-modal,
-  .notification-modal,
-  [class*="border-red-500"],
-  [class*="border-yellow-500"],
-  [class*="border-green-500"],
-  [class*="border-blue-500"],
-  [class*="border-purple-500"] {
-    border-width: 2px !important;
-  }
-  
-  /* Gradient animation */
-  @keyframes gradientBackground {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  .animate-gradientBackground {
-    animation: gradientBackground 20s linear infinite;
-  }
-
-  /* Neon flash animation */
-  @keyframes neonGlow {
-    0%   { text-shadow: 0 0 5px #fff, 0 0 10px #fff; }
-    100% { text-shadow: 0 0 20px #ff00de, 0 0 30px #ff00de, 0 0 40px #ff00de; }
-  }
-  .animate-neon {
-    animation: neonGlow 1.5s ease-in-out infinite alternate;
-  }
-  
-  /* Pulse slow animation */
-  @keyframes pulse-slow {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 0.7; }
-  }
-  .animate-pulse-slow {
-    animation: pulse-slow 4s ease-in-out infinite;
-  }
-  .animation-delay-1000 {
-    animation-delay: 1s;
-  }
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
-  .animation-delay-3000 {
-    animation-delay: 3s;
-  }
-  
-  /* Shimmer animation */
-  @keyframes shimmer {
-    0% { background-position: 100% 0%; }
-    100% { background-position: -100% 0%; }
-  }
-  .animate-shimmer {
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite linear;
-  }
-  
-  /* Fade animations */
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  .animate-fade-in {
-    animation: fade-in 0.3s ease-in-out forwards;
-  }
-  
-  /* Slide in animations for notifications */
-  @keyframes slide-in-right {
-    from {
-      opacity: 0;
-      transform: translateX(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  .animate-slide-in-right {
-    animation: slide-in-right 0.3s ease-out forwards;
-  }
-  
-  .delay-100 {
-    animation-delay: 0.1s;
-  }
-  .delay-200 {
-    animation-delay: 0.2s;
-  }
-  .delay-300 {
-    animation-delay: 0.3s;
-  }
-  .delay-500 {
-    animation-delay: 0.5s;
-  }
-  
-  @keyframes fade-right {
-    from {
-      opacity: 0;
-      transform: translateX(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  .animate-fade-right {
-    animation: fade-right 0.4s ease-out forwards;
-  }
-  
-  @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  .animate-fade-up {
-    animation: fade-up 0.5s ease-out forwards;
-  }
-  
-  @keyframes fade-down {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  .animate-fade-down {
-    animation: fade-down 0.4s ease-out forwards;
-  }
-  
-  /* Loading animations */
-  @keyframes bounce-pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(0.85); opacity: 0.8; }
-  }
-  .animate-bounce-pulse {
-    animation: bounce-pulse 1.5s ease-in-out infinite;
-  }
-  
-  @keyframes wave {
-    0% { transform: rotate(0deg); }
-    20% { transform: rotate(25deg); }
-    40% { transform: rotate(-15deg); }
-    60% { transform: rotate(10deg); }
-    80% { transform: rotate(-5deg); }
-    100% { transform: rotate(0deg); }
-  }
-  .animate-wave {
-    animation: wave 2s ease-in-out infinite;
-    transform-origin: bottom center;
-  }
-  
-  /* Stripe animation */
-  @keyframes stripe {
-    0% { background-position: 0 0; }
-    100% { background-position: 30px 0; }
-  }
-  .animate-stripe {
-    animation: stripe 1s linear infinite;
-  }
-  /* Hero background */
-  .hero-background {
-    @apply absolute inset-0
-           bg-gradient-to-tr from-purple-500 to-blue-500
-           opacity-30 blur-2xl z-0
-           animate-gradientBackground;
-  }
-
-  /* Neon title */
-  .neon-title {
-    @apply text-8xl font-extrabold
-           bg-clip-text text-transparent
-           bg-gradient-to-r from-pink-400 via-purple-500 to-blue-400
-           drop-shadow-[0_0_20px_rgba(255,0,255,0.7)]
-           animate-neon;
-  }
-
-  /* Navigation button */
-  .nav-button {
-    @apply px-6 py-3
-           bg-purple-800
-           text-white
-           font-bold
-           rounded-lg
-           shadow-lg
-           transition-all
-           duration-200
-           ease-in-out;
-  }
-
-  .nav-button:hover {
-    @apply bg-purple-600 shadow-[0_0_15px_rgba(200,150,255,0.8)];
-  }
-
-  /* Wallet connection button */
-  .wallet-adapter-button {
-    @apply text-base md:text-lg px-4 py-2 md:px-6 md:py-3
-           bg-purple-600 hover:bg-purple-700
-           text-white font-semibold rounded-lg shadow-md
-           transition duration-200 ease-in-out
-           z-50;
-  }
-
-  /* Wallet button container - new style */
-  .wallet-button-container {
-    @apply rounded-lg bg-gray-800 bg-opacity-50 p-4 flex justify-center
-           border border-purple-500 border-opacity-30 shadow-lg;
-  }
-  
-  /* Enhanced Neon glow button effects */
-  .neon-glow-purple {
-    @apply transition-all duration-300;
-    position: relative;
-    z-index: 1;
-  }
-  .neon-glow-purple:hover {
-    @apply shadow-[0_0_15px_rgba(168,85,247,0.9),0_0_30px_rgba(168,85,247,0.7),0_0_40px_rgba(168,85,247,0.5)];
-    transform: translateY(-2px);
-  }
-  .neon-glow-purple:hover::after {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: -5px;
-    right: -5px;
-    bottom: -5px;
-    border-radius: inherit;
-    z-index: -1;
-    animation: pulseGlow 1.5s infinite;
-    background: radial-gradient(circle, rgba(168,85,247,0.6) 0%, rgba(168,85,247,0) 70%);
-  }
-  
-  .neon-glow-pink {
-    @apply transition-all duration-300;
-    position: relative;
-    z-index: 1;
-  }
-  .neon-glow-pink:hover {
-    @apply shadow-[0_0_8px_rgba(236,72,153,0.8),0_0_15px_rgba(236,72,153,0.6),0_0_20px_rgba(236,72,153,0.4)];
-    transform: translateY(-1px);
-  }
-  .neon-glow-pink:hover::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border-radius: inherit;
-    z-index: -1;
-    animation: pulseGlow 2s infinite;
-    background: radial-gradient(circle, rgba(236,72,153,0.4) 0%, rgba(236,72,153,0) 70%);
-  }
-  
-  .neon-glow-blue {
-    @apply transition-all duration-300;
-    position: relative;
-    z-index: 1;
-  }
-  .neon-glow-blue:hover {
-    @apply shadow-[0_0_8px_rgba(59,130,246,0.8),0_0_15px_rgba(59,130,246,0.6),0_0_20px_rgba(59,130,246,0.4)];
-    transform: translateY(-1px);
-  }
-  .neon-glow-blue:hover::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border-radius: inherit;
-    z-index: -1;
-    animation: pulseGlow 2s infinite;
-    background: radial-gradient(circle, rgba(59,130,246,0.4) 0%, rgba(59,130,246,0) 70%);
-  }
-  
-  .neon-glow-cyan {
-    @apply transition-all duration-300;
-    position: relative;
-    z-index: 1;
-  }
-  .neon-glow-cyan:hover {
-    @apply shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_15px_rgba(34,211,238,0.6),0_0_20px_rgba(34,211,238,0.4)];
-    transform: translateY(-1px);
-  }
-  .neon-glow-cyan:hover::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border-radius: inherit;
-    z-index: -1;
-    animation: pulseGlow 2s infinite;
-    background: radial-gradient(circle, rgba(34,211,238,0.4) 0%, rgba(34,211,238,0) 70%);
-  }
-  
-  .neon-glow-green {
-    @apply transition-all duration-300;
-    position: relative;
-    z-index: 1;
-  }
-  .neon-glow-green:hover {
-    @apply shadow-[0_0_8px_rgba(16,185,129,0.8),0_0_15px_rgba(16,185,129,0.6),0_0_20px_rgba(16,185,129,0.4)];
-    transform: translateY(-1px);
-  }
-  .neon-glow-green:hover::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border-radius: inherit;
-    z-index: -1;
-    animation: pulseGlow 2s infinite;
-    background: radial-gradient(circle, rgba(16,185,129,0.4) 0%, rgba(16,185,129,0) 70%);
-  }
-  
-  /* Glow pulse animation */
-  @keyframes pulseGlow {
-    0% { opacity: 0.6; }
-    50% { opacity: 0.2; }
-    100% { opacity: 0.6; }
-  }
-  
-  /* Floating animations */
-  @keyframes float {
-    0% { transform: translateY(0px) rotate(0deg); }
-    25% { transform: translateY(-10px) rotate(3deg); }
-    50% { transform: translateY(-15px) rotate(0deg); }
-    75% { transform: translateY(-5px) rotate(-3deg); }
-    100% { transform: translateY(0px) rotate(0deg); }
-  }
-  .animate-float {
-    animation: float 10s ease-in-out infinite;
-  }
-  
-  /* Bounce animations - softer variant */
-  @keyframes bounce-slow {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
-  }
-  .animate-bounce-slow {
-    animation: bounce-slow 3s ease-in-out infinite;
-  }
-  
-  /* Shake animation for memes */
-  @keyframes shake {
-    0%, 100% { transform: rotate(0deg); }
-    10% { transform: rotate(3deg); }
-    20% { transform: rotate(-3deg); }
-    30% { transform: rotate(3deg); }
-    40% { transform: rotate(-3deg); }
-    50% { transform: rotate(3deg); }
-    60% { transform: rotate(-3deg); }
-    70% { transform: rotate(3deg); }
-    80% { transform: rotate(-3deg); }
-    90% { transform: rotate(3deg); }
-  }
-  .animate-shake {
-    animation: shake 0.8s ease-in-out;
-  }
-  .hover-shake:hover {
-    animation: shake 0.8s ease-in-out;
-  }
-  
-  /* Wiggle animation for memes */
-  @keyframes wiggle {
-    0%, 100% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(7deg) scale(1.1); }
-    50% { transform: rotate(-7deg) scale(1.1); }
-    75% { transform: rotate(7deg) scale(1.1); }
-  }
-  .animate-wiggle {
-    animation: wiggle 1s ease-in-out;
-  }
-  .hover-wiggle:hover {
-    animation: wiggle 1s ease-in-out;
-  }
-  
-  /* Rainbow text animation */
-  @keyframes rainbow-text {
-    0% { color: #ff0000; }
-    15% { color: #ff8000; }
-    30% { color: #ffff00; }
-    45% { color: #00ff00; }
-    60% { color: #00ffff; }
-    75% { color: #0000ff; }
-    90% { color: #8000ff; }
-    100% { color: #ff0000; }
-  }
-  .animate-rainbow {
-    animation: rainbow-text 5s linear infinite;
-  }
-  
-  /* 3D rotate on hover */
-  .hover-rotate-3d {
-    transition: transform 0.5s ease;
-  }
-  .hover-rotate-3d:hover {
-    transform: perspective(1000px) rotateY(15deg);
-  }
-  
-  /* Zoom bounce effect */
-  @keyframes zoom-bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
-  }
-  .animate-zoom-bounce {
-    animation: zoom-bounce 2s ease-in-out infinite;
-  }
-  
-  /* Fire text effect */
-  @keyframes fire-text {
-    0%, 100% { text-shadow: 0 -2px 4px #fff, 0 -2px 10px #ff3, 0 -10px 20px #f90, 0 -20px 40px #c33; }
-    50% { text-shadow: 0 -2px 4px #fff, 0 -2px 8px #ff3, 0 -8px 15px #f90, 0 -15px 30px #c33; }
-  }
-  .animate-fire-text {
-    animation: fire-text 2s ease-in-out infinite;
-    color: #fff;
-  }
-  
-  /* Tape rotation animation */
-  @keyframes tape-rotation {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  .animate-tape-rotation {
-    animation: tape-rotation 2s linear infinite;
-  }
-  
-  /* VHS Glitch effect */
-  @keyframes vhs-glitch {
-    0%, 100% { opacity: 1; transform: translateX(0); }
-    10% { opacity: 0.9; transform: translateX(2px); }
-    20% { opacity: 1; transform: translateX(-1px); }
-    30% { opacity: 0.8; transform: translateX(0); }
-    40% { opacity: 1; transform: translateX(0); }
-    50% { opacity: 0.9; transform: translateX(1px); }
-    60% { opacity: 1; transform: translateX(0); }
-    70% { opacity: 0.7; transform: translateX(-2px); }
-    80% { opacity: 1; transform: translateX(0); }
-  }
-  .animate-vhs-glitch {
-    animation: vhs-glitch 0.5s ease-in-out;
-  }
-  
-  /* Text glow animation */
-  @keyframes text-glow {
-    0%, 100% { text-shadow: 0 0 10px rgba(255, 77, 77, 0.5); }
-    50% { text-shadow: 0 0 20px rgba(255, 77, 77, 0.8), 0 0 30px rgba(255, 215, 0, 0.6); }
-  }
-  .animate-text-glow {
-    animation: text-glow 2s infinite;
-  }
-  
-  /* Reverse spin animation */
-  @keyframes reverse-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(-360deg); }
-  }
-  .animate-reverse-spin {
-    animation: reverse-spin 10s linear infinite;
-  }
-  
-  /* Slow spin animation */
-  @keyframes spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .animate-spin-slow {
-    animation: spin-slow 8s linear infinite;
-  }
-  
-  /* Scale hover */
-  .hover\:scale-102:hover {
-    transform: scale(1.02);
-  }
-  
-  /* Font for handwriting style */
-  .font-handwriting {
-    font-family: 'Comic Sans MS', 'Orbitron', cursive, sans-serif;
-  }
-  
-  /* Font for comic numbers */
-  .font-comic {
-    font-family: 'Impact', 'Arial Black', 'Orbitron', sans-serif;
-  }
-  
-  /* Equalizer animation */
-  @keyframes equalizer-bar {
-    0%, 100% { height: 15%; }
-    25% { height: 90%; }
-    50% { height: 50%; }
-    75% { height: 75%; }
-  }
-  .equalizer-bar-1 {
-    animation: equalizer-bar 1.1s ease-in-out infinite;
-  }
-  .equalizer-bar-2 {
-    animation: equalizer-bar 0.8s ease-in-out infinite;
-    animation-delay: 0.1s;
-  }
-  .equalizer-bar-3 {
-    animation: equalizer-bar 1.3s ease-in-out infinite;
-    animation-delay: 0.2s;
-  }
-  .equalizer-bar-4 {
-    animation: equalizer-bar 0.6s ease-in-out infinite;
-    animation-delay: 0.3s;
-  }
-
-  /* Enhanced Minting button */
-  .mint-button {
-    @apply text-xl md:text-2xl px-8 py-4 font-extrabold
-           bg-blue-600 hover:bg-blue-700
-           hover:shadow-[0_0_30px_15px_rgba(0,128,255,0.8)]
-           text-white rounded-xl shadow-2xl
-           transition duration-300 ease-in-out
-           relative z-10;
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-  }
-  
-  .mint-button:hover {
-    transform: translateY(-2px) scale(1.02);
-  }
-  
-  .mint-button::after {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    background: linear-gradient(45deg, rgba(0,128,255,0.4), rgba(128,0,255,0.4));
-    z-index: -1;
-    border-radius: 16px;
-    filter: blur(10px);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  .mint-button:hover::after {
-    opacity: 1;
-    animation: rotateBorderGlow 3s linear infinite;
-  }
-  
-  @keyframes rotateBorderGlow {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  /* Wallet dropdown */
-  .wallet-adapter-dropdown {
-    @apply relative z-50;
-  }
-
-  .wallet-adapter-dropdown-list {
-    @apply absolute mt-2 bg-gray-800 p-2 rounded-xl shadow-lg list-none z-50;
-  }
-
-  .wallet-adapter-dropdown-list-item {
-    @apply px-6 py-3 text-white hover:bg-gray-700 rounded-lg;
   }
 }

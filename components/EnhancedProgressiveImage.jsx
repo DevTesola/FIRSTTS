@@ -293,7 +293,7 @@ function EnhancedProgressiveImage({
             
             if (!isMounted) return;
             
-            // 썸네일 로딩 (아직 로드되지 않았고 URL이 있는 경우)
+            // Load thumbnail (not loaded yet and URL exists)
             if (!loadState.thumbnailLoaded && thumbnailUrl) {
               thumbnailRef.current = imagePool.getImage(); // 풀에서 이미지 객체 가져오기
               
@@ -322,7 +322,7 @@ function EnhancedProgressiveImage({
               thumbnailRef.current.src = thumbnailUrl;
             }
             
-            // 풀 이미지 로딩 (아직 로드되지 않았고 URL이 있는 경우)
+            // Load full image (not loaded yet and URL exists)
             if (!loadState.fullLoaded && fullUrl) {
               // 초기 상태를 전체 이미지 로딩으로 업데이트
               if (loadState.stage === 'initial') {

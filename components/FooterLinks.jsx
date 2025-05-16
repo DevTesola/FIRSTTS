@@ -12,7 +12,7 @@ export default function FooterLinks({ onShowHowItWorks }) {
           <div className="flex items-center space-x-4 mb-6 justify-center">
             {/* "Verified on Magic Eden" link */}
             <a
-              href="https://magiceden.io/marketplace/slr"
+              href="https://magiceden.io/marketplace/solara"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2 hover:underline"

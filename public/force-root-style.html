@@ -1,55 +1,8 @@
-<!-- This HTML fragment will be loaded by Next.js -->
+<!-- 간단한 최소 스타일만 유지 -->
 <style id="orbitron-root-style">
-  /* Root level style with highest priority */
-  :root {
-    font-family: 'Orbitron', sans-serif !important;
-  }
-  
-  /* Target everything */
-  * {
-    font-family: 'Orbitron', sans-serif !important;
-  }
-  
-  /* Specific element targeting */
-  html, body, div, span, applet, object, iframe,
-  h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-  a, abbr, acronym, address, big, cite, code,
-  del, dfn, em, img, ins, kbd, q, s, samp,
-  small, strike, strong, sub, sup, tt, var,
-  b, u, i, center,
-  dl, dt, dd, ol, ul, li,
-  fieldset, form, label, legend,
-  table, caption, tbody, tfoot, thead, tr, th, td,
-  article, aside, canvas, details, embed, 
-  figure, figcaption, footer, header, hgroup, 
-  menu, nav, output, ruby, section, summary,
-  time, mark, audio, video, button, input, textarea, select {
-    font-family: 'Orbitron', sans-serif !important;
-  }
-  
-  /* Tailwind classes */
-  .font-sans, 
-  .font-mono, 
-  .font-serif,
-  .text-sm,
-  .text-base,
-  .text-lg,
-  .text-xl,
-  .text-2xl,
-  .text-3xl,
-  .font-bold,
-  .font-medium,
-  .font-normal {
-    font-family: 'Orbitron', sans-serif !important;
-  }
-  
-  /* Class-specific overrides */
-  [class] {
-    font-family: 'Orbitron', sans-serif !important;
-  }
-  
-  /* Override inline styles */
-  [style*="font-family"] {
-    font-family: 'Orbitron', sans-serif !important;
+  /* Error Components Fix - Prevent white screen error */
+  #__next_error {
+    background-color: black !important;
+    color: white !important;
   }
 </style>

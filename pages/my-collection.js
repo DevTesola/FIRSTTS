@@ -14,6 +14,7 @@ import { useNotification, ConfirmModal } from '../components/Notifications';
 import { processImageUrl, createPlaceholder, getNftPreviewImage } from '../utils/mediaUtils';
 import { getNFTImageUrl, getNFTName, getNFTTier, getTierStyles } from '../utils/nftImageUtils';
 import { getStakingStats as fetchStakingStatsService } from '../services/stakingService';
+import LaunchAnnouncementModal from '../components/LaunchAnnouncementModal';
 
 // Import ErrorBoundary and FallbackLoading
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -1659,6 +1660,9 @@ export default function MyCollection() {
             {renderTabContent()}
           </div>
         </div>
+        
+        {/* Launch Announcement Modal */}
+        <LaunchAnnouncementModal />
         </Layout>
       </ErrorBoundary>
     </>

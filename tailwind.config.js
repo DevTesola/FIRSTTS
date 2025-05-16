@@ -4,6 +4,14 @@ module.exports = {
     './components/**/*.{js,jsx}',
   ],
   theme: {
+    screens: {
+      'xs': '480px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       fontFamily: {
         orbitron: ['"Orbitron"', 'sans-serif'],
@@ -40,8 +48,9 @@ module.exports = {
           "100%": { filter: "brightness(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7))" },
         },
         shimmer: {
-          "0%": { backgroundPosition: "200% 0" },
-          "100%": { backgroundPosition: "-200% 0" },
+          "0%": { backgroundPosition: "200% 0", opacity: "0.8" },
+          "50%": { backgroundPosition: "0% 0", opacity: "1" },
+          "100%": { backgroundPosition: "-200% 0", opacity: "0.8" },
         },
         gradientXY: {
           "0%": { backgroundPosition: "0% 0%" },
@@ -58,22 +67,8 @@ module.exports = {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
-        planetEntryLeft: {
-          "0%": { transform: "translateX(-700px) translateY(-400px) scale(0.2) rotate(-40deg)", opacity: "0" },
-          "20%": { transform: "translateX(-400px) translateY(-250px) scale(0.3) rotate(-30deg)", opacity: "0.3" },
-          "60%": { transform: "translateX(100px) translateY(-80px) scale(0.6) rotate(-15deg)", opacity: "0.7" },
-          "80%": { transform: "translateX(30px) translateY(-20px) scale(0.9) rotate(-5deg)", opacity: "0.9" },
-          "95%": { transform: "translateX(-5px) translateY(5px) scale(1.03) rotate(2deg)", opacity: "1" },
-          "100%": { transform: "translateX(120px) translateY(0) scale(1) rotate(0deg)", opacity: "1" }
-        },
-        planetEntryRight: {
-          "0%": { transform: "translateX(700px) translateY(-400px) scale(0.2) rotate(40deg)", opacity: "0" },
-          "20%": { transform: "translateX(400px) translateY(-250px) scale(0.3) rotate(30deg)", opacity: "0.3" },
-          "60%": { transform: "translateX(-100px) translateY(-80px) scale(0.6) rotate(15deg)", opacity: "0.7" },
-          "80%": { transform: "translateX(-30px) translateY(-20px) scale(0.9) rotate(5deg)", opacity: "0.9" },
-          "95%": { transform: "translateX(5px) translateY(5px) scale(1.03) rotate(-2deg)", opacity: "1" },
-          "100%": { transform: "translateX(-120px) translateY(0) scale(1) rotate(0deg)", opacity: "1" }
-        },
+        // 이전 planetEntryLeft, planetEntryRight 정의는 제거됨
+        // 모든 행성 애니메이션은 globals.css에 통합 정의되었습니다
         entryShadow: {
           "0%": { boxShadow: "0 0 0 rgba(0, 0, 0, 0)" },
           "40%": { boxShadow: "0 0 15px rgba(80, 80, 180, 0.4)" },
@@ -81,21 +76,14 @@ module.exports = {
           "85%": { boxShadow: "0 0 50px rgba(120, 120, 255, 0.9)" },
           "100%": { boxShadow: "0 10px 25px rgba(60, 60, 200, 0.3)" }
         },
-        planetTrail: {
-          "0%": { width: "0px", height: "0px", opacity: "0" },
-          "30%": { width: "200px", height: "10px", opacity: "0.7" },
-          "100%": { width: "500px", height: "3px", opacity: "0" }
-        },
-        planetArrival: {
-          "0%": { transform: "scale(0)", opacity: "0" },
-          "30%": { transform: "scale(1.5)", opacity: "0.9" },
-          "100%": { transform: "scale(3)", opacity: "0" }
-        },
+        // 모든 행성 애니메이션 키프레임은 globals.css에 통합 정의되었습니다
         sparkle: {
           "0%": { transform: "scale(0) rotate(0deg)", opacity: "0" },
           "50%": { transform: "scale(1) rotate(180deg)", opacity: "1" },
           "100%": { transform: "scale(0) rotate(360deg)", opacity: "0" }
         },
+        // 모든 애니메이션 keyframes는 globals.css로 이동했습니다
+        // tailwind.config.js에서는 해당 keyframes에 대한 애니메이션 설정만 정의합니다
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
@@ -143,11 +131,25 @@ module.exports = {
         'shimmer': 'shimmer 8s ease-in-out infinite',
         'gradient-xy': 'gradientXY 15s ease-in-out infinite',
         'float-up': 'floatUp 3s ease-in-out infinite',
+        // Planet animation classes - 모든 keyframes은 globals.css에 정의됨
+        'planetFromLeft': 'planetFromLeft 5s cubic-bezier(0.16,1,0.3,1) forwards',
+        'planetFromRight': 'planetFromRight 5s cubic-bezier(0.16,1,0.3,1) forwards',
+        'planetFromBottom': 'planetFromBottom 5s cubic-bezier(0.16,1,0.3,1) forwards',
+        'planetBounce': 'planetBounce 8s ease-in-out infinite',
+        'planetTrail': 'planetTrail 4s ease-out forwards',
+        'planetBurst': 'planetBurst 1.2s ease-out forwards',
+        'sparkleForever': 'sparkleForever 7s ease-in-out infinite',
       },
       animationDelay: {
         '150': '150ms',
         '300': '300ms',
         '500': '500ms',
+        '1000': '1000ms',
+        '1500': '1500ms',
+        '2000': '2000ms',
+        '3000': '3000ms',
+        '4000': '4000ms',
+        '5000': '5000ms',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

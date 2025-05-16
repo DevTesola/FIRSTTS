@@ -225,7 +225,7 @@ export default function DeveloperSpace() {
               
               <span className="text-xs sm:text-sm bg-gradient-to-r from-red-900/40 to-yellow-900/40 px-2 sm:px-3 py-1 rounded-full border border-red-500/30 flex items-center hover-wiggle cursor-pointer">
                 <span className="mr-1">🧠</span>
-                <span>TSL HODLER SINCE 2018</span>
+                <span>TSLA HODLER SINCE 2018</span>
               </span>
             </div>
             

@@ -38,7 +38,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
     async function fetchRealNftId() {
       try {
         if (!stake || !stake.mint_address) {
-          debugError('StakedNFTCard', '민트 주소 없음');
+          debugError('StakedNFTCard', 'No mint address');
           setImageLoadError(true);
           return;
         }
@@ -50,15 +50,15 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
         if (stake.staked_nft_id) {
           // 스테이킹 정보에 이미 ID가 있는 경우
           realNftId = String(stake.staked_nft_id).padStart(4, '0');
-          debugLog('StakedNFTCard', `스테이킹 정보의 ID 사용: ${realNftId}`);
+          debugLog('StakedNFTCard', `Using ID from staking info: ${realNftId}`);
         } else {
           // 데이터베이스에서 ID 조회
           realNftId = await resolveNftId(stake.mint_address);
-          debugLog('StakedNFTCard', `DB에서 조회한 ID: ${realNftId || 'Not found'}`);
+          debugLog('StakedNFTCard', `ID retrieved from DB: ${realNftId || 'Not found'}`);
         }
         
         if (!realNftId) {
-          debugError('StakedNFTCard', `NFT ID를 찾을 수 없음: ${stake.mint_address}`);
+          debugError('StakedNFTCard', `Cannot find NFT ID: ${stake.mint_address}`);
           
           // 일관된 해시 기반 ID 생성 함수 (fallback용)
           const hashString = (str) => {
@@ -76,7 +76,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
           const hashValue = hashString(stake.mint_address);
           const fallbackId = availableIds[hashValue % availableIds.length];
           
-          debugLog('StakedNFTCard', `대체 ID 생성: ${stake.mint_address} -> ${fallbackId}`);
+          debugLog('StakedNFTCard', `Generated fallback ID: ${stake.mint_address} -> ${fallbackId}`);
           realNftId = fallbackId;
         }
         
@@ -98,7 +98,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
           // 게이트웨이 URL 생성 (캐시 버스팅 포함)
           const url = `${IPFS_GATEWAY}/ipfs/${IMAGES_CID}/${realNftId}.png?_cb=${sessionCacheBuster}`;
           
-          debugLog('StakedNFTCard', `이미지 URL 생성 - IPFS: ${ipfsUrl}, 게이트웨이: ${url}`);
+          debugLog('StakedNFTCard', `Image URL generation - IPFS: ${ipfsUrl}, Gateway: ${url}`);
           setImageUrl(url);
           
           // stake 객체에 추가 정보 저장 (디버깅에 도움)
@@ -418,7 +418,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
         } catch (parseError) {
           // 트랜잭션은 성공했으니 느슨하게 처리
           debugLog('StakedNFTCard', '완료 API 응답 파싱 오류, 하지만 트랜잭션은 성공함:', parseError);
-          setSuccessMessage(`언스테이킹 성공! 온체인 트랜잭션이 컨펌되었습니다. (백엔드 완료 처리에 문제가 있었지만 무시해도 됩니다)`);
+          setSuccessMessage(`Unstaking successful! On-chain transaction confirmed. (Backend completion had issues but can be ignored)`);
           
           // 데이터 갱신
           if (onRefresh) {
@@ -438,7 +438,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
       
       // 성공 메시지 표시
       const earnedAmount = data.earnedRewards || stake.earned_so_far || 0;
-      setSuccessMessage(`언스테이킹 성공! ${earnedAmount} TESOLA 토큰을 획득했습니다.`);
+      setSuccessMessage(`Unstaking successful! Earned ${earnedAmount} TESOLA tokens.`);
       
       // 데이터 갱신
       if (onRefresh) {
@@ -500,7 +500,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
       }
 
       const data = await res.json();
-      setSuccessMessage(`${data.amount || "0"} TESOLA 토큰을 성공적으로 청구했습니다!`);
+      setSuccessMessage(`Successfully claimed ${data.amount || "0"} TESOLA tokens!`);
 
       // 데이터 갱신
       if (onRefresh) {
@@ -736,7 +736,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
               }}
             />
           ) : (
-            // 이미지 URL이 아직 로딩 중인 경우 로딩 표시 (개선된 애니메이션)
+            // Show loading indicator if image URL is still loading (improved animation)
             <div className="w-full h-full bg-black/30 flex items-center justify-center">
               <div className="animate-pulse flex flex-col items-center">
                 <div className="w-4 h-4 rounded-full bg-purple-500/50 mb-1"></div>
@@ -880,7 +880,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
                 )}
               </div>
             ) : imageUrl ? (
-              // 확대 이미지 표시 (캐시 버스팅과 에러 핸들링 개선)
+              // Show enlarged image (with cache busting and improved error handling)
               <ResponsiveImageLoader
                 src={imageUrl}
                 alt={getNFTName(stake, 'SOLARA')}

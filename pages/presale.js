@@ -1,6 +1,7 @@
 import Head from "next/head";
 import PresalePage from "../components/presale/PresalePage";
 import Layout from "../components/Layout";
+import LaunchAnnouncementModal from "../components/LaunchAnnouncementModal";
 
 export default function PresaleIndex() {
   return (
@@ -30,6 +31,7 @@ export default function PresaleIndex() {
       </Head>
       <Layout>
         <PresalePage initialSupply={0} />
+        <LaunchAnnouncementModal />
       </Layout>
     </>
   );

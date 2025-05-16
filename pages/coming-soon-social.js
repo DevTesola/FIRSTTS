@@ -66,7 +66,7 @@ export default function ComingSoonSocialPage() {
   const info = socialInfo[currentPlatform];
   
   return (
-    <div className="min-h-screen bg-black bg-[url('/stars.jpg')] bg-cover bg-center flex flex-col items-center justify-center p-4" style={{ minHeight: '-webkit-fill-available' }}>
+    <div className="min-h-screen bg-black bg-[url('/stars.jpg')] bg-fixed bg-cover bg-center flex flex-col items-center justify-center p-4" style={{ minHeight: '-webkit-fill-available' }}>
       <Head>
         <title>{info.title} Coming Soon | TESOLA</title>
         <meta name="description" content={`TESOLA ${info.title} Coming Soon - Join our community for exclusive updates and benefits.`} />
@@ -174,6 +174,17 @@ export default function ComingSoonSocialPage() {
         }
         .animation-delay-4000 {
           animation-delay: 4s;
+        }
+        
+        /* Fix for background */
+        :global(html), :global(body), :global(#__next) {
+          height: 100%;
+          min-height: 100vh;
+          background-color: black;
+          background-image: url('/stars.jpg');
+          background-size: cover;
+          background-attachment: fixed;
+          background-position: center;
         }
         
         /* Prevent text overflow on small screens */

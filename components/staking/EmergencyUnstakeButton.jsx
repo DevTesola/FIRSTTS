@@ -1,8 +1,8 @@
 /**
  * Emergency Unstake Button Component
  * 
- * 비상 언스테이킹 기능을 위한 버튼 컴포넌트
- * 스테이킹 기간이 끝나기 전에 NFT를 긴급하게 언스테이킹할 때 사용
+ * Button component for emergency unstaking functionality
+ * Used for unstaking NFTs urgently before the staking period ends
  */
 
 import React, { useState } from 'react';
@@ -34,13 +34,13 @@ const buttonHoverStyle = {
 };
 
 /**
- * 비상 언스테이킹 버튼 컴포넌트
+ * Emergency unstaking button component
  * 
- * @param {Object} props - 컴포넌트 속성
- * @param {string} props.nftMint - NFT 민트 주소
- * @param {Object} props.stakeInfo - 스테이킹 정보 객체
- * @param {Function} props.onSuccess - 언스테이킹 성공 시 호출되는 콜백 함수
- * @param {boolean} props.disabled - 버튼 비활성화 여부
+ * @param {Object} props - Component properties
+ * @param {string} props.nftMint - NFT mint address
+ * @param {Object} props.stakeInfo - Staking information object
+ * @param {Function} props.onSuccess - Callback function called on successful unstaking
+ * @param {boolean} props.disabled - Button disabled status
  */
 export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled = false }) => {
   const { publicKey, signTransaction } = useWallet();
@@ -52,7 +52,7 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
   const [penaltyInfo, setPenaltyInfo] = useState(null);
 
   /**
-   * 비상 언스테이킹 트랜잭션 준비
+   * Prepare emergency unstaking transaction
    */
   const prepareEmergencyUnstaking = async () => {
     if (!publicKey || !nftMint) return;
@@ -75,18 +75,18 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '비상 언스테이킹 준비 중 오류가 발생했습니다.');
+        throw new Error(data.error || 'Error preparing emergency unstaking.');
       }
 
       // API 응답 구조 검증
       if (!data.data) {
-        debugError('EmergencyUnstakeButton', 'API 응답 데이터 형식 오류:', data);
-        throw new Error('서버 응답 형식이 올바르지 않습니다. 관리자에게 문의하세요.');
+        debugError('EmergencyUnstakeButton', 'API response data format error:', data);
+        throw new Error('Invalid server response format. Please contact administrator.');
       }
 
       // 페널티 정보 검증
       if (!data.data.emergencyFee || !data.data.rewards) {
-        debugError('EmergencyUnstakeButton', '페널티 또는 보상 정보가 없습니다:', data.data);
+        debugError('EmergencyUnstakeButton', 'Missing penalty or reward information:', data.data);
         throw new Error('페널티 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.');
       }
 
@@ -102,8 +102,8 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
       
       return data.data;
     } catch (err) {
-      debugError('EmergencyUnstakeButton', '비상 언스테이킹 준비 오류:', err);
-      setError(err.message || '비상 언스테이킹을 준비하는 동안 오류가 발생했습니다.');
+      debugError('EmergencyUnstakeButton', 'Emergency unstaking preparation error:', err);
+      setError(err.message || 'Error occurred while preparing emergency unstaking.');
       toast.error('비상 언스테이킹 준비 실패: ' + err.message);
     } finally {
       setLoading(false);
@@ -111,7 +111,7 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
   };
 
   /**
-   * 비상 언스테이킹 실행
+   * Execute emergency unstaking
    */
   const executeEmergencyUnstaking = async () => {
     if (!publicKey || !nftMint) return;
@@ -137,7 +137,7 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
       try {
         transaction = Transaction.from(Buffer.from(txData.transaction.data));
       } catch (txError) {
-        debugError('EmergencyUnstakeButton', '트랜잭션 객체 생성 오류:', txError);
+        debugError('EmergencyUnstakeButton', 'Transaction object creation error:', txError);
         throw new Error('트랜잭션 데이터가 유효하지 않습니다.');
       }
       
@@ -151,10 +151,10 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
       // 트랜잭션 확인
       const confirmation = await connection.confirmTransaction(signature, 'confirmed');
       
-      // 확인 중 오류 확인
+      // Check for errors during confirmation
       if (confirmation.value && confirmation.value.err) {
-        debugError('EmergencyUnstakeButton', '트랜잭션 확인 오류:', confirmation.value.err);
-        throw new Error('트랜잭션 확인 중 오류가 발생했습니다.');
+        debugError('EmergencyUnstakeButton', 'Transaction confirmation error:', confirmation.value.err);
+        throw new Error('Error occurred during transaction confirmation.');
       }
 
       // 트랜잭션 완료 API 호출
@@ -176,15 +176,15 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
       try {
         completeData = await completeResponse.json();
       } catch (jsonError) {
-        debugError('EmergencyUnstakeButton', 'API 응답 파싱 오류:', jsonError);
+        debugError('EmergencyUnstakeButton', 'API response parsing error:', jsonError);
         throw new Error('완료 API 응답을 파싱할 수 없습니다.');
       }
 
-      // API 오류 응답 처리
+      // Handle API error response
       if (!completeResponse.ok) {
-        debugError('EmergencyUnstakeButton', '완료 API 오류 응답:', completeData);
+        debugError('EmergencyUnstakeButton', 'Completion API error response:', completeData);
         // 온체인 트랜잭션은 성공했으므로 UI에서 성공으로 처리
-        debugLog('EmergencyUnstakeButton', '온체인 트랜잭션은 성공했지만 완료 API에서 오류가 발생했습니다. 트랜잭션 ID:', signature);
+        debugLog('EmergencyUnstakeButton', 'On-chain transaction succeeded but completion API encountered error. Transaction ID:', signature);
         toast.warn('온체인 트랜잭션은 성공했지만 데이터베이스 업데이트 중 문제가 발생했습니다.');
       } else {
         // 성공 메시지 표시
@@ -202,8 +202,8 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
       }
 
     } catch (err) {
-      debugError('EmergencyUnstakeButton', '비상 언스테이킹 실행 오류:', err);
-      setError(err.message || '비상 언스테이킹 실행 중 오류가 발생했습니다.');
+      debugError('EmergencyUnstakeButton', 'Emergency unstaking execution error:', err);
+      setError(err.message || 'Error occurred during emergency unstaking execution.');
       toast.error('비상 언스테이킹 실패: ' + err.message);
     } finally {
       setLoading(false);
@@ -211,21 +211,21 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
   };
 
   /**
-   * 비상 언스테이킹 버튼 클릭 핸들러
+   * Emergency unstaking button click handler
    */
   const handleClick = async () => {
     await prepareEmergencyUnstaking();
   };
 
   /**
-   * 모달 확인 핸들러
+   * Modal confirm handler
    */
   const handleConfirm = async () => {
     await executeEmergencyUnstaking();
   };
 
   /**
-   * 모달 닫기 핸들러
+   * Modal close handler
    */
   const handleCancel = () => {
     setShowConfirmationModal(false);
@@ -239,7 +239,7 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
         onClick={handleClick}
         disabled={disabled || loading}
       >
-        {loading ? '처리 중...' : '긴급 언스테이킹'}
+        {loading ? 'Processing...' : 'Emergency Unstake'}
       </button>
 
       {error && <ErrorMessage message={error} />}

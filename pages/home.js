@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import FallbackLoading from "../components/FallbackLoading";
 import ErrorBoundary from "../components/ErrorBoundary";
+import LaunchAnnouncementModal from "../components/LaunchAnnouncementModal";
 
 // Dynamic imports with error handling
 const Layout = dynamic(() => import("../components/Layout").catch(err => {
@@ -59,6 +60,7 @@ export default function HomePage() {
         <Suspense fallback={<FallbackLoading />}>
           <Layout>
             <LandingPage />
+            <LaunchAnnouncementModal />
           </Layout>
         </Suspense>
       </ErrorBoundary>

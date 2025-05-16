@@ -73,30 +73,20 @@ export default function MobileOptimizedImage({
     const loadImage = async () => {
       try {
         const containerWidth = containerRef.current?.clientWidth || 300;
-        const isIpfs = isIPFSUrl(src);
-        
-        // IPFS URL handling
-        let processedSrc = src;
-        if (isIpfs) {
-          const hashAndPath = src.replace('ipfs://', '');
-          processedSrc = `https://tesola.mypinata.cloud/ipfs/${hashAndPath}`;
-          
-          // Add cache busting for staking related images
-          if (props._cacheBust || props.__source?.includes('staking')) {
-            const cacheBuster = `?_cb=${props._cacheBust || Date.now()}`;
-            processedSrc += cacheBuster;
-          }
-        }
         
         // Mobile-optimized size and quality
-        const imageUrl = processImageUrl(processedSrc, { 
+        // processImageUrl을 사용하여 IPFS URL을 올바르게 처리
+        const imageUrl = processImageUrl(src, { 
           width: getOptimalImageSize(containerWidth, { 
             screenType: 'mobile',
             isHighQuality: false
           }),
           quality: quality,
           optimizeFormat: true,
-          preferRemote: true
+          preferRemote: true,
+          __source: props.__source, // nftImageUtils.js의 로직을 위해 전달
+          _cacheBust: props._cacheBust,
+          forceNoCaching: props.__source?.includes('staking') && !props._cacheBust
         });
         
         imgRef.current = new Image();

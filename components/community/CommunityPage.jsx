@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { useWallet } from "@solana/wallet-adapter-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import ScrollableTabs from "../common/ScrollableTabs";
+import LoadingSkeleton from "../LoadingSkeleton";
 
 // Visual components
 const GlowEffect = ({ color = "purple", children, className = "" }) => {
@@ -29,6 +31,8 @@ const GlowEffect = ({ color = "purple", children, className = "" }) => {
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState("news");
   const [isLoading, setIsLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState({});
+  const [videoLoading, setVideoLoading] = useState({});
   const [error, setError] = useState(null);
   const { publicKey, connected } = useWallet();
   const router = useRouter();
@@ -47,53 +51,62 @@ export default function CommunityPage() {
     router.push(`/community?tab=${tab}`, undefined, { shallow: true });
   };
 
-  // Mock data for news section
+  // News data with actual blog links
   const newsData = [
     {
       id: 1,
-      title: "TESOLA Token Launch Success!",
-      date: "May 1, 2025",
-      author: "TESOLA Team",
-      image: "/nft-previews/0171.png",
-      summary: "We're thrilled to announce the successful launch of the TESOLA token! Over 10,000 early adopters joined our community.",
-      link: "#",
+      title: "Meme Battle Governance Launched!",
+      date: "May 20, 2025",
+      author: "DevTeam",
+      image: "/ss/s2.gif",
+      summary: "The most fun governance system in crypto! Vote for your favorite memes, earn rewards, and become the Meme Lord of TESOLA!",
+      link: "/blog/meme-battle-governance-launched",
       featured: true
     },
     {
       id: 2,
-      title: "SOLARA NFT Evolution Coming Next Month",
-      date: "April 28, 2025",
-      author: "Lead Developer",
-      image: "/nft-previews/0119.png",
-      summary: "Top 100 SOLARA NFT holders will receive special evolution airdrops that enhance their NFT capabilities.",
-      link: "#"
+      title: "TESOLA Token Launch Success!",
+      date: "May 1, 2025",
+      author: "TESOLA Team",
+      image: "/ss/s17.png",
+      summary: "We're excited to announce the successful launch of TESOLA token on Solana. Join our growing community and be part of the future!",
+      link: "/blog/tesola-token-launch-success"
     },
     {
       id: 3,
+      title: "SOLARA NFT Evolution System",
+      date: "May 15, 2025",
+      author: "DevTeam",
+      image: "/zz/0011z.jpg",
+      summary: "Discover how SOLARA NFTs evolve through staking, unlocking new visual traits and earning multipliers. Complete guide inside!",
+      link: "/blog/solara-nft-evolution-guide"
+    },
+    {
+      id: 4,
       title: "New Staking Rewards Boost Program",
       date: "April 22, 2025",
       author: "TESOLA Team",
       image: "/nft-previews/0418.png",
       summary: "Stake multiple NFTs to earn bonus multipliers on your rewards. New program starts next week!",
-      link: "#"
+      link: "/staking-rewards-boost"
     },
     {
       id: 4,
       title: "Community AMA Summary",
       date: "April 15, 2025",
       author: "Community Manager",
-      image: "/nft-previews/0579.png",
+      image: "/ss/s5.png",
       summary: "Read the highlights from our recent Ask Me Anything session with the founding team.",
-      link: "#"
+      link: "/blog/community-ama-summary"
     },
     {
       id: 5,
       title: "Upcoming Gaming Partnership",
       date: "April 10, 2025",
       author: "TESOLA Team",
-      image: "/nft-previews/0327.png",
+      image: "/ss/s1.gif",
       summary: "We're excited to announce an upcoming partnership with a major gaming studio.",
-      link: "#"
+      link: "/blog/upcoming-gaming-partnership"
     }
   ];
   
@@ -104,7 +117,7 @@ export default function CommunityPage() {
       type: "meme",
       title: "When your NFT earns more TESOLA than expected",
       image: "/nft-previews/0327.png",
-      creator: "CryptoMemer",
+      creator: "TES_ChampX999",
       likes: 245,
       comments: 42,
       tags: ["NFT", "TESOLA", "ToTheMoon"]
@@ -114,7 +127,7 @@ export default function CommunityPage() {
       type: "meme",
       title: "Waiting for the blockchain to confirm my transaction",
       image: "/nft-previews/0416.png",
-      creator: "SolanaFan22",
+      creator: "SOL_Master4242",
       likes: 189,
       comments: 31,
       tags: ["Solana", "Speed", "Waiting"]
@@ -124,7 +137,7 @@ export default function CommunityPage() {
       type: "art",
       title: "TESOLA Astronaut - Fan Art",
       image: "/nft-previews/0579.png",
-      creator: "DigitalArtist",
+      creator: "NFT_Creator7892",
       likes: 312,
       comments: 56,
       tags: ["FanArt", "Digital", "Astronaut"]
@@ -135,7 +148,7 @@ export default function CommunityPage() {
       title: "When you realize how much your SOLARA NFT is worth now",
       video: "/nft-previews/0113.mp4",
       posterImage: "/nft-previews/0113.mp4",
-      creator: "MemeKing",
+      creator: "MemeGod_5678",
       likes: 423,
       comments: 87,
       tags: ["Reaction", "Value", "Growth"]
@@ -146,7 +159,7 @@ export default function CommunityPage() {
       title: "My reaction to the new TESOLA features",
       video: "/nft-previews/0625.mp4",
       posterImage: "/nft-previews/0625.mp4",
-      creator: "TesolaFan",
+      creator: "TesUser_3456",
       likes: 276,
       comments: 43,
       tags: ["Excited", "Features", "Update"]
@@ -260,12 +273,12 @@ export default function CommunityPage() {
                 <p className="text-gray-300 mb-4">{featured.summary}</p>
               </div>
               <div>
-                <button className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 flex items-center">
+                <Link href={featured.link} className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40">
                   Read Full Article
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -281,11 +294,18 @@ export default function CommunityPage() {
           >
             {news.image && (
               <div className="relative h-48 overflow-hidden">
+                {imageLoading[news.id] && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-800">
+                    <LoadingSkeleton height="100%" width="100%" />
+                  </div>
+                )}
                 <Image 
                   src={news.image} 
                   alt={news.title}
                   layout="fill"
                   objectFit="cover"
+                  onLoadingComplete={() => setImageLoading(prev => ({ ...prev, [news.id]: false }))}
+                  onLoadStart={() => setImageLoading(prev => ({ ...prev, [news.id]: true }))}
                   className="transition-transform duration-500 group-hover:scale-110 transform"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent h-1/3"></div>
@@ -296,10 +316,10 @@ export default function CommunityPage() {
                 <span className="text-gray-400 text-xs">{news.date}</span>
                 <span className="text-purple-400 text-xs">{news.author}</span>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition-colors line-clamp-2">
                 {news.title}
               </h3>
-              <p className="text-gray-300 text-sm">{news.summary}</p>
+              <p className="text-gray-300 text-sm line-clamp-3">{news.summary}</p>
             </div>
             <div className="p-5 pt-0 mt-auto">
               <a 
@@ -378,27 +398,22 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      {/* Filter tabs with active indicator and hover effects */}
-      <div className="flex overflow-x-auto mb-6 pb-2 no-scrollbar">
-        <button className="px-4 py-2 rounded-full mr-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white flex-shrink-0 shadow-lg shadow-purple-900/20">
-          All
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Memes
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Fan Art
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Videos
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Most Liked
-        </button>
-        <button className="px-4 py-2 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          New
-        </button>
-      </div>
+      {/* Mobile-optimized filter tabs with ScrollableTabs */}
+      <ScrollableTabs
+        tabs={[
+          { id: "all", label: "All" },
+          { id: "memes", label: "Memes" },
+          { id: "fanart", label: "Fan Art" },
+          { id: "videos", label: "Videos" },
+          { id: "mostliked", label: "Most Liked" },
+          { id: "new", label: "New" }
+        ]}
+        activeTab="all"
+        onTabChange={(id) => console.log(`Filter selected: ${id}`)}
+        colorFrom="pink-600"
+        colorTo="purple-600"
+        className="mb-6"
+      />
 
       {/* Content grid with media support and enhanced visuals */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -410,12 +425,19 @@ export default function CommunityPage() {
             {/* Video content */}
             {item.type === 'video' && (
               <div className="relative aspect-video bg-gray-900">
+                {videoLoading[item.id] && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-800">
+                    <LoadingSkeleton height="100%" width="100%" />
+                  </div>
+                )}
                 <video 
                   className="w-full h-full object-cover"
                   poster={item.posterImage}
                   controls
                   muted
                   loop
+                  onLoadStart={() => setVideoLoading(prev => ({ ...prev, [item.id]: true }))}
+                  onLoadedData={() => setVideoLoading(prev => ({ ...prev, [item.id]: false }))}
                 >
                   <source src={item.video} type="video/mp4" />
                   Your browser does not support the video tag.
@@ -431,11 +453,18 @@ export default function CommunityPage() {
             {/* Image content */}
             {(item.type === 'meme' || item.type === 'art') && (
               <div className="relative aspect-square overflow-hidden bg-gray-900">
+                {imageLoading[item.id] && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-800">
+                    <LoadingSkeleton height="100%" width="100%" />
+                  </div>
+                )}
                 <Image 
                   src={item.image} 
                   alt={item.title}
                   layout="fill"
                   objectFit="cover"
+                  onLoadingComplete={() => setImageLoading(prev => ({ ...prev, [item.id]: false }))}
+                  onLoadStart={() => setImageLoading(prev => ({ ...prev, [item.id]: true }))}
                   className="transition-transform duration-500 group-hover:scale-110 transform"
                 />
                 <div className="absolute top-2 right-2 bg-black/70 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
@@ -446,7 +475,7 @@ export default function CommunityPage() {
             
             {/* Content info with improved typography and layout */}
             <div className="p-5">
-              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-pink-400 transition-colors">{item.title}</h3>
+              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-pink-400 transition-colors line-clamp-2">{item.title}</h3>
               
               <div className="flex justify-between mb-4">
                 <div className="text-gray-400 text-sm flex items-center">
@@ -544,27 +573,22 @@ export default function CommunityPage() {
         </div>
       </GlowEffect>
 
-      {/* Categories with animated indicator */}
-      <div className="flex overflow-x-auto mb-6 pb-2 no-scrollbar">
-        <button className="px-4 py-2 rounded-full mr-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex-shrink-0 shadow-lg shadow-blue-900/20">
-          All Topics
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Strategy
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Market
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Technical
-        </button>
-        <button className="px-4 py-2 rounded-full mr-2 bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Guides
-        </button>
-        <button className="px-4 py-2 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors flex-shrink-0 hover:text-white">
-          Showcase
-        </button>
-      </div>
+      {/* Mobile-optimized categories with ScrollableTabs */}
+      <ScrollableTabs
+        tabs={[
+          { id: "alltopics", label: "All Topics" },
+          { id: "strategy", label: "Strategy" },
+          { id: "market", label: "Market" },
+          { id: "technical", label: "Technical" },
+          { id: "guides", label: "Guides" },
+          { id: "showcase", label: "Showcase" }
+        ]}
+        activeTab="alltopics"
+        onTabChange={(id) => console.log(`Category selected: ${id}`)}
+        colorFrom="blue-600"
+        colorTo="indigo-600"
+        className="mb-6"
+      />
 
       {/* Forum topics with hover effects and visual indicators */}
       <div className="bg-gray-800/50 rounded-xl overflow-hidden border border-gray-700/50 shadow-lg">
@@ -578,9 +602,57 @@ export default function CommunityPage() {
         
         <div className="divide-y divide-gray-700/50">
           {forumData.map(topic => (
-            <div key={topic.id} className="px-4 py-4 md:px-6 hover:bg-gray-700/20 transition-colors">
-              <div className="md:grid md:grid-cols-12 md:gap-4 flex flex-col">
-                <div className="col-span-6 mb-2 md:mb-0">
+            <div key={topic.id} className="p-4 md:px-6 hover:bg-gray-700/20 transition-colors">
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                <div className="flex items-start">
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full h-10 w-10 flex items-center justify-center mr-3 flex-shrink-0 shadow-glow-blue">
+                    <span className="text-white font-bold">{topic.author.substring(0, 2)}</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-medium flex flex-wrap items-center gap-2">
+                      <span className="hover:text-blue-400 transition-colors">{topic.title}</span>
+                      {topic.pinned && (
+                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-xs px-2 py-0.5 rounded-full text-white shadow-glow-purple">Pinned</span>
+                      )}
+                      {topic.hot && (
+                        <span className="bg-gradient-to-r from-red-600 to-orange-600 text-xs px-2 py-0.5 rounded-full text-white shadow-glow-red">Hot</span>
+                      )}
+                    </h3>
+                    <div className="text-gray-400 text-sm mt-1">
+                      By <span className="text-blue-400">{topic.author}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center">
+                    <span className="text-gray-400 text-sm mr-2">Category:</span>
+                    <span className="bg-gray-900 text-blue-300 px-2 py-1 rounded text-xs font-medium border border-blue-500/20">{topic.category}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-400 text-sm mr-2">Replies:</span>
+                    <span className="text-white bg-gray-900 px-2 py-1 rounded-full text-xs">{topic.replies}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="text-gray-400 text-sm mr-2">Views:</span>
+                    <span className="text-gray-400">{topic.views}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-400 text-sm">{topic.lastPost}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Desktop Grid View */}
+              <div className="hidden md:grid md:grid-cols-12 md:gap-4">
+                <div className="col-span-6">
                   <div className="flex items-start">
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full h-10 w-10 flex items-center justify-center mr-3 flex-shrink-0 shadow-glow-blue">
                       <span className="text-white font-bold">{topic.author.substring(0, 2)}</span>
@@ -602,23 +674,19 @@ export default function CommunityPage() {
                   </div>
                 </div>
                 
-                <div className="col-span-2 flex items-center md:justify-center">
-                  <span className="md:hidden text-gray-400 mr-2 text-sm">Category:</span>
+                <div className="col-span-2 flex items-center justify-center">
                   <span className="bg-gray-900 text-blue-300 px-2 py-1 rounded text-xs font-medium border border-blue-500/20">{topic.category}</span>
                 </div>
                 
-                <div className="col-span-1 flex md:justify-center items-center">
-                  <span className="md:hidden text-gray-400 mr-2 text-sm">Replies:</span>
+                <div className="col-span-1 flex justify-center items-center">
                   <span className="text-white bg-gray-900 px-2 py-1 rounded-full text-xs">{topic.replies}</span>
                 </div>
                 
-                <div className="col-span-1 flex md:justify-center items-center">
-                  <span className="md:hidden text-gray-400 mr-2 text-sm">Views:</span>
+                <div className="col-span-1 flex justify-center items-center">
                   <span className="text-gray-400">{topic.views}</span>
                 </div>
                 
-                <div className="col-span-2 flex md:justify-end items-center">
-                  <span className="md:hidden text-gray-400 mr-2 text-sm">Last Post:</span>
+                <div className="col-span-2 flex justify-end items-center">
                   <span className="text-gray-400 text-sm flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
@@ -743,69 +811,51 @@ export default function CommunityPage() {
             Connect, share, and grow with fellow TESOLA enthusiasts. Stay updated on the latest news, share memes, and join discussions.
           </p>
 
-          {/* Tab navigation with animated spotlight effect */}
-          <div className="inline-flex animate-fade-up" style={{ animationDelay: "300ms" }}>
-            <div className="relative group">
+          {/* Mobile-optimized scrollable tab navigation */}
+          <div className="animate-fade-up flex justify-center" style={{ animationDelay: "300ms" }}>
+            <div className="relative group w-full max-w-md md:max-w-2xl">
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse-slow"></div>
               <div className="relative bg-gray-900 rounded-xl p-1">
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => handleTabChange("news")}
-                    className={`relative px-6 py-3 rounded-l-lg font-medium transition-all duration-300 overflow-hidden ${
-                      activeTab === "news" 
-                        ? "text-white" 
-                        : "text-gray-300 hover:text-white"
-                    }`}
-                  >
-                    {activeTab === "news" && (
-                      <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600"></span>
-                    )}
-                    <span className="relative flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M2 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H4a2 2 0 01-2-2V5zm3 1h6v4H5V6zm6 6H5v2h6v-2z" clipRule="evenodd" />
-                        <path d="M15 7h1a2 2 0 012 2v5.5a1.5 1.5 0 01-3 0V7z" />
-                      </svg>
-                      News & Events
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => handleTabChange("garage")}
-                    className={`relative px-6 py-3 font-medium transition-all duration-300 overflow-hidden ${
-                      activeTab === "garage" 
-                        ? "text-white" 
-                        : "text-gray-300 hover:text-white"
-                    }`}
-                  >
-                    {activeTab === "garage" && (
-                      <span className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600"></span>
-                    )}
-                    <span className="relative flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                      </svg>
-                      Garage
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => handleTabChange("forum")}
-                    className={`relative px-6 py-3 rounded-r-lg font-medium transition-all duration-300 overflow-hidden ${
-                      activeTab === "forum" 
-                        ? "text-white" 
-                        : "text-gray-300 hover:text-white"
-                    }`}
-                  >
-                    {activeTab === "forum" && (
-                      <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600"></span>
-                    )}
-                    <span className="relative flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                        <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                      </svg>
-                      Community
-                    </span>
-                  </button>
-                </div>
+                {/* Import the ScrollableTabs component for better mobile experience */}
+                <ScrollableTabs
+                  tabs={[
+                    {
+                      id: "news",
+                      label: "News & Events",
+                      icon: (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M2 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H4a2 2 0 01-2-2V5zm3 1h6v4H5V6zm6 6H5v2h6v-2z" clipRule="evenodd" />
+                          <path d="M15 7h1a2 2 0 012 2v5.5a1.5 1.5 0 01-3 0V7z" />
+                        </svg>
+                      )
+                    },
+                    {
+                      id: "garage",
+                      label: "Garage",
+                      icon: (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                        </svg>
+                      )
+                    },
+                    {
+                      id: "forum",
+                      label: "Community",
+                      icon: (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                          <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                        </svg>
+                      )
+                    }
+                  ]}
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                  colorFrom="purple-600"
+                  colorTo="pink-600"
+                  minTouchTarget={44}
+                  className="w-full"
+                />
               </div>
             </div>
           </div>

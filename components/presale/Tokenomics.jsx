@@ -15,21 +15,21 @@ const Tokenomics = () => {
   const driveToEarnDetails = [
     { 
       phase: "HOLD-TO-EARN", 
-      allocation: "40%", 
+      allocation: "33.3%", 
       status: "Active", 
       icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
       color: "from-purple-500 to-blue-500" 
     },
     { 
       phase: "GAME DRIVE-TO-EARN", 
-      allocation: "40%", 
-      status: "Q3 2025", 
+      allocation: "33.3%", 
+      status: "Q4 2025", 
       icon: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8", 
       color: "from-blue-500 to-cyan-500" 
     },
     { 
       phase: "REAL DRIVE-TO-EARN", 
-      allocation: "20%", 
+      allocation: "33.3%", 
       status: "2026 Target", 
       icon: "M13 10V3L4 14h7v7l9-11h-7z", 
       color: "from-cyan-500 to-teal-500" 
@@ -50,14 +50,14 @@ const Tokenomics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* 토큰 분배 */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-            <div className="bg-purple-900/50 p-2 rounded-lg mr-3">
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-4 flex flex-col sm:flex-row items-start sm:items-center">
+            <div className="bg-purple-900/50 p-2 rounded-lg mb-2 sm:mb-0 sm:mr-3 flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
               </svg>
             </div>
-            Token Distribution Structure
+            <span className="leading-tight">Token Distribution Structure</span>
           </h3>
           
           <div className="space-y-4">
@@ -95,13 +95,13 @@ const Tokenomics = () => {
         
         {/* DRIVE-TO-EARN 세부 구조 */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-            <div className="bg-blue-900/50 p-2 rounded-lg mr-3">
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-4 flex flex-col sm:flex-row items-start sm:items-center">
+            <div className="bg-blue-900/50 p-2 rounded-lg mb-2 sm:mb-0 sm:mr-3 flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            DRIVE[HOLD]-TO-EARN 3-Phase Strategy
+            <span className="leading-tight">DRIVE[HOLD]-TO-EARN 3-Phase Strategy</span>
           </h3>
           
           <div className="space-y-4">
@@ -130,7 +130,7 @@ const Tokenomics = () => {
           <div className="mt-5 space-y-4">
             <div className="bg-blue-900/20 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20">
               <div className="text-blue-300 font-medium mb-1">NFT Tier-Based Daily Rewards</div>
-              <div className="grid grid-cols-4 gap-2 text-center text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-sm">
                 <div className="bg-yellow-900/30 p-2 rounded">
                   <div className="text-yellow-300 font-bold">200</div>
                   <div className="text-gray-400 text-xs">Legendary</div>
@@ -152,7 +152,7 @@ const Tokenomics = () => {
             
             <div className="bg-teal-900/20 backdrop-blur-sm p-3 rounded-lg border border-teal-500/20">
               <div className="text-teal-300 font-medium mb-1">Long-Term Staking Bonuses</div>
-              <div className="grid grid-cols-4 gap-2 text-center text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-sm">
                 <div className="bg-gray-800/50 p-2 rounded">
                   <div className="text-white font-bold">+20%</div>
                   <div className="text-gray-400 text-xs">30+ Days</div>
@@ -179,13 +179,13 @@ const Tokenomics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* 베스팅 일정 */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-            <div className="bg-pink-900/50 p-2 rounded-lg mr-3">
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-4 flex flex-col sm:flex-row items-start sm:items-center">
+            <div className="bg-pink-900/50 p-2 rounded-lg mb-2 sm:mb-0 sm:mr-3 flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            Vesting & Release Schedule
+            <span className="leading-tight">Vesting & Release Schedule</span>
           </h3>
           
           <div className="space-y-3">
@@ -238,13 +238,13 @@ const Tokenomics = () => {
         
         {/* 토큰 가치 보호 */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-            <div className="bg-teal-900/50 p-2 rounded-lg mr-3">
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-4 flex flex-col sm:flex-row items-start sm:items-center">
+            <div className="bg-teal-900/50 p-2 rounded-lg mb-2 sm:mb-0 sm:mr-3 flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            Token Value Protection Mechanisms
+            <span className="leading-tight">Token Value Protection</span>
           </h3>
           
           <div className="space-y-3">

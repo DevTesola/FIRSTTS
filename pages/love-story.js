@@ -294,13 +294,6 @@ export default function LoveStory() {
               <div className="text-4xl ml-4 animate-pulse-slow animation-delay-2000">✨</div>
             </div>
             
-            <div className="relative flex justify-center mb-6">
-              <div className="inline-block bg-blue-900/40 rounded-full px-4 py-1 text-xs text-white font-bold border border-blue-500/20 shadow-lg transform -rotate-2 hover:rotate-2 transition-transform">
-                <span className="mr-2">👉</span>
-                <span>SWIPE LEFT FOR DRAMA</span>
-                <span className="ml-2">👈</span>
-              </div>
-            </div>
             
             <div className="relative border-l-2 border-purple-500/50 pl-6 sm:pl-10 ml-6 sm:ml-10 space-y-12 sm:space-y-16">
               {/* Timeline Item 1 */}

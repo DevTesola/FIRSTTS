@@ -46,38 +46,33 @@ const FAQ = () => {
     },
     {
       id: 7,
-      question: "What are the NFT holder presale benefits?",
-      answer: "SOLARA NFT holders receive special purchase limits based on NFT rarity: Legendary NFT holders can purchase up to 10 SOL worth, Epic up to 5 SOL, Rare up to 3 SOL, and Common up to 1 SOL. Additionally, NFT holders receive a better exchange rate of 300,000 TESOLA per SOL compared to 200,000 TESOLA per SOL for public participants."
-    },
-    {
-      id: 8,
       question: "When will I receive my tokens?",
       answer: "TESOLA tokens purchased during the presale will be distributed at the Token Generation Event (TGE), which occurs shortly after the presale concludes. 25% of your purchased tokens will be unlocked immediately, with the remaining 75% vesting over 3 months (25% each month)."
     },
     {
-      id: 9,
+      id: 8,
       question: "How does the HOLD-TO-EARN system work?",
       answer: "The HOLD-TO-EARN system rewards SOLARA NFT holders with daily TESOLA token distributions. Rewards vary by NFT rarity tier (Legendary: 4x, Epic: 2x, Rare: 1.5x, Common: 1x) and increase with staking duration (30 days: +10%, 90 days: +25%, 180 days: +40%, 365 days: +100%)."
     },
     {
-      id: 10,
+      id: 9,
       question: "When will the GAME DRIVE-TO-EARN launch?",
       answer: "The GAME DRIVE-TO-EARN racing game is scheduled for beta release in Q4 2025 (3-4 months after token launch), with a full release in early 2026. SOLARA NFT holders will receive free NFT car airdrops for the game based on their NFT rarity level."
     },
     {
-      id: 11,
+      id: 10,
       question: "Which exchanges will list TESOLA after the presale?",
       answer: "Initial liquidity will be provided on Jupiter and Raydium on Solana with 70% of the presale funds. We're also in discussions with several CEXs for secondary listings following our DEX launch. All confirmed listings will be announced through our official channels."
     },
     {
-      id: 12,
+      id: 11,
       question: "How is TESOLA ensuring long-term value?",
       answer: "TESOLA implements several value protection mechanisms: token burns from game revenue, buyback programs using ecosystem profits, long-term vesting schedules for team tokens (36 months), and lockups for ecosystem rewards. Additionally, staking incentives help reduce circulating supply while providing sustainable rewards."
     }
   ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-900/80 to-purple-900/30 rounded-xl p-8 border border-purple-500/40 shadow-[0_0_30px_rgba(139,92,246,0.35)] relative overflow-hidden backdrop-blur-sm font-orbitron">
+    <div className="container-purple rounded-xl p-8 border border-purple-500/40 shadow-[0_0_30px_rgba(139,92,246,0.35)] relative overflow-hidden font-orbitron">
       {/* Animated background elements */}
       <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl animate-pulse-slow"></div>
       <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-violet-600/10 rounded-full blur-3xl animate-pulse-slow animation-delay-1000"></div>
@@ -133,27 +128,18 @@ const FAQ = () => {
         </p>
         <div className="flex flex-wrap justify-center gap-5 relative z-10">
           <a 
-            href="https://discord.gg/tesola" 
+            href="https://t.me/tesolachat" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg flex items-center transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)]"
           >
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"></path>
+            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm-3.5 8c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm7 0c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5z"></path>
             </svg>
-            Join our Discord
+            Join our Telegram
           </a>
           <a 
-            href="mailto:support@tesola.xyz" 
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-3 rounded-lg flex items-center transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-[0_0_15px_rgba(192,38,211,0.5)]"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Email Support
-          </a>
-          <a 
-            href="https://twitter.com/tesola_xyz" 
+            href="https://twitter.com/teslainsolana" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white px-6 py-3 rounded-lg flex items-center transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-[0_0_15px_rgba(14,165,233,0.5)]"

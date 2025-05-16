@@ -10,25 +10,36 @@ const Roadmap = () => {
       items: [
         "TESOLA token and smart contract launch",
         "Staking platform implementation (HOLD-TO-EARN)",
-        "Initial DEX & CEX listings",
         "Community foundation development",
         "NFT collection integration"
       ]
     },
     {
       quarter: "Q3 2025",
+      title: "Platform Enhancement & Token Launch",
+      completed: false,
+      items: [
+        "Enhanced staking program deployment",
+        "Governance system implementation", 
+        "Initial DEX & CEX listings (Pending review)",
+        "Social rewards system launch",
+        "Referral program activation"
+      ]
+    },
+    {
+      quarter: "Q4 2025",
       title: "Game Platform Expansion",
       completed: false,
       items: [
         "Virtual driving game platform beta release",
-        "Game reward system implementation",
+        "Game reward system implementation (GAME DRIVE-TO-EARN)",
         "Gaming partnerships acquisition",
         "Tournament & competition system launch",
         "Mobile app release"
       ]
     },
     {
-      quarter: "Q4 2025",
+      quarter: "Q1 2026",
       title: "Ecosystem Expansion & Globalization",
       completed: false,
       items: [
@@ -70,21 +81,21 @@ const Roadmap = () => {
     {
       title: "HOLD-TO-EARN",
       description: "Staking rewards for token holders",
-      allocation: "40%",
+      allocation: "33.3%",
       status: "Active",
       icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
     },
     {
       title: "GAME DRIVE-TO-EARN",
       description: "Game-based virtual driving rewards",
-      allocation: "40%",
-      status: "Q3 2025",
+      allocation: "33.3%",
+      status: "Q4 2025",
       icon: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
     },
     {
       title: "REAL DRIVE-TO-EARN",
       description: "Real Tesla driving rewards",
-      allocation: "20%",
+      allocation: "33.3%",
       status: "2026 Target",
       icon: "M13 10V3L4 14h7v7l9-11h-7z"
     }

@@ -13,12 +13,11 @@ export default function ComingSoonMintPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Calculate remaining time (starting from 15 days)
+  // Calculate remaining time until fixed launch date
   const calculateTimeLeft = () => {
-    // Set launch date to 15 days from now
+    // Set fixed launch date (June 1, 2025)
     const now = new Date();
-    const launchDate = new Date();
-    launchDate.setDate(now.getDate() + 15);
+    const launchDate = new Date('2025-06-01T09:00:00');
     const difference = launchDate - now;
     
     let timeLeft = {};
@@ -28,6 +27,7 @@ export default function ComingSoonMintPage() {
         days: Math.floor(difference / (1000 * 60 * 60 * 24)),
         hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
         minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
       };
     }
     
@@ -36,24 +36,25 @@ export default function ComingSoonMintPage() {
   
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
   
-  // Update countdown timer every minute
+  // Update countdown timer every second
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
-    }, 60000);
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
   
   return (
-    <div className="min-h-screen bg-black bg-[url('/stars.jpg')] bg-cover bg-center flex flex-col items-center justify-center p-4" style={{ minHeight: '-webkit-fill-available' }}>
+    <div className="min-h-screen bg-black bg-[url('/stars.jpg')] bg-cover bg-center flex flex-col">
       <Head>
         <title>NFT Minting Coming Soon | TESOLA</title>
         <meta name="description" content="TESOLA NFT Minting Coming Soon - Exclusive benefits and early access for whitelist members." />
       </Head>
     
-      <div 
-        className={`max-w-4xl w-full transition-all duration-1000 ease-out transform translate-y-10 ${animationClass}`}
-      >
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div 
+          className={`max-w-4xl w-full transition-all duration-1000 ease-out transform ${animationClass}`}
+        >
         {/* Top logo / title */}
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-blue-500 bg-clip-text text-transparent mb-3">
@@ -90,6 +91,12 @@ export default function ComingSoonMintPage() {
                     {timeLeft.minutes}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">MINUTES</div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white bg-purple-900/50 w-14 h-14 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center border border-purple-500/30">
+                    {timeLeft.seconds}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">SECONDS</div>
                 </div>
               </div>
             ) : (
@@ -190,6 +197,7 @@ export default function ComingSoonMintPage() {
         <div className="text-center mt-8 text-gray-500 text-sm">
           &copy; 2025 TESOLA. All rights reserved.
         </div>
+      </div>
       </div>
       
       {/* Background decoration elements */}

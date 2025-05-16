@@ -186,44 +186,42 @@ const BackgroundVideo = () => {
 
   return (
     <>
-      {/* 페이드인을 위한 이미지 빠른 표시 */}
-      {!isLoaded && (
-        <div className="fixed inset-0 -z-29">
-          <Image
-            src="/stars.jpg"
-            alt="Space background"
-            fill
-            priority
-            sizes="100vw"
-            style={{ objectFit: 'cover' }}
-          />
-        </div>
-      )}
+      {/* 페이드인을 위한 이미지 빠른 표시 - 투명도 낮춤 */}
+      <div className="fixed inset-0 -z-29">
+        <Image
+          src="/stars.jpg"
+          alt="Space background"
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: 'cover', opacity: isLoaded ? '0.3' : '0.7' }}
+          className="transition-opacity duration-1000"
+        />
+      </div>
     
       <video
         ref={videoRef}
-        className={`fixed inset-0 min-w-full min-h-full max-w-none object-cover -z-30 ${isLoaded ? 'opacity-60' : 'opacity-0'} transition-opacity duration-700`}
+        className={`fixed inset-0 min-w-full min-h-full max-w-none object-cover -z-30 ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-700`}
         src={videoSrc}
         autoPlay
         muted
         loop
         playsInline
         poster="/video-poster.png"
-        preload="metadata"
+        preload="auto"
         style={{
-          width: '120vw', 
-          height: '120vh',
-          left: '-10vw',
-          top: '-10vh',
-          objectPosition: 'center'
+          width: '100vw', 
+          height: '100vh',
+          objectPosition: 'center',
+          filter: 'brightness(1.3) contrast(1.15)' // 비디오 밝기와 대비 향상
         }}
       >
         <source src={videoSrc} type={videoType} />
       </video>
       
-      {/* Fallback background */}
+      {/* 오류 시에만 표시되는 단순 블랙 배경 */}
       {hasError && (
-        <div className="absolute inset-0 -z-25 bg-gradient-to-b from-purple-900/30 to-black"></div>
+        <div className="fixed inset-0 -z-24 bg-black"></div>
       )}
     </>
   );

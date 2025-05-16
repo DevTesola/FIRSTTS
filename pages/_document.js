@@ -32,43 +32,14 @@ export default function MyDocument() {
           onLoad="this.media='all'" 
         />
         
+        {/* 외부 스타일 로딩 코드 제거 */}
+        
         {/* Inline styles for critical CSS */}
         <style>
           {`
-          /* Ensure Orbitron is applied everywhere */
+          /* 최소한의 기본 스타일만 적용 */
           html, body {
             font-family: 'Orbitron', sans-serif !important;
-          }
-          
-          /* Custom cursor styles */
-          .cursor-dot,
-          .cursor-outline {
-            position: fixed;
-            z-index: 9999;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-            transition: opacity 0.3s ease;
-          }
-          
-          .cursor-dot {
-            width: 12px;
-            height: 12px;
-            background-color: rgb(168, 85, 247);
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.8),
-                        0 0 20px rgba(168, 85, 247, 0.6),
-                        0 0 30px rgba(168, 85, 247, 0.4);
-            mix-blend-mode: screen;
-          }
-          
-          .cursor-outline {
-            width: 32px;
-            height: 32px;
-            border: 2px solid rgb(59, 130, 246);
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5),
-                        0 0 25px rgba(59, 130, 246, 0.3);
-            mix-blend-mode: exclusion;
           }
           `}
         </style>
@@ -77,14 +48,20 @@ export default function MyDocument() {
         <Main />
         <NextScript />
         
-        {/* Custom cursor script */}
-        <script src="/cursor.js" />
+        {/* 모든 커스텀 스크립트는 비활성화 */}
+        {/* <script src="/cursor.js" /> */}
         
-        {/* Service worker registration - disabled for Vercel compatibility */}
-        {/* <script src="/register-sw.js" /> */}
+        {/* 오류 복구 스크립트 유지 */}
+        <script src="/recovery.js" />
         
+        {/* 오류 컴포넌트 유지 */}
+        <script src="/error-components.js" />
+
         {/* Service worker unregister patch for Vercel compatibility */}
         <script src="/swr-patch.js" />
+        
+        {/* 행성 애니메이션 수정 스크립트 */}
+        <script src="/planet-fix.js" />
       </body>
     </Html>
   );

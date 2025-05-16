@@ -111,7 +111,7 @@ export default function OfflineDetector({
     <>
       {children}
       
-      <div className="fixed bottom-4 left-4 z-40">
+      <div className="fixed bottom-16 left-4 z-40">
         <div className={`
           flex items-center px-3 py-2 rounded-full shadow-md transition-all duration-300
           ${connectionQuality === "offline" 

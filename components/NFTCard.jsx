@@ -179,7 +179,7 @@ const NFTCard = ({ nft, onClick, showActions = false }) => {
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-4
                         transform translate-y-2 group-hover:translate-y-0 opacity-90 group-hover:opacity-100
                         transition-all duration-300 backdrop-blur-sm">
-          <p className="text-white font-semibold truncate text-lg group-hover:text-transparent
+          <p className="text-white font-semibold truncate text-lg text-shadow-sm group-hover:text-transparent
                         group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-300 group-hover:to-pink-300
                         transition-all duration-500">{displayName}</p>
           <div className="flex justify-between items-center mt-1">
