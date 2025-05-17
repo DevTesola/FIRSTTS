@@ -28,7 +28,7 @@ export function middleware(request) {
     "img-src 'self' data: https: blob:; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "connect-src 'self' https://*.supabase.co https://*.helius-rpc.com wss://*.solana.com https://api.coingecko.com; " +
-    "frame-src 'self' https://phantom.app https://solflare.com; " +
+    "frame-src 'self' https://phantom.app https://solflare.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com; " +
     "object-src 'none'; " +
     "base-uri 'self';"
   );
