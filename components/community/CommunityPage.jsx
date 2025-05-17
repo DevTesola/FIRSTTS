@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import ScrollableTabs from "../common/ScrollableTabs";
 import LoadingSkeleton from "../LoadingSkeleton";
+import { BlogMediaHybrid } from "../BlogMediaHybrid";
 
 // Visual components
 const GlowEffect = ({ color = "purple", children, className = "" }) => {
@@ -31,7 +32,7 @@ const GlowEffect = ({ color = "purple", children, className = "" }) => {
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState("news");
   const [isLoading, setIsLoading] = useState(false);
-  const [imageLoading, setImageLoading] = useState({});
+  // BlogMediaHybrid handles its own loading state
   const [videoLoading, setVideoLoading] = useState({});
   const [error, setError] = useState(null);
   const { publicKey, connected } = useWallet();
@@ -245,12 +246,10 @@ export default function CommunityPage() {
             <div className="md:w-1/2 relative h-60 md:h-auto mb-4 md:mb-0">
               {featured.image && (
                 <div className="relative h-full rounded-lg overflow-hidden">
-                  <Image 
+                  <BlogMediaHybrid 
                     src={featured.image} 
                     alt={featured.title}
-                    layout="fill"
-                    objectFit="cover"
-                    className="transition-transform duration-500 hover:scale-105 transform"
+                    className="w-full h-full transition-transform duration-500 hover:scale-105 transform"
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent h-1/3"></div>
                   <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-glow-purple">
@@ -294,19 +293,10 @@ export default function CommunityPage() {
           >
             {news.image && (
               <div className="relative h-48 overflow-hidden">
-                {imageLoading[news.id] && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-800">
-                    <LoadingSkeleton height="100%" width="100%" />
-                  </div>
-                )}
-                <Image 
+                <BlogMediaHybrid 
                   src={news.image} 
                   alt={news.title}
-                  layout="fill"
-                  objectFit="cover"
-                  onLoadingComplete={() => setImageLoading(prev => ({ ...prev, [news.id]: false }))}
-                  onLoadStart={() => setImageLoading(prev => ({ ...prev, [news.id]: true }))}
-                  className="transition-transform duration-500 group-hover:scale-110 transform"
+                  className="w-full h-full transition-transform duration-500 group-hover:scale-110 transform"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent h-1/3"></div>
               </div>
@@ -453,19 +443,10 @@ export default function CommunityPage() {
             {/* Image content */}
             {(item.type === 'meme' || item.type === 'art') && (
               <div className="relative aspect-square overflow-hidden bg-gray-900">
-                {imageLoading[item.id] && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-800">
-                    <LoadingSkeleton height="100%" width="100%" />
-                  </div>
-                )}
-                <Image 
+                <BlogMediaHybrid 
                   src={item.image} 
                   alt={item.title}
-                  layout="fill"
-                  objectFit="cover"
-                  onLoadingComplete={() => setImageLoading(prev => ({ ...prev, [item.id]: false }))}
-                  onLoadStart={() => setImageLoading(prev => ({ ...prev, [item.id]: true }))}
-                  className="transition-transform duration-500 group-hover:scale-110 transform"
+                  className="w-full h-full transition-transform duration-500 group-hover:scale-110 transform"
                 />
                 <div className="absolute top-2 right-2 bg-black/70 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
                   {item.type === 'meme' ? 'MEME' : 'ART'}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Layout from '../../components/Layout';
 import { blogPosts } from '../../lib/blog-posts';
+import { BlogHeroMedia, BlogContentImage } from '../../components/BlogMedia';
 
 // Dynamically import ReactMarkdown to avoid SSR issues
 const ReactMarkdown = dynamic(() => import('react-markdown'), {
@@ -156,28 +157,12 @@ export default function BlogPost() {
           
           {/* Hero Image */}
           {post.heroImage && (
-            <div className="relative aspect-video mb-8 sm:mb-10 md:mb-12 rounded-lg sm:rounded-xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
-              {post.heroImage.endsWith('.mp4') ? (
-                <video
-                  src={post.heroImage}
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                />
-              ) : (
-                <img 
-                  src={post.heroImage}
-                  alt={post.title}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              )}
+            <div className="mb-8 sm:mb-10 md:mb-12">
+              <BlogHeroMedia
+                src={post.heroImage}
+                alt={post.title}
+                className="rounded-lg sm:rounded-xl"
+              />
             </div>
           )}
           
@@ -214,9 +199,7 @@ export default function BlogPost() {
                         );
                       },
                       img: ({node, ...props}) => (
-                        <span className="block my-4 sm:my-6 md:my-8">
-                          <img className="rounded-lg w-full shadow-xl shadow-purple-900/30" loading="lazy" {...props} />
-                        </span>
+                        <BlogContentImage {...props} />
                       ),
                       blockquote: ({node, ...props}) => (
                         <blockquote className="border-l-4 border-purple-500 pl-4 sm:pl-6 my-4 sm:my-6 text-gray-300 italic" {...props} />

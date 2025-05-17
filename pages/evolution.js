@@ -8,11 +8,11 @@ export default function EvolutionPage() {
   const [selectedExample, setSelectedExample] = useState(0);
   
   const evolutionExamples = [
-    { id: "0011", name: "SOLARA #0011", rarity: "common", rarityEng: "COMMON", color: "from-green-500 to-green-600", bgColor: "from-green-900/20 to-green-800/20", borderColor: "border-green-500/50", beforeType: "png", afterType: "jpg" },
-    { id: "0012", name: "SOLARA #0012", rarity: "common", rarityEng: "COMMON", color: "from-green-500 to-green-600", bgColor: "from-green-900/20 to-green-800/20", borderColor: "border-green-500/50", beforeType: "png", afterType: "jpg" },
-    { id: "0467", name: "SOLARA #0467", rarity: "rare", rarityEng: "RARE", color: "from-blue-500 to-blue-600", bgColor: "from-blue-900/20 to-blue-800/20", borderColor: "border-blue-500/50", beforeType: "png", afterType: "jpg" },
-    { id: "0932", name: "SOLARA #0932", rarity: "epic", rarityEng: "EPIC", color: "from-purple-500 to-purple-600", bgColor: "from-purple-900/20 to-purple-800/20", borderColor: "border-purple-500/50", beforeType: "png", afterType: "jpg" },
-    { id: "0873", name: "SOLARA #0873", rarity: "legendary", rarityEng: "LEGENDARY (IMAGE)", color: "from-yellow-500 to-amber-600", bgColor: "from-yellow-900/20 to-amber-800/20", borderColor: "border-yellow-500/50", beforeType: "png", afterType: "jpg" },
+    { id: "0011", name: "SOLARA #0011", rarity: "common", rarityEng: "COMMON", color: "from-green-500 to-green-600", bgColor: "from-green-900/20 to-green-800/20", borderColor: "border-green-500/50", beforeType: "jpg", afterType: "jpg" },
+    { id: "0012", name: "SOLARA #0012", rarity: "common", rarityEng: "COMMON", color: "from-green-500 to-green-600", bgColor: "from-green-900/20 to-green-800/20", borderColor: "border-green-500/50", beforeType: "jpg", afterType: "jpg" },
+    { id: "0467", name: "SOLARA #0467", rarity: "rare", rarityEng: "RARE", color: "from-blue-500 to-blue-600", bgColor: "from-blue-900/20 to-blue-800/20", borderColor: "border-blue-500/50", beforeType: "jpg", afterType: "jpg" },
+    { id: "0932", name: "SOLARA #0932", rarity: "epic", rarityEng: "EPIC", color: "from-purple-500 to-purple-600", bgColor: "from-purple-900/20 to-purple-800/20", borderColor: "border-purple-500/50", beforeType: "jpg", afterType: "jpg" },
+    { id: "0873", name: "SOLARA #0873", rarity: "legendary", rarityEng: "LEGENDARY (IMAGE)", color: "from-yellow-500 to-amber-600", bgColor: "from-yellow-900/20 to-amber-800/20", borderColor: "border-yellow-500/50", beforeType: "jpg", afterType: "jpg" },
     { id: "0873", name: "SOLARA #0873", rarity: "legendary", rarityEng: "LEGENDARY (VIDEO)", color: "from-orange-500 to-red-600", bgColor: "from-orange-900/20 to-red-800/20", borderColor: "border-orange-500/50", beforeType: "mp4", afterType: "mp4", isVideo: true }
   ];
 
@@ -144,6 +144,8 @@ export default function EvolutionPage() {
                           alt={`${evolutionExamples[selectedExample].name} Card`}
                           fill
                           className="object-cover"
+                          priority={true}
+                          quality={85}
                         />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -194,6 +196,8 @@ export default function EvolutionPage() {
                           alt={`${evolutionExamples[selectedExample].name} Evolved`}
                           fill
                           className="object-cover"
+                          priority={true}
+                          quality={85}
                         />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

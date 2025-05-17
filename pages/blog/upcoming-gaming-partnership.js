@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BlogHeroMediaHybrid } from '../../components/BlogMediaHybrid';
 
 export default function UpcomingGamingPartnership() {
-  // 페이지 로드 시 맨 위로 스크롤
+  // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -58,19 +58,16 @@ export default function UpcomingGamingPartnership() {
           </div>
 
           {/* Featured Image */}
-          <div className="mb-8 rounded-xl overflow-hidden shadow-2xl border border-blue-500/20">
-            <div className="relative h-64 md:h-96">
-              <Image
-                src="/ss/s1.gif"
-                alt="TESOLA Gaming Partnership"
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-500 hover:scale-105"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+          <div className="mb-8">
+            <BlogHeroMediaHybrid
+              src="/ss/s1.gif"
+              alt="TESOLA Gaming Partnership"
+              className="rounded-xl shadow-2xl border border-blue-500/20"
+            >
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 z-20">
                 <p className="text-white text-lg font-bold">The Future of Blockchain Gaming Arrives</p>
               </div>
-            </div>
+            </BlogHeroMediaHybrid>
           </div>
 
           {/* Alert Banner */}
@@ -216,6 +213,16 @@ export default function UpcomingGamingPartnership() {
               </div>
             </div>
 
+            {/* Game Environment Preview */}
+            <div className="my-8">
+              <BlogHeroMediaHybrid
+                src="/ss/s7.png"
+                alt="In-Game Racing Environment"
+                className="rounded-xl shadow-2xl border border-blue-500/20"
+              />
+              <p className="text-sm text-center text-gray-400 mt-2 italic">Developers working day and night on coding... 🔧🚀</p>
+            </div>
+
             {/* Roadmap Integration */}
             <div>
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
@@ -266,6 +273,16 @@ export default function UpcomingGamingPartnership() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* NFT Gaming Integration Visual */}
+            <div className="my-8">
+              <BlogHeroMediaHybrid
+                src="/ss/s8.png"
+                alt="NFT Gaming Integration"
+                className="rounded-xl shadow-2xl border border-purple-500/20"
+              />
+              <p className="text-sm text-center text-gray-400 mt-2 italic">The combination of these two is... beyond imagination 🤩🎆</p>
             </div>
 
             {/* Benefits for Holders */}

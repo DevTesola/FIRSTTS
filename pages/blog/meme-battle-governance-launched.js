@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BlogHeroMediaHybrid } from '../../components/BlogMediaHybrid';
 
 export default function MemeBattleGovernanceLaunched() {
-  // 페이지 로드 시 맨 위로 스크롤
+  // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -58,17 +58,14 @@ export default function MemeBattleGovernanceLaunched() {
           </div>
 
           {/* Epic Banner */}
-          <div className="mb-8 rounded-xl overflow-hidden shadow-2xl border border-pink-500/20">
-            <div className="relative h-64 md:h-96">
-              <Image
-                src="/ss/s2.gif"
-                alt="TESOLA Meme Battle Governance"
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-500 hover:scale-105"
-              />
+          <div className="mb-8">
+            <BlogHeroMediaHybrid 
+              src="/ss/s2.gif"
+              alt="TESOLA Meme Battle Governance"
+              className="rounded-xl shadow-2xl border border-pink-500/20"
+            >
               {/* Meme Text Overlay */}
-              <div className="absolute top-0 left-0 w-full p-4">
+              <div className="absolute top-0 left-0 w-full p-4 z-20">
                 <div className="flex justify-start">
                   <div className="bg-black/80 backdrop-blur-sm px-4 py-2 rounded-full border border-pink-500/50">
                     <p className="text-white text-sm md:text-base font-bold tracking-wider">
@@ -77,10 +74,10 @@ export default function MemeBattleGovernanceLaunched() {
                   </div>
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 z-20">
                 <p className="text-white text-lg font-bold">🏆 The Meme Battle for Ultimate TESOLA Supremacy Begins! 🏆</p>
               </div>
-            </div>
+            </BlogHeroMediaHybrid>
           </div>
 
           {/* Alert Banner */}

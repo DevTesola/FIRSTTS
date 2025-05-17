@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
 import Link from 'next/link';
+import { BlogMediaHybrid } from '../components/BlogMediaHybrid';
 
 export default function StakingRewardsBoost() {
   useEffect(() => {
@@ -92,6 +93,16 @@ export default function StakingRewardsBoost() {
             </div>
           </div>
 
+          {/* On-Chain Verification Visual */}
+          <div className="my-12">
+            <BlogMediaHybrid
+              src="/ss/s10.webp"
+              alt="On-Chain Verification System"
+              className="rounded-xl shadow-2xl border border-green-500/20 max-w-3xl mx-auto"
+            />
+            <p className="text-sm text-center text-gray-400 mt-2 italic">Live on-chain verification and transparency dashboard preview</p>
+          </div>
+
           {/* Features Preview */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
             <div className="bg-gray-900/50 backdrop-blur-lg p-6 rounded-xl border border-purple-500/30 transform hover:scale-105 transition-all">
@@ -123,6 +134,16 @@ export default function StakingRewardsBoost() {
               <h3 className="text-xl font-bold text-white mb-2">On-Chain NFT Synergy</h3>
               <p className="text-gray-400">Stack multiple NFTs with rewards calculated transparently on-chain</p>
             </div>
+          </div>
+
+          {/* Staking Boost Mechanics */}
+          <div className="my-12">
+            <BlogMediaHybrid
+              src="/ss/s11.webp"
+              alt="Staking Boost Mechanics"
+              className="rounded-xl shadow-2xl border border-purple-500/20 max-w-3xl mx-auto"
+            />
+            <p className="text-sm text-center text-gray-400 mt-2 italic">Advanced staking multiplier mechanics visualization</p>
           </div>
 
           {/* Waitlist */}

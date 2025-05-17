@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BlogMediaHybrid } from '../../components/BlogMediaHybrid';
 
 export default function TesolaTokenLaunchSuccess() {
-  // 페이지 로드 시 맨 위로 스크롤
+  // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -43,14 +43,12 @@ export default function TesolaTokenLaunchSuccess() {
           </div>
 
           {/* Hero Image */}
-          <div className="mb-8 rounded-lg overflow-hidden">
-            <video
+          <div className="mb-8">
+            <BlogMediaHybrid
               src="/nft-previews/tsts.mp4"
-              className="w-full h-auto"
-              autoPlay
-              loop
-              muted
-              playsInline
+              alt="TESOLA Token Launch"
+              className="rounded-lg overflow-hidden"
+              priority={true}
             />
           </div>
 
@@ -62,7 +60,7 @@ export default function TesolaTokenLaunchSuccess() {
 
             {/* Launch Day Statistics */}
             <div className="bg-gray-800/50 rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">출시일 통계 (예상 기대치)</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Launch Day Statistics (Expected Metrics)</h2>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-gray-700/30 p-4 rounded">
                   <div className="text-purple-400 text-sm mb-1">Unique Wallets</div>
@@ -85,6 +83,16 @@ export default function TesolaTokenLaunchSuccess() {
                   <div className="text-gray-400 text-sm">Long-term confidence shown</div>
                 </div>
               </div>
+            </div>
+
+            {/* Launch Day Visualization */}
+            <div className="my-8">
+              <BlogMediaHybrid
+                src="/ss/s12.jpg"
+                alt="Launch Day Statistics Dashboard"
+                className="rounded-lg shadow-xl shadow-purple-900/30"
+              />
+              <p className="text-sm text-center text-gray-400 mt-2 italic">Real-time launch day metrics dashboard</p>
             </div>
 
             {/* Why TESOLA */}
@@ -172,6 +180,16 @@ export default function TesolaTokenLaunchSuccess() {
               </div>
             </div>
 
+            {/* NFT Staking Interface Showcase */}
+            <div className="my-8">
+              <BlogMediaHybrid
+                src="/ss/s13.jpg"
+                alt="NFT Staking Interface"
+                className="rounded-lg shadow-xl shadow-purple-900/30"
+              />
+              <p className="text-sm text-center text-gray-400 mt-2 italic">Our innovative staking interface in action</p>
+            </div>
+
             {/* DRIVE[HOLD]-TO-EARN System */}
             <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 p-6 rounded-lg border border-purple-500/20">
               <h3 className="text-xl font-bold text-white mb-3">DRIVE[HOLD]-TO-EARN System</h3>
@@ -192,13 +210,23 @@ export default function TesolaTokenLaunchSuccess() {
               </div>
             </div>
 
+            {/* Future Development Preview */}
+            <div className="my-8">
+              <BlogMediaHybrid
+                src="/ss/s14.jpg"
+                alt="Future Development Roadmap"
+                className="rounded-lg shadow-xl shadow-purple-900/30"
+              />
+              <p className="text-sm text-center text-gray-400 mt-2 italic">Sneak peek at upcoming features and developments</p>
+            </div>
+
             {/* What's Next */}
             <div>
               <h2 className="text-2xl font-bold text-white mb-6">What's Next?</h2>
               
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="bg-gray-800/50 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-purple-400 mb-3">Q2 2025 Roadmap</h3>
+                  <h3 className="text-xl font-bold text-purple-400 mb-3">Q3 2025 Roadmap</h3>
                   <ul className="space-y-2 text-gray-300">
                     <li className="flex items-start">
                       <span className="text-green-400 mr-2">✓</span>
@@ -252,8 +280,8 @@ export default function TesolaTokenLaunchSuccess() {
                   <h3 className="text-xl font-bold text-purple-400 mb-3">1. Buy TESOLA</h3>
                   <p className="mb-3">Available on:</p>
                   <ul className="space-y-2 text-gray-300">
-                    <li>• Raydium (Coming Q2)</li>
-                    <li>• Jupiter Aggregator (Coming Q2)</li>
+                    <li>• Raydium (Coming Q3)</li>
+                    <li>• Jupiter Aggregator (Coming Q3)</li>
                   </ul>
                 </div>
                 
@@ -272,7 +300,7 @@ export default function TesolaTokenLaunchSuccess() {
                   <h3 className="text-xl font-bold text-purple-400 mb-3">3. Join the Community</h3>
                   <ul className="space-y-2 text-gray-300">
                     <li>• Telegram: <a href="https://t.me/tesolachat" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">t.me/tesolachat</a></li>
-                    <li>• Twitter: Coming soon</li>
+                    <li>• Twitter: <a href="https://x.com/TESLAINSOLANA" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">@TESLAINSOLANA</a></li>
                   </ul>
                 </div>
               </div>

@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BlogHeroMediaHybrid } from '../../components/BlogMediaHybrid';
 
 export default function CommunityAMASummary() {
-  // 페이지 로드 시 맨 위로 스크롤
+  // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -59,19 +59,16 @@ export default function CommunityAMASummary() {
           </div>
 
           {/* Featured Image */}
-          <div className="mb-8 rounded-xl overflow-hidden shadow-2xl border border-purple-500/20">
-            <div className="relative h-64 md:h-96">
-              <Image
-                src="/ss/s5.png"
-                alt="TESOLA Community AMA"
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-500 hover:scale-105"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+          <div className="mb-8">
+            <BlogHeroMediaHybrid
+              src="/ss/s5.png"
+              alt="TESOLA Community AMA"
+              className="rounded-xl shadow-2xl border border-purple-500/20"
+            >
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 z-20">
                 <p className="text-white text-lg font-bold">Highlights from our April 2025 AMA Session</p>
               </div>
-            </div>
+            </BlogHeroMediaHybrid>
           </div>
 
           {/* Article Content */}
@@ -190,6 +187,16 @@ export default function CommunityAMASummary() {
               </div>
             </div>
 
+            {/* Community Engagement Visualization */}
+            <div className="my-8">
+              <img
+                src="/ss/s6.png"
+                alt="Community Engagement Statistics"
+                className="w-full h-auto rounded-xl shadow-2xl border border-purple-500/20"
+              />
+              <p className="text-sm text-center text-gray-400 mt-2 italic">Live community participation during the AMA session</p>
+            </div>
+
             {/* Technical Updates */}
             <div>
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
@@ -229,6 +236,16 @@ export default function CommunityAMASummary() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Future Features Preview */}
+            <div className="my-8">
+              <BlogHeroMediaHybrid
+                src="/ss/s9.webp"
+                alt="Upcoming Features Preview"
+                className="rounded-xl shadow-2xl border border-green-500/20"
+              />
+              <p className="text-sm text-center text-gray-400 mt-2 italic">The upcoming features discussed will be created by you.</p>
             </div>
 
             {/* Community Feedback */}

@@ -168,7 +168,7 @@ export default function PresaleSection({
         <div className="w-full md:w-1/2 p-4 md:p-0 md:flex md:items-stretch">
           <div className="w-full h-full min-h-[250px] relative rounded-xl md:rounded-l-none md:rounded-r-xl overflow-hidden">
             <Image
-              src="/slr.png"
+              src="/slr.jpg"
               alt="TESOLA Token"
               fill
               className="object-cover"

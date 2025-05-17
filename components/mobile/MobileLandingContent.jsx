@@ -15,7 +15,7 @@ const MobileLandingContent = () => {
   
   return (
     <ErrorBoundary>
-      <div className="fixed inset-0 w-full h-full overflow-hidden font-orbitron">
+      <div className="fixed inset-0 w-full h-full overflow-x-hidden overflow-y-auto font-orbitron">
         {/* 배경 비디오 - SPACE.mp4 (원래 랜딩 페이지와 동일) */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <video
@@ -31,13 +31,13 @@ const MobileLandingContent = () => {
         </div>
       
         {/* 별빛 효과 배경 - 단순화된 버전 */}
-        <div className="fixed inset-0 overflow-hidden" style={{zIndex: 1, pointerEvents: 'none'}}>
+        <div className="absolute inset-0 overflow-hidden" style={{zIndex: 1, pointerEvents: 'none'}}>
           {/* 단순화된 별 배경 */}
           <div className="stars-simple"></div>
         </div>
 
         {/* 비디오 컨테이너 - 모바일용 간소화 버전 */}
-        <div className="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md z-20">
+        <div className="absolute top-[15%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[85%] max-w-sm z-20">
           {/* 스타일링된 비디오 프레임 - 간소화 버전 */}
           <div className="relative rounded-lg overflow-visible shadow-[0_0_30px_rgba(100,100,255,0.6)] border-2 border-gray-800/80">
             {/* 비디오 요소 - intro.mp4 */}
@@ -111,53 +111,53 @@ const MobileLandingContent = () => {
         </div>
       
         {/* 메인 콘텐츠 */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center w-full h-full pt-[60%] px-4">
+        <div className="relative z-10 flex flex-col items-center justify-start w-full min-h-screen pt-[58%] pb-8 px-4">
           {/* 로고는 이미 비디오 컨테이너 위에 있으므로 상단 로고/제목 생략 */}
 
-          {/* 행성 정적 이미지들 - 작은 사이즈와 간단한 애니메이션 */}
-          <div className="flex justify-center w-full gap-6 mb-10">
+          {/* 행성 정적 이미지들 - 크기 증가 및 간격 조정 */}
+          <div className="flex justify-between w-full gap-4 mb-16 px-4">
             <Link href="/whitepaper">
-              <div className="relative w-20 h-20 animate-[bounce_6s_ease-in-out_infinite]">
+              <div className="relative w-24 h-24 animate-[bounce_6s_ease-in-out_infinite]">
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-600 shadow-xl shadow-blue-500/30 flex items-center justify-center">
                   {/* 간단한 행성 질감 */}
                   <div className="absolute inset-1 rounded-full bg-gradient-to-br from-blue-500 to-purple-700"></div>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white relative z-10" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white relative z-10" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                   </svg>
                 </div>
-                <p className="text-center text-white text-xs mt-2">Whitepaper</p>
+                <p className="text-center text-white text-sm mt-2 font-medium">Whitepaper</p>
               </div>
             </Link>
             
             <Link href="/introduction">
-              <div className="relative w-20 h-20 animate-[bounce_6s_ease-in-out_infinite_0.5s]">
+              <div className="relative w-24 h-24 animate-[bounce_6s_ease-in-out_infinite_0.5s]">
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-red-400 to-yellow-500 shadow-xl shadow-amber-500/30 flex items-center justify-center">
                   {/* 간단한 행성 질감 */}
                   <div className="absolute inset-1 rounded-full bg-gradient-to-br from-red-500 to-yellow-600"></div>
-                  <svg className="w-8 h-8 text-white relative z-10" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-10 h-10 text-white relative z-10" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                   </svg>
                 </div>
-                <p className="text-center text-white text-xs mt-2">The REAL Story</p>
+                <p className="text-center text-white text-sm mt-2 font-medium">The REAL Story</p>
               </div>
             </Link>
             
             <Link href="/developer-space">
-              <div className="relative w-20 h-20 animate-[bounce_6s_ease-in-out_infinite_1s]">
+              <div className="relative w-24 h-24 animate-[bounce_6s_ease-in-out_infinite_1s]">
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-black to-gray-900 shadow-xl shadow-rose-500/30 flex items-center justify-center">
                   {/* 간단한 행성 질감 */}
                   <div className="absolute inset-1 rounded-full bg-gradient-to-br from-gray-900 to-black"></div>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-rose-400 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-rose-400 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
                 </div>
-                <p className="text-center text-white text-xs mt-2">Dev's Space</p>
+                <p className="text-center text-white text-sm mt-2 font-medium">Dev's Space</p>
               </div>
             </Link>
           </div>
 
           {/* 메인 내비게이션 메뉴 */}
-          <div className="flex flex-col space-y-4 w-full max-w-xs mb-8">
+          <div className="flex flex-col space-y-3 w-full max-w-xs mb-6 mt-4">
             <Link href="/whitepaper">
               <div className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg text-center text-white font-semibold shadow-lg shadow-blue-500/20 transform hover:scale-105 transition-transform">
                 Whitepaper
@@ -179,7 +179,7 @@ const MobileLandingContent = () => {
 
           {/* 홈 버튼 - 로켓 대신 간단한 버튼 */}
           <Link href="/home">
-            <div className="relative w-full max-w-xs py-4 px-6 bg-gradient-to-r from-purple-600 to-violet-600 rounded-lg text-center text-white font-bold shadow-lg shadow-purple-500/30 transform hover:scale-105 transition-transform">
+            <div className="relative w-full max-w-xs py-4 px-6 bg-gradient-to-r from-purple-600 to-violet-600 rounded-lg text-center text-white font-bold shadow-lg shadow-purple-500/30 transform hover:scale-105 transition-transform mt-4">
               <div className="absolute inset-0 overflow-hidden rounded-lg">
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping"></div>
                 <div className="absolute bottom-1 left-2 w-2 h-2 bg-white rounded-full animate-ping animation-delay-500"></div>

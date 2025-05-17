@@ -220,7 +220,7 @@ export default function CharacterIntroduction() {
                   <div className="grid grid-cols-4 gap-2">
                     <img src="/nft-previews/0418.png" alt="E-LON NFT" className="rounded-md hover:scale-105 transition-transform" />
                     <img src="/nft-previews/0579.png" alt="E-LON NFT" className="rounded-md hover:scale-105 transition-transform" />
-                    <img src="/elon.png" alt="E-LON" className="rounded-md hover:scale-105 transition-transform" />
+                    <img src="/elon.jpg" alt="E-LON" className="rounded-md hover:scale-105 transition-transform" />
                     <div className="bg-black rounded-md hover:scale-105 transition-transform overflow-hidden">
                       <video 
                         className="w-full h-full object-cover" 

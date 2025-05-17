@@ -111,12 +111,16 @@ function EnhancedProgressiveImage({
         // Use alt text as fallback (typically contains NFT name)
         const simpleId = props.alt.replace(/[^a-z0-9]/gi, '');
         props._cacheBust = `img-${simpleId}`;
+      } else if (src) {
+        // Use src hash as stable key for consistent caching
+        const srcHash = src.split('/').pop()?.split('.')[0] || 'default';
+        props._cacheBust = `src-${srcHash}`;
       } else {
         // Session-based stable key - changes only on page reload
         props._cacheBust = 'session-stable';
       }
     }
-  }, [props.id, props.alt, props.__source, props.disableCacheBusting]);
+  }, [props.id, props.alt, props.__source, props.disableCacheBusting, src]);
 
   // Generate beautiful placeholder with gradient for better UX
   const defaultPlaceholder = useMemo(() => createPlaceholder(alt || "SOLARA", null, { 

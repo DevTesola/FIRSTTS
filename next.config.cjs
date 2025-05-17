@@ -18,12 +18,7 @@ const nextConfig = {
   },
   
   // Runtime settings for Vercel compatibility
-  experimental: {
-    // Disable server components
-    serverComponents: false,
-    // Use Node.js instead of Edge runtime
-    runtime: 'nodejs',
-  },
+  // Removed experimental settings to fix binding error
   
   // Security headers
   async headers() {

@@ -56,7 +56,7 @@ export default function LandingPage() {
         <div className="bg-gradient-to-br from-purple-900/40 to-blue-900/40 rounded-xl overflow-hidden border border-purple-500/30 shadow-xl hover:shadow-purple-500/20 transition-shadow">
           <div className="relative h-60 bg-gray-800">
             <Image 
-              src="/slr.png" 
+              src="/slr.jpg" 
               alt="SOLARA NFT Collection" 
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -118,7 +118,7 @@ export default function LandingPage() {
           
           <div className="relative h-60 bg-gray-800">
             <Image 
-              src="/elon.png" 
+              src="/elon.jpg" 
               alt="TESOLA Token Presale" 
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
