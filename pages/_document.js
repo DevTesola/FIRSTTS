@@ -61,6 +61,9 @@ export default function MyDocument() {
         
         {/* 행성 애니메이션 수정 스크립트 */}
         <script src="/planet-fix.js" />
+        
+        {/* Wallet adapter override script for MetaMask compatibility */}
+        <script src="/wallet-adapter-override.js" />
       </body>
     </Html>
   );

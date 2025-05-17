@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
-import { BlogHeroMediaHybrid } from '../../components/BlogMediaHybrid';
+import { BlogHeroMediaOptimizedV2 } from '../../components/BlogMediaOptimizedV2';
 
 export default function MemeBattleGovernanceLaunched() {
   // Scroll to top on page load
@@ -17,7 +17,7 @@ export default function MemeBattleGovernanceLaunched() {
         <meta name="description" content="The most fun governance system in crypto! Vote for your favorite memes, earn rewards, and become the Meme Lord of TESOLA!" />
         <meta property="og:title" content="TESOLA Meme Battle Voting System Launched!" />
         <meta property="og:description" content="Democracy has never been this fun! Join the meme battle governance" />
-        <meta property="og:image" content="/ss/s2.gif" />
+        <meta property="og:image" content="/ss/optimized/s1.webp" />
       </Head>
 
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
@@ -59,10 +59,12 @@ export default function MemeBattleGovernanceLaunched() {
 
           {/* Epic Banner */}
           <div className="mb-8">
-            <BlogHeroMediaHybrid 
-              src="/ss/s2.gif"
+            <BlogHeroMediaOptimizedV2 
+              src="/ss/s1.mp4"
+              lowQualitySrc="/ss/optimized/s1_low.mp4"
               alt="TESOLA Meme Battle Governance"
               className="rounded-xl shadow-2xl border border-pink-500/20"
+              height={350}
             >
               {/* Meme Text Overlay */}
               <div className="absolute top-0 left-0 w-full p-4 z-20">
@@ -77,7 +79,7 @@ export default function MemeBattleGovernanceLaunched() {
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 z-20">
                 <p className="text-white text-lg font-bold">🏆 The Meme Battle for Ultimate TESOLA Supremacy Begins! 🏆</p>
               </div>
-            </BlogHeroMediaHybrid>
+            </BlogHeroMediaOptimizedV2>
           </div>
 
           {/* Alert Banner */}

@@ -91,7 +91,7 @@ const EnhancedStakingButtonV2 = ({
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `${phase} 트랜잭션 제출 실패`);
+        throw new Error(errorData.message || `${phase} transaction submission failed`);
       }
       
       const data = await response.json();
@@ -162,7 +162,7 @@ const EnhancedStakingButtonV2 = ({
       const prepareData = await prepareResponse.json();
       
       if (!prepareData.success) {
-        throw new Error(prepareData.message || "스테이킹 준비 실패");
+        throw new Error(prepareData.message || "Staking preparation failed");
       }
       
       debugLog("EnhancedStakingButtonV2", "스테이킹 준비 데이터:", prepareData.data);
@@ -198,7 +198,7 @@ const EnhancedStakingButtonV2 = ({
           setTxResults(prev => ({ ...prev, setup: setupResult }));
           
           if (!setupResult.success) {
-            return; // 실패 시 중단
+            return; // Stop on failure
           }
         } else {
           debugLog("EnhancedStakingButtonV2", "계정 초기화가 필요 없음, 스테이킹으로 진행");
@@ -218,10 +218,10 @@ const EnhancedStakingButtonV2 = ({
       setTxResults(prev => ({ ...prev, stake: stakeResult }));
       
       if (!stakeResult.success) {
-        return; // 실패 시 중단
+        return; // Stop on failure
       }
       
-      // 3. 성공 처리
+      // 3. Success handling
       setStatus("success");
       
       // 4. 스테이킹 완료 기록

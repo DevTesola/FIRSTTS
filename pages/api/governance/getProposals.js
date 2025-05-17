@@ -73,7 +73,7 @@ export default async function handler(req, res) {
         try {
           const proposalStatus = await getProposalVotingStatus(account.pubkey, connection);
           
-          // 사용자 투표 상태 확인
+          // Check user voting status
           let userVoteStatus = null;
           if (walletPubkey) {
             userVoteStatus = await canUserVote(programId, walletPubkey, account.pubkey, connection);
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
             canVote: userVoteStatus?.canVote || false
           });
         } catch (error) {
-          console.error("제안 계정 파싱 오류:", error);
+          console.error("Error parsing proposal account:", error);
         }
       }
       
@@ -180,7 +180,7 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('제안 목록 조회 중 오류:', error);
+    console.error('Error fetching proposal list:', error);
     return res.status(500).json({ 
       error: '제안 목록 조회 실패: ' + getErrorMessage(error),
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined

@@ -1,44 +1,31 @@
 // pages/api/admin/checkAdmin.js
 // 관리자 권한 확인 API
 
+import { validateEnvVariables } from '../../../utils/envValidator.js';
+import { isAdminWallet } from '../../../utils/adminAuth.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
   
   try {
+    // 환경 변수 검증
+    try {
+      validateEnvVariables();
+    } catch (error) {
+      console.error('Environment configuration error:', error);
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+    
     const { wallet } = req.query;
     
     if (!wallet) {
-      return res.status(400).json({ error: '지갑 주소가 필요합니다' });
+      return res.status(400).json({ error: 'Wallet address is required' });
     }
     
-    // 환경 변수에서 관리자 목록 가져오기
-    const adminWallets = process.env.ADMIN_WALLETS 
-      ? process.env.ADMIN_WALLETS.split(',') 
-      : [];
-    
-    // 개발 환경 전용 관리자 지갑 확인
-    const devAdminWallets = process.env.NEXT_PUBLIC_DEV_ADMIN_WALLETS 
-      ? process.env.NEXT_PUBLIC_DEV_ADMIN_WALLETS.split(',').map(w => w.trim()).filter(w => w)
-      : [];
-    
-    let isAdmin = false;
-    
-    // 개발 환경에서는 개발 전용 관리자 목록 사용
-    if (process.env.NODE_ENV === 'development') {
-      if (devAdminWallets.length > 0) {
-        // 개발 관리자 목록이 있으면 그 목록으로 검증
-        isAdmin = devAdminWallets.includes(wallet);
-      } else {
-        // 개발 관리자 목록이 없으면 모든 지갑 허용 (테스트용)
-        console.warn('보안 경고: 개발 환경에서 관리자 지갑이 지정되지 않았습니다');
-        isAdmin = true;
-      }
-    } else {
-      // 프로덕션에서는 실제 관리자 목록만 사용
-      isAdmin = adminWallets.includes(wallet);
-    }
+    // 보안 강화된 관리자 검증 사용
+    const isAdmin = isAdminWallet(wallet);
     
     return res.status(200).json({ isAdmin });
     

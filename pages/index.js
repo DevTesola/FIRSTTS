@@ -72,7 +72,7 @@ export default function Index() {
         <title>TESOLA - 우주를 향한 여정</title>
         <meta name="description" content="Enter the TESOLA experience - 우주 탐험과 미래 기술의 융합" />
         
-        {/* 응급 인라인 스타일 - 빈 화면 방지 */}
+        {/* Emergency inline style - prevent blank screen */}
         <style dangerouslySetInnerHTML={{ __html: `
           body {
             background-color: black !important;

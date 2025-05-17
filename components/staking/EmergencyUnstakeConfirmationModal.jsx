@@ -104,7 +104,7 @@ export const EmergencyUnstakeConfirmationModal = ({
     borderRadius: '4px',
   };
 
-  // 스테이킹 완료율 계산 (0-100%)
+  // Calculate staking completion rate (0-100%)
   const completionPercentage = penaltyInfo?.rewards?.completionRatio 
     ? Math.round(penaltyInfo.rewards.completionRatio * 100)
     : 0;

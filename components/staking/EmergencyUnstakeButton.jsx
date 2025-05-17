@@ -104,7 +104,7 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
     } catch (err) {
       debugError('EmergencyUnstakeButton', 'Emergency unstaking preparation error:', err);
       setError(err.message || 'Error occurred while preparing emergency unstaking.');
-      toast.error('비상 언스테이킹 준비 실패: ' + err.message);
+      toast.error('Emergency unstaking preparation failed: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -157,7 +157,7 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
         throw new Error('Error occurred during transaction confirmation.');
       }
 
-      // 트랜잭션 완료 API 호출
+      // Call transaction completion API
       debugLog('EmergencyUnstakeButton', 'completeEmergencyUnstaking API 호출 중...');
       const completeResponse = await fetch('/api/staking/completeEmergencyUnstaking', {
         method: 'POST',
@@ -177,26 +177,26 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
         completeData = await completeResponse.json();
       } catch (jsonError) {
         debugError('EmergencyUnstakeButton', 'API response parsing error:', jsonError);
-        throw new Error('완료 API 응답을 파싱할 수 없습니다.');
+        throw new Error('Cannot parse completion API response.');
       }
 
       // Handle API error response
       if (!completeResponse.ok) {
         debugError('EmergencyUnstakeButton', 'Completion API error response:', completeData);
-        // 온체인 트랜잭션은 성공했으므로 UI에서 성공으로 처리
+        // On-chain transaction successful, treat as success in UI
         debugLog('EmergencyUnstakeButton', 'On-chain transaction succeeded but completion API encountered error. Transaction ID:', signature);
-        toast.warn('온체인 트랜잭션은 성공했지만 데이터베이스 업데이트 중 문제가 발생했습니다.');
+        toast.warn('On-chain transaction succeeded but database update encountered issues.');
       } else {
-        // 성공 메시지 표시
-        toast.success('NFT가 성공적으로 언스테이킹되었습니다.');
+        // Show success message
+        toast.success('NFT has been successfully unstaked.');
       }
       
       // 모달 닫기
       setShowConfirmationModal(false);
       
-      // 성공 콜백 호출
+      // Call success callback
       if (onSuccess) {
-        // API 응답이 실패해도 UI에서는 성공으로 처리
+        // Treat as success in UI even if API response fails
         const result = completeData && completeData.data ? completeData.data : { status: 'unstaked', txid: signature };
         onSuccess(signature, result);
       }
@@ -204,7 +204,7 @@ export const EmergencyUnstakeButton = ({ nftMint, stakeInfo, onSuccess, disabled
     } catch (err) {
       debugError('EmergencyUnstakeButton', 'Emergency unstaking execution error:', err);
       setError(err.message || 'Error occurred during emergency unstaking execution.');
-      toast.error('비상 언스테이킹 실패: ' + err.message);
+      toast.error('Emergency unstaking failed: ' + err.message);
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
-import { BlogHeroMediaHybrid } from '../../components/BlogMediaHybrid';
 
 export default function UpcomingGamingPartnership() {
   // Scroll to top on page load
@@ -17,7 +16,7 @@ export default function UpcomingGamingPartnership() {
         <meta name="description" content="TESOLA announces a major gaming partnership that will revolutionize blockchain gaming. Get the exclusive details on our upcoming collaboration." />
         <meta property="og:title" content="Major Gaming Partnership Coming to TESOLA" />
         <meta property="og:description" content="Revolutionary blockchain gaming experience coming soon" />
-        <meta property="og:image" content="/ss/s1.gif" />
+        <meta property="og:image" content="/ss/optimized/s18.webp" />
       </Head>
 
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
@@ -58,16 +57,15 @@ export default function UpcomingGamingPartnership() {
           </div>
 
           {/* Featured Image */}
-          <div className="mb-8">
-            <BlogHeroMediaHybrid
-              src="/ss/s1.gif"
+          <div className="mb-8 relative">
+            <img
+              src="/ss/optimized/s18.webp"
               alt="TESOLA Gaming Partnership"
-              className="rounded-xl shadow-2xl border border-blue-500/20"
-            >
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 z-20">
-                <p className="text-white text-lg font-bold">The Future of Blockchain Gaming Arrives</p>
-              </div>
-            </BlogHeroMediaHybrid>
+              className="w-full h-[350px] object-cover rounded-xl shadow-2xl border border-blue-500/20"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 z-20">
+              <p className="text-white text-lg font-bold">The Future of Blockchain Gaming Arrives</p>
+            </div>
           </div>
 
           {/* Alert Banner */}
@@ -215,10 +213,10 @@ export default function UpcomingGamingPartnership() {
 
             {/* Game Environment Preview */}
             <div className="my-8">
-              <BlogHeroMediaHybrid
+              <img
                 src="/ss/s7.png"
                 alt="In-Game Racing Environment"
-                className="rounded-xl shadow-2xl border border-blue-500/20"
+                className="w-full h-auto rounded-xl shadow-2xl border border-blue-500/20"
               />
               <p className="text-sm text-center text-gray-400 mt-2 italic">Developers working day and night on coding... 🔧🚀</p>
             </div>
@@ -277,10 +275,10 @@ export default function UpcomingGamingPartnership() {
 
             {/* NFT Gaming Integration Visual */}
             <div className="my-8">
-              <BlogHeroMediaHybrid
+              <img
                 src="/ss/s8.png"
                 alt="NFT Gaming Integration"
-                className="rounded-xl shadow-2xl border border-purple-500/20"
+                className="w-full h-auto rounded-xl shadow-2xl border border-purple-500/20"
               />
               <p className="text-sm text-center text-gray-400 mt-2 italic">The combination of these two is... beyond imagination 🤩🎆</p>
             </div>

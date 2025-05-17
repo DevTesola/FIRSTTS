@@ -43,7 +43,12 @@ export const corsConfig = {
   // Allowed origins for CORS requests
   allowedOrigins: [
     process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    'https://tesola.xyz'
+    'https://tesola.xyz',
+    'https://phantom.app',
+    'https://solflare.com',
+    'https://www.backpack.exchange',
+    'https://chrome-extension://',
+    'moz-extension://'
   ],
   
   // Add localhost in development mode

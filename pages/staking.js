@@ -161,7 +161,7 @@ export default function StakingPage() {
       
       // 완전히 새로운 방식의 온체인 데이터 API 시도
       try {
-        console.log("모든 스테이킹된 NFT를 가져오는 Anchor 기반 API 시도...");
+        console.log("Attempting to fetch all staked NFTs using Anchor-based API...");
         
         // 새롭게 개발한 get-all-staked-nfts 엔드포인트 사용 
         const response = await fetch(`/api/staking/get-all-staked-nfts?wallet=${publicKey.toString()}&nocache=${Date.now()}`);
@@ -195,7 +195,7 @@ export default function StakingPage() {
           console.log("온체인 데이터 로드 성공!");
           return;
         } else {
-          console.log("API 응답이 예상 형식과 다릅니다:", onchainData);
+          console.log("API response does not match expected format:", onchainData);
           
           // 응답에 에러가 있으면 표시
           if (onchainData.error) {
@@ -223,7 +223,7 @@ export default function StakingPage() {
             console.log(`첫 번째 폴백 API: ${fallbackData.stats.activeStakes.length}개의 스테이킹된 NFT 발견`);
             setStakingStats(fallbackData.stats);
             setIsLoading(false);
-            console.log("첫 번째 폴백 데이터 사용 성공");
+            console.log("Successfully using first fallback data");
             return;
           }
         } catch (fallback1Err) {
@@ -244,7 +244,7 @@ export default function StakingPage() {
               console.log(`두 번째 폴백 API: ${fallback2Data.stats.activeStakes.length}개의 스테이킹된 NFT 발견`);
               setStakingStats(fallback2Data.stats);
               setIsLoading(false);
-              console.log("두 번째 폴백 데이터 사용 성공");
+              console.log("Successfully using second fallback data");
               return;
             }
           } catch (fallback2Err) {
@@ -347,7 +347,7 @@ export default function StakingPage() {
       setUserNFTs(availableNFTs || []);
     } catch (err) {
       console.error("Error fetching user NFTs:", err);
-      setError("NFT 데이터를 불러오는데 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.");
+      setError("Failed to load NFT data. Please refresh the page and try again.");
       
       // 개발 환경에서는 모의 데이터 생성 (간소화)
       if (process.env.NODE_ENV === 'development') {
@@ -650,7 +650,7 @@ export default function StakingPage() {
                               const match = String(selectedNFT.id).match(/(\d+)/);
                               if (match && match[1]) {
                                 nftId = match[1];
-                                console.log(`스테이킹 페이지: ID에서 숫자 추출: ${nftId}`);
+                                console.log(`Staking page: Extracted number from ID: ${nftId}`);
                               }
                             }
                             
@@ -659,7 +659,7 @@ export default function StakingPage() {
                               const match = selectedNFT.name.match(/#(\d+)/);
                               if (match && match[1]) {
                                 nftId = match[1];
-                                console.log(`스테이킹 페이지: 이름에서 숫자 추출: ${nftId}`);
+                                console.log(`Staking page: Extracted number from name: ${nftId}`);
                               }
                             }
                             
@@ -689,7 +689,7 @@ export default function StakingPage() {
                             
                             // 로그로 생성된 URL 확인
                             console.log(`❗❗❗ 스테이킹 페이지: 강제 생성된 IPFS URL: ${gatewayUrl}`);
-                            console.log(`❗❗❗ 스테이킹 페이지: 사용된 CID: ${IMAGES_CID}`);
+                            console.log(`❗❗❗ Staking page: Using CID: ${IMAGES_CID}`);
                             
                             return gatewayUrl;
                           })()} alt={selectedNFT.name} 
@@ -741,7 +741,7 @@ export default function StakingPage() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
-                        <span>새로운 스테이킹 방식이 적용되었습니다! 이제 계정 초기화 문제 없이 NFT를 스테이킹 할 수 있습니다.</span>
+                        <span>New staking method has been applied! You can now stake NFTs without account initialization issues.</span>
                       </p>
                     </div>
 

@@ -628,7 +628,7 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
       // Step 6: 트랜잭션 확인
       await connection.confirmTransaction(txSignature, "confirmed");
 
-      // Step 7: 스테이킹 완료 기록
+      // Step 7: Record staking completion
       setTransactionStatus("completing");
       setTransactionProgress(98);
       console.log("Step 7: Recording staking completion...");
@@ -650,7 +650,7 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
         console.warn("Warning: Failed to record staking completion, but transaction was successful:", errorData);
       }
 
-      // 성공 처리
+      // Success handling
       setTransactionStatus("completed");
       setTransactionProgress(100);
       setIsStaked(true);
@@ -1851,7 +1851,7 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
               stakingPeriod={stakingPeriod}
               onSuccess={(result) => {
                 // Show success message
-                setSuccessMessage(`NFT가 성공적으로 스테이킹되었습니다.`);
+                setSuccessMessage(`NFT has been successfully staked.`);
                 setSuccessData(result);
                 setShowSuccessPopup(true);
 

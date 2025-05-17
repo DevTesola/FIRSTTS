@@ -15,6 +15,8 @@ import { Program, AnchorProvider, utils, web3, BN } from '@project-serum/anchor'
 import { validateTokenAccount } from '../../../shared/utils/token-validator';
 import { prepareIdlForAnchor, safeInitializeProgram } from '../../../shared/utils/idl-helper';
 import { prepareStakingTransaction } from '../../../shared/utils/staking/unified-staking';
+import { createSecurityMiddleware, validateSolanaAddress, sanitizeInput } from '../../../api-middlewares/apiSecurity';
+import { validateEnvironment } from '../../../utils/envValidator';
 
 // NFT 스테이킹 IDL 가져오기
 import rawNftStakingIdl from '../../../idl/nft_staking.json';

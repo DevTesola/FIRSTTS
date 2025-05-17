@@ -1,8 +1,9 @@
 import { PublicKey, SystemProgram, Transaction, Connection } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
-import { validateSolanaAddress } from '../../../api-middlewares/apiSecurity';
+import { validateSolanaAddress, createSecurityMiddleware, sanitizeInput } from '../../../api-middlewares/apiSecurity';
 import { v4 as uuidv4 } from 'uuid';
 import { SELLER_KEYPAIR } from '../../../server/utils/sellerKeypair';
+import { validateEnvVariables } from '../../../utils/envValidator';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -16,40 +17,61 @@ const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'http
 // Seller wallet - derived from keypair
 const SELLER_PUBLIC_KEY = SELLER_KEYPAIR.publicKey.toString();
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+// 보안 미들웨어 설정
+const securityMiddleware = createSecurityMiddleware({
+  rateLimit: {
+    limit: 10, // 프리세일은 더 엄격한 제한
+    windowMs: 60000 // 1분
   }
+});
 
-  try {
-    // Extract parameters from request
-    const { wallet, amount } = req.body;
-    
-    // Input validation
-    if (!wallet || typeof wallet !== 'string') {
-      return res.status(400).json({ error: 'Invalid wallet address' });
-    }
-    
-    if (!amount || isNaN(amount) || amount < 1000) {
-      return res.status(400).json({ error: 'Invalid token amount. Minimum purchase is 1,000 TESOLA' });
-    }
-    
-    // 수량을 숫자로 확실하게 변환
-    const tokenAmount = parseInt(amount);
-    
-    // Validate address
-    if (typeof validateSolanaAddress === 'function') {
-      const validation = validateSolanaAddress(wallet);
-      if (validation.error) {
-        return res.status(400).json({ error: validation.error });
+export default async function handler(req, res) {
+  // 보안 미들웨어 적용
+  return new Promise((resolve) => {
+    securityMiddleware(req, res, async () => {
+      if (req.method !== 'POST') {
+        return resolve(res.status(405).json({ error: 'Method Not Allowed' }));
       }
-    }
+
+      try {
+        // Validate environment variables
+        try {
+          validateEnvVariables();
+        } catch (error) {
+          console.error('Environment configuration error:', error);
+          return resolve(res.status(500).json({ error: 'Server configuration error' }));
+        }
+        // Extract parameters from request
+        const { wallet, amount } = req.body;
+        
+        // Input sanitization
+        const sanitizedWallet = sanitizeInput(wallet);
+        
+        // Input validation
+        if (!sanitizedWallet || typeof sanitizedWallet !== 'string') {
+          return resolve(res.status(400).json({ error: 'Invalid wallet address' }));
+        }
+        
+        if (!amount || isNaN(amount) || amount < 1000) {
+          return resolve(res.status(400).json({ error: 'Invalid token amount. Minimum purchase is 1,000 TESOLA' }));
+        }
     
-    // Create PublicKey object from wallet address
-    const buyerPublicKey = new PublicKey(wallet);
+        // Convert amount to number
+        const tokenAmount = parseInt(amount);
+        
+        // Validate address
+        if (typeof validateSolanaAddress === 'function') {
+          const validation = validateSolanaAddress(sanitizedWallet);
+          if (validation.error) {
+            return resolve(res.status(400).json({ error: validation.error }));
+          }
+        }
+        
+        // Create PublicKey object from wallet address
+        const buyerPublicKey = new PublicKey(sanitizedWallet);
     
-    // Create Solana connection
-    const connection = new Connection(SOLANA_RPC_ENDPOINT);
+        // Create Solana connection
+        const connection = new Connection(SOLANA_RPC_ENDPOINT);
     
     // Verify presale status and settings
     const { data: presaleSettings, error: settingsError } = await supabase
@@ -91,7 +113,7 @@ export default async function handler(req, res) {
       const { data: whitelistData, error: whitelistError } = await supabase
         .from('presale_whitelist')
         .select('*')
-        .eq('wallet_address', wallet)
+        .eq('wallet_address', sanitizedWallet)
         .single();
         
       if (whitelistError || !whitelistData) {
@@ -101,7 +123,7 @@ export default async function handler(req, res) {
       }
     }
     
-    // 남은 물량 확인
+    // Check remaining supply
     const totalSupply = parseInt(presaleSettings.total_supply);
     
     // 모든 판매 내역을 가져와서 직접 합산
@@ -147,7 +169,7 @@ export default async function handler(req, res) {
       const { data: whitelistData } = await supabase
         .from('presale_whitelist')
         .select('tier_id')
-        .eq('wallet_address', wallet)
+        .eq('wallet_address', sanitizedWallet)
         .single();
       
       if (whitelistData && whitelistData.tier_id) {
@@ -218,7 +240,7 @@ export default async function handler(req, res) {
     const { data: insertData, error: insertError } = await supabase
       .from('minted_nfts')
       .insert({
-        wallet: wallet,
+        wallet: sanitizedWallet,
         status: 'pending',
         is_presale: true,
         presale_price: tokenPrice,
@@ -252,16 +274,20 @@ export default async function handler(req, res) {
       })
     );
     
-    // Return transaction for client to sign
-    return res.status(200).json({
-      transaction: transferTx.serialize({ requireAllSignatures: false }).toString('base64'),
-      paymentId: paymentId,
-      tokenAmount: tokenAmount,
-      totalCost: totalCost
+        // Return transaction for client to sign
+        return resolve(res.status(200).json({
+          transaction: transferTx.serialize({ requireAllSignatures: false }).toString('base64'),
+          paymentId: paymentId,
+          tokenAmount: tokenAmount,
+          totalCost: totalCost
+        }));
+        
+      } catch (err) {
+        console.error('Purchase TESOLA API error:', err);
+        return resolve(res.status(500).json({ 
+          error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error' 
+        }));
+      }
     });
-    
-  } catch (err) {
-    console.error('Purchase TESOLA API error:', err);
-    res.status(500).json({ error: err.message || 'Internal server error' });
-  }
+  });
 }

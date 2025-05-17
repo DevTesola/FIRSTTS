@@ -13,9 +13,9 @@ export function getAdminWallets() {
       .map(address => address.trim())
       .filter(address => address.length > 0);
     
-    // Log warning if no admin wallets are configured (development only)
-    if (adminWallets.length === 0 && process.env.NODE_ENV === 'development') {
-      console.warn('Warning: ADMIN_WALLET_ADDRESSES environment variable is not set.');
+    // Log error if no admin wallets are configured
+    if (adminWallets.length === 0) {
+      console.error('Error: ADMIN_WALLET_ADDRESSES environment variable is not set. Admin access will be denied.');
     }
     
     return adminWallets;
@@ -29,27 +29,31 @@ export function getAdminWallets() {
   export function isAdminWallet(walletAddress) {
     if (!walletAddress) return false;
     
-    // Production 환경이 아닌 경우 (development, test 등) 모든 지갑 허용
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('개발 환경에서 모든 지갑 허용 중:', walletAddress);
-      return true;
-    }
-    
     const adminWallets = getAdminWallets();
     
-    // 와일드카드 * 처리
-    if (adminWallets.includes('*')) {
-      console.log('와일드카드 설정으로 모든 지갑 허용:', walletAddress);
-      return true;
-    }
-    
-    // 빈 목록인 경우 첫 번째 연결 지갑을 관리자로 간주
+    // Deny admin access if the list is empty
     if (adminWallets.length === 0) {
-      console.log('관리자 목록이 비어 있어 연결된 지갑을 관리자로 허용:', walletAddress);
-      return true;
+      console.warn('Admin list is empty. Admin access denied.');
+      return false;
     }
     
-    return adminWallets.includes(walletAddress);
+    // Do not allow wildcards
+    const validAdminWallets = adminWallets.filter(wallet => 
+      wallet !== '*' && wallet.length > 0
+    );
+    
+    // Compare without case sensitivity
+    const normalizedWallet = walletAddress.toLowerCase();
+    const isAdmin = validAdminWallets.some(admin => 
+      admin.toLowerCase() === normalizedWallet
+    );
+    
+    // Only allow explicit admins even in development
+    if (process.env.NODE_ENV !== 'production' && isAdmin) {
+      console.log('Development environment - Authenticated admin:', walletAddress);
+    }
+    
+    return isAdmin;
   }
   
   /**

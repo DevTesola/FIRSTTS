@@ -19,12 +19,26 @@ import { LedgerWalletAdapter } from "@solana/wallet-adapter-ledger";
 import { SlopeWalletAdapter } from "@solana/wallet-adapter-slope";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 
-const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.devnet.solana.com";
+const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "https://api.mainnet-beta.solana.com";
 
 export default function WalletWrapper({ children }) {
-  if (!SOLANA_RPC_ENDPOINT) {
-    console.error("Warning: NEXT_PUBLIC_SOLANA_RPC_ENDPOINT environment variable not set. Using default devnet endpoint.");
-  }
+  // State for wallets
+  const [wallets, setWallets] = useState([]);
+  
+  // Add debugging for production
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[WalletWrapper] Environment check:');
+      console.log('- NODE_ENV:', process.env.NODE_ENV);
+      console.log('- RPC Endpoint:', SOLANA_RPC_ENDPOINT);
+      console.log('- Is Production:', process.env.NODE_ENV === 'production');
+      console.log('- Window location:', window.location.href);
+      console.log('- Available wallets:', wallets ? wallets.length : 0);
+      
+      // Set wallets when window is available
+      setWallets(getInstalledWallets());
+    }
+  }, []);
 
   // Get all installed wallets including metamask ones
   const getInstalledWallets = () => {
@@ -55,13 +69,10 @@ export default function WalletWrapper({ children }) {
     return installed;
   };
 
-  // Use installed wallet adapters
-  const wallets = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return [];
-    }
-    return getInstalledWallets();
-  }, []);
+  // Use installed wallet adapters with state
+  const memoizedWallets = useMemo(() => {
+    return wallets;
+  }, [wallets]);
 
   const endpoint = useMemo(() => SOLANA_RPC_ENDPOINT, []);
   
@@ -222,10 +233,9 @@ export default function WalletWrapper({ children }) {
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider
-        wallets={wallets}
+        wallets={memoizedWallets}
         autoConnect={false}
         onError={onWalletError}
-        onStateChange={onWalletStateChange}
       >
         <WalletModalProvider {...walletModalProviderConfig}>
           <>

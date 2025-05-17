@@ -1,12 +1,48 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useWallet } from "@solana/wallet-adapter-react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import ScrollableTabs from "../common/ScrollableTabs";
-import LoadingSkeleton from "../LoadingSkeleton";
-import { BlogMediaHybrid } from "../BlogMediaHybrid";
+import SimpleVideo from "../SimpleVideo";
+
+// Icon components
+const TelegramIcon = ({ className = "h-5 w-5" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M12 0c-6.626 0-12 5.372-12 12 0 6.627 5.374 12 12 12 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12zm3.224 17.871c.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-6.895c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-3.592c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953zm-.649-5.443c.654-1.561 2.067-3.182 3.425-3.182s2.771 1.621 3.425 3.182c.146.35.681.336.682-.071 0-2.235-1.836-4.046-4.107-4.046s-4.107 1.811-4.107 4.046c0 .407.536.421.682.071z"/>
+  </svg>
+);
+
+const ClockIcon = ({ className = "h-4 w-4" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+  </svg>
+);
+
+const ArrowRightIcon = ({ className = "h-4 w-4" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+  </svg>
+);
+
+// Common Button Component
+const GradientButton = ({ children, href, onClick, from = "purple-600", to = "pink-600", className = "" }) => {
+  const baseClass = `inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-${from} to-${to} hover:from-${from.replace('-600', '-500')} hover:to-${to.replace('-600', '-500')} text-white rounded-lg font-medium transition-all shadow-lg shadow-${from.split('-')[0]}-900/20 hover:shadow-${from.split('-')[0]}-900/40 ${className}`;
+  
+  if (href) {
+    return (
+      <Link href={href} className={baseClass}>
+        {children}
+      </Link>
+    );
+  }
+  
+  return (
+    <button onClick={onClick} className={baseClass}>
+      {children}
+    </button>
+  );
+};
 
 // Visual components
 const GlowEffect = ({ color = "purple", children, className = "" }) => {
@@ -31,11 +67,7 @@ const GlowEffect = ({ color = "purple", children, className = "" }) => {
  */
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState("news");
-  const [isLoading, setIsLoading] = useState(false);
-  // BlogMediaHybrid handles its own loading state
-  const [videoLoading, setVideoLoading] = useState({});
-  const [error, setError] = useState(null);
-  const { publicKey, connected } = useWallet();
+  const { connected } = useWallet();
   const router = useRouter();
   
   // Handle tab change from URL params on page load
@@ -46,20 +78,23 @@ export default function CommunityPage() {
     }
   }, [router.query]);
   
+  
   // Update URL when tab changes
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     router.push(`/community?tab=${tab}`, undefined, { shallow: true });
   };
 
-  // News data with actual blog links
-  const newsData = [
+  // News data with actual blog links - memoized to prevent re-creation
+  const newsData = useMemo(() => [
     {
       id: 1,
       title: "Meme Battle Governance Launched!",
       date: "May 20, 2025",
       author: "DevTeam",
-      image: "/ss/s2.gif",
+      video: "/ss/s1.mp4",
+      posterImage: "/ss/optimized/s1.webp",
+      fallbackImage: "/ss/optimized/s1.webp",
       summary: "The most fun governance system in crypto! Vote for your favorite memes, earn rewards, and become the Meme Lord of TESOLA!",
       link: "/blog/meme-battle-governance-launched",
       featured: true
@@ -69,7 +104,7 @@ export default function CommunityPage() {
       title: "TESOLA Token Launch Success!",
       date: "May 1, 2025",
       author: "TESOLA Team",
-      image: "/ss/s17.png",
+      image: "/ss/optimized/s17.webp",
       summary: "We're excited to announce the successful launch of TESOLA token on Solana. Join our growing community and be part of the future!",
       link: "/blog/tesola-token-launch-success"
     },
@@ -78,7 +113,7 @@ export default function CommunityPage() {
       title: "SOLARA NFT Evolution System",
       date: "May 15, 2025",
       author: "DevTeam",
-      image: "/zz/0011z.jpg",
+      image: "/zz/optimized/0011z.webp",
       summary: "Discover how SOLARA NFTs evolve through staking, unlocking new visual traits and earning multipliers. Complete guide inside!",
       link: "/blog/solara-nft-evolution-guide"
     },
@@ -87,29 +122,29 @@ export default function CommunityPage() {
       title: "New Staking Rewards Boost Program",
       date: "April 22, 2025",
       author: "TESOLA Team",
-      image: "/nft-previews/0418.png",
+      image: "/nft-previews/optimized/0418.webp",
       summary: "Stake multiple NFTs to earn bonus multipliers on your rewards. New program starts next week!",
       link: "/staking-rewards-boost"
     },
     {
-      id: 4,
+      id: 5,
       title: "Community AMA Summary",
       date: "April 15, 2025",
       author: "Community Manager",
-      image: "/ss/s5.png",
+      image: "/ss/optimized/s5.webp",
       summary: "Read the highlights from our recent Ask Me Anything session with the founding team.",
       link: "/blog/community-ama-summary"
     },
     {
-      id: 5,
+      id: 6,
       title: "Upcoming Gaming Partnership",
       date: "April 10, 2025",
       author: "TESOLA Team",
-      image: "/ss/s1.gif",
+      image: "/ss/optimized/s18.webp",
       summary: "We're excited to announce an upcoming partnership with a major gaming studio.",
       link: "/blog/upcoming-gaming-partnership"
     }
-  ];
+  ], []);
   
   // Mock data for garage section with media
   const garageData = [
@@ -117,7 +152,7 @@ export default function CommunityPage() {
       id: 1,
       type: "meme",
       title: "When your NFT earns more TESOLA than expected",
-      image: "/nft-previews/0327.png",
+      image: "/nft-previews/optimized/0327.webp",
       creator: "TES_ChampX999",
       likes: 245,
       comments: 42,
@@ -127,7 +162,7 @@ export default function CommunityPage() {
       id: 2,
       type: "meme",
       title: "Waiting for the blockchain to confirm my transaction",
-      image: "/nft-previews/0416.png",
+      image: "/nft-previews/optimized/0416.webp",
       creator: "SOL_Master4242",
       likes: 189,
       comments: 31,
@@ -137,34 +172,12 @@ export default function CommunityPage() {
       id: 3,
       type: "art",
       title: "TESOLA Astronaut - Fan Art",
-      image: "/nft-previews/0579.png",
+      image: "/nft-previews/optimized/0579.webp",
       creator: "NFT_Creator7892",
       likes: 312,
       comments: 56,
       tags: ["FanArt", "Digital", "Astronaut"]
     },
-    {
-      id: 4,
-      type: "video",
-      title: "When you realize how much your SOLARA NFT is worth now",
-      video: "/nft-previews/0113.mp4",
-      posterImage: "/nft-previews/0113.mp4",
-      creator: "MemeGod_5678",
-      likes: 423,
-      comments: 87,
-      tags: ["Reaction", "Value", "Growth"]
-    },
-    {
-      id: 5,
-      type: "video",
-      title: "My reaction to the new TESOLA features",
-      video: "/nft-previews/0625.mp4",
-      posterImage: "/nft-previews/0625.mp4",
-      creator: "TesUser_3456",
-      likes: 276,
-      comments: 43,
-      tags: ["Excited", "Features", "Update"]
-    }
   ];
   
   // Mock data for forum section
@@ -237,20 +250,32 @@ export default function CommunityPage() {
   ];
 
   // Render News & Events tab content
-  const renderNewsContent = () => (
+  const renderNewsContent = () => {
+    
+    return (
     <div className="space-y-8 animate-fade-in">
       {/* Featured News */}
       {newsData.filter(item => item.featured).map(featured => (
         <GlowEffect key={featured.id} color="purple" className="mb-8">
           <div className="md:flex">
             <div className="md:w-1/2 relative h-60 md:h-auto mb-4 md:mb-0">
-              {featured.image && (
+              {(featured.image || featured.video) && (
                 <div className="relative h-full rounded-lg overflow-hidden">
-                  <BlogMediaHybrid 
-                    src={featured.image} 
-                    alt={featured.title}
-                    className="w-full h-full transition-transform duration-500 hover:scale-105 transform"
-                  />
+                  {featured.video ? (
+                    <SimpleVideo 
+                      src={featured.video}
+                      poster={featured.posterImage}
+                      className="w-full h-full transition-transform duration-500 hover:scale-105 transform object-cover"
+                      autoPlay={true}
+                      controls={false}
+                    />
+                  ) : (
+                    <img 
+                      src={featured.image} 
+                      alt={featured.title}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105 transform"
+                    />
+                  )}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent h-1/3"></div>
                   <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-glow-purple">
                     Featured
@@ -274,9 +299,7 @@ export default function CommunityPage() {
               <div>
                 <Link href={featured.link} className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40">
                   Read Full Article
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
+                  <ArrowRightIcon className="h-4 w-4 ml-2" />
                 </Link>
               </div>
             </div>
@@ -291,13 +314,23 @@ export default function CommunityPage() {
             key={news.id} 
             className="group bg-gray-800/50 rounded-xl overflow-hidden shadow-lg border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 hover:shadow-purple-500/20 hover:shadow-lg transform hover:-translate-y-1 flex flex-col"
           >
-            {news.image && (
+            {(news.image || news.video) && (
               <div className="relative h-48 overflow-hidden">
-                <BlogMediaHybrid 
-                  src={news.image} 
-                  alt={news.title}
-                  className="w-full h-full transition-transform duration-500 group-hover:scale-110 transform"
-                />
+                {news.video ? (
+                  <SimpleVideo 
+                    src={news.video}
+                    poster={news.posterImage}
+                    className="w-full h-full transition-transform duration-500 group-hover:scale-110 transform object-cover"
+                    autoPlay={false}
+                    controls={true}
+                  />
+                ) : (
+                  <img 
+                    src={news.image} 
+                    alt={news.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform"
+                  />
+                )}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent h-1/3"></div>
               </div>
             )}
@@ -329,26 +362,6 @@ export default function CommunityPage() {
       {/* Newsletter signup with animation */}
       <div className="relative mt-12 overflow-hidden rounded-xl">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 to-pink-900/40 z-0"></div>
-        {/* Animated particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="particles-container">
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                className="particle"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 5}s`,
-                  width: `${Math.random() * 10 + 2}px`,
-                  height: `${Math.random() * 10 + 2}px`,
-                  opacity: Math.random() * 0.5 + 0.25,
-                  backgroundColor: i % 2 === 0 ? "#c084fc" : "#f472b6",
-                }}
-              ></div>
-            ))}
-          </div>
-        </div>
         <div className="relative z-10 p-8">
           <div className="md:flex items-center justify-between">
             <div className="mb-4 md:mb-0">
@@ -361,9 +374,7 @@ export default function CommunityPage() {
               rel="noopener noreferrer"
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-2 px-4 rounded-lg font-medium transition-all duration-300 shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 flex items-center justify-center"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5 mr-2 fill-current">
-                <path d="M12 0c-6.626 0-12 5.372-12 12 0 6.627 5.374 12 12 12 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12zm3.224 17.871c.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-6.895c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953.188.133.43.131.618-.002.401-.286.175-.857-.394-.857h-3.592c-.57 0-.796.571-.395.857.188.133.43.131.618-.002.932-.661 1.608-1.734 1.608-2.953 0-1.984-1.602-3.592-3.58-3.592s-3.58 1.608-3.58 3.592c0 1.219.676 2.292 1.608 2.953zm-.649-5.443c.654-1.561 2.067-3.182 3.425-3.182s2.771 1.621 3.425 3.182c.146.35.681.336.682-.071 0-2.235-1.836-4.046-4.107-4.046s-4.107 1.811-4.107 4.046c0 .407.536.421.682.071z"/>
-              </svg>
+              <TelegramIcon className="h-5 w-5 mr-2" />
               Join Our Telegram Channel
             </a>
           </div>
@@ -371,6 +382,7 @@ export default function CommunityPage() {
       </div>
     </div>
   );
+  };
 
   // Render Garage (Memes) tab content with media support
   const renderGarageContent = () => (
@@ -412,41 +424,13 @@ export default function CommunityPage() {
             key={item.id} 
             className="group bg-gray-800/50 rounded-xl overflow-hidden shadow-lg border border-gray-700/50 hover:border-pink-500/30 transition-all duration-300 hover:shadow-pink-500/20 hover:shadow-lg transform hover:-translate-y-1"
           >
-            {/* Video content */}
-            {item.type === 'video' && (
-              <div className="relative aspect-video bg-gray-900">
-                {videoLoading[item.id] && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-800">
-                    <LoadingSkeleton height="100%" width="100%" />
-                  </div>
-                )}
-                <video 
-                  className="w-full h-full object-cover"
-                  poster={item.posterImage}
-                  controls
-                  muted
-                  loop
-                  onLoadStart={() => setVideoLoading(prev => ({ ...prev, [item.id]: true }))}
-                  onLoadedData={() => setVideoLoading(prev => ({ ...prev, [item.id]: false }))}
-                >
-                  <source src={item.video} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-                <div className="absolute top-2 right-2 bg-black/70 text-white rounded-full h-8 w-8 flex items-center justify-center shadow-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                  </svg>
-                </div>
-              </div>
-            )}
-            
             {/* Image content */}
             {(item.type === 'meme' || item.type === 'art') && (
               <div className="relative aspect-square overflow-hidden bg-gray-900">
-                <BlogMediaHybrid 
+                <img 
                   src={item.image} 
                   alt={item.title}
-                  className="w-full h-full transition-transform duration-500 group-hover:scale-110 transform"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform"
                 />
                 <div className="absolute top-2 right-2 bg-black/70 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
                   {item.type === 'meme' ? 'MEME' : 'ART'}
@@ -623,9 +607,7 @@ export default function CommunityPage() {
                     <span className="text-gray-400">{topic.views}</span>
                   </div>
                   <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                    </svg>
+                    <ClockIcon className="h-4 w-4 mr-1 text-blue-400" />
                     <span className="text-gray-400 text-sm">{topic.lastPost}</span>
                   </div>
                 </div>
@@ -669,9 +651,7 @@ export default function CommunityPage() {
                 
                 <div className="col-span-2 flex justify-end items-center">
                   <span className="text-gray-400 text-sm flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                    </svg>
+                    <ClockIcon className="h-4 w-4 mr-1 text-blue-400" />
                     {topic.lastPost}
                   </span>
                 </div>
@@ -704,26 +684,6 @@ export default function CommunityPage() {
       {!connected && (
         <div className="mt-10 relative overflow-hidden rounded-xl">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 z-0"></div>
-          {/* Animated particles */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="particles-container">
-              {[...Array(20)].map((_, i) => (
-                <div
-                  key={i}
-                  className="particle"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 5}s`,
-                    width: `${Math.random() * 10 + 2}px`,
-                    height: `${Math.random() * 10 + 2}px`,
-                    opacity: Math.random() * 0.5 + 0.25,
-                    backgroundColor: i % 2 === 0 ? "#93c5fd" : "#818cf8",
-                  }}
-                ></div>
-              ))}
-            </div>
-          </div>
           <div className="relative z-10 p-8 border border-blue-500/20 rounded-xl">
             <div className="md:flex items-center justify-between">
               <div className="mb-4 md:mb-0">
@@ -756,7 +716,7 @@ export default function CommunityPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-purple-900/50 to-pink-900/50 z-10"></div>
           <div className="absolute inset-0 -z-10">
             <Image 
-              src="/stars.jpg" 
+              src="/optimized/stars.webp" 
               alt="Stars background" 
               layout="fill" 
               objectFit="cover" 
@@ -765,22 +725,6 @@ export default function CommunityPage() {
             />
           </div>
           
-          {/* Animated stars */}
-          <div className="stars-container">
-            {[...Array(50)].map((_, i) => (
-              <div
-                key={i}
-                className="star"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 5}s`,
-                  width: `${Math.random() * 3 + 1}px`,
-                  height: `${Math.random() * 3 + 1}px`,
-                }}
-              ></div>
-            ))}
-          </div>
         </div>
         
         {/* Hero content */}

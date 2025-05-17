@@ -28,7 +28,7 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src * 'self' data: blob:; connect-src * 'self' wss:; style-src * 'self' 'unsafe-inline'; font-src * 'self' data:; script-src * 'self' 'unsafe-inline' 'unsafe-eval' blob:;",
+            value: "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.devnet.solana.com https://api.mainnet-beta.solana.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none';",
           },
           {
             key: 'X-Content-Type-Options',

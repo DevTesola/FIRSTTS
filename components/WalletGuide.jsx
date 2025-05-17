@@ -216,7 +216,7 @@ export default function WalletGuide({ forceShow, onClose }) {
               
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-800 p-3 rounded-lg text-center hover:bg-gray-700 transition-colors cursor-pointer">
-                  <img src="/phantom-logo.png" alt="Phantom Logo" className="h-12 mx-auto mb-2" />
+                  <img src="/optimized/phantom.webp" alt="Phantom Logo" className="h-12 mx-auto mb-2" />
                   <h3 className="font-medium">Phantom</h3>
                   <div className="flex justify-center mt-1">
                     <span className="text-xs px-2 py-0.5 bg-green-900 text-green-400 rounded-full">Recommended</span>
@@ -225,7 +225,7 @@ export default function WalletGuide({ forceShow, onClose }) {
                 </div>
                 
                 <div className="bg-gray-800 p-3 rounded-lg text-center hover:bg-gray-700 transition-colors cursor-pointer">
-                  <img src="/solflare-logo.png" alt="Solflare Logo" className="h-12 mx-auto mb-2" />
+                  <img src="/optimized/solflare.webp" alt="Solflare Logo" className="h-12 mx-auto mb-2" />
                   <h3 className="font-medium">Solflare</h3>
                   <p className="text-xs text-gray-400 mt-2">Feature-rich wallet</p>
                 </div>

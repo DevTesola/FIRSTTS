@@ -30,7 +30,7 @@ export default function TestAdminAuthority() {
       
       const response = await fetch('/api/admin/update-admin-check');
       if (!response.ok) {
-        throw new Error('관리자 정보 확인 실패');
+        throw new Error('Failed to verify admin information');
       }
       
       const data = await response.json();
@@ -38,15 +38,15 @@ export default function TestAdminAuthority() {
       
       // 관리자 권한 문제 알림
       if (!data.admin_check.env_admin_matches_pool_admin) {
-        toast.warn('환경변수의 관리자가 풀 관리자와 일치하지 않습니다.');
+        toast.warn('Admin in environment variables does not match pool admin.');
       }
       
       if (!data.admin_check.has_admin_authority) {
-        toast.error('현재 지갑에 관리자 권한이 없습니다.');
+        toast.error('Current wallet does not have admin privileges.');
       }
     } catch (error) {
-      console.error('관리자 상태 확인 오류:', error);
-      toast.error('관리자 상태 확인 중 오류 발생: ' + error.message);
+      console.error('Admin status verification error:', error);
+      toast.error('Error occurred while verifying admin status: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +64,7 @@ export default function TestAdminAuthority() {
   
   const handleTestAdminAuthority = async () => {
     if (!publicKey || !signTransaction || !connection) {
-      toast.error('지갑이 연결되지 않았습니다');
+      toast.error('Wallet is not connected');
       return;
     }
     
@@ -116,7 +116,7 @@ export default function TestAdminAuthority() {
         
         if (confirmation.value.err) {
           console.error('트랜잭션 오류:', confirmation.value.err);
-          toast.error('관리자 권한 테스트 실패: 트랜잭션 오류');
+          toast.error('Admin privilege test failed: Transaction error');
         } else {
           toast.success('관리자 권한 테스트 성공! 등급 승수가 업데이트되었습니다.');
           // 관리자 정보 다시 확인
