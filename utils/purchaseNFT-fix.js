@@ -168,17 +168,9 @@ export async function purchaseNFT(buyerPublicKey) {
       lamports: NFT_PRICE_LAMPORTS,
     });
     
-    // Create memo instruction for better wallet display
-    const memoInstruction = new TransactionInstruction({
-      keys: [],
-      programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
-      data: Buffer.from(`💰 SOLARA NFT Price: ${NFT_PRICE_LAMPORTS/LAMPORTS_PER_SOL} SOL - Minting Payment`, 'utf8'),
-    });
-    
-    // Add both instructions to transaction
+    // Create simple SOL transfer transaction (no memo to avoid wallet warnings)
     const transferTx = new Transaction()
-      .add(transferInstruction)
-      .add(memoInstruction);
+      .add(transferInstruction);
       
     transferTx.feePayer = buyerPublicKey;
     
