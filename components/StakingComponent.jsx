@@ -456,7 +456,7 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
     setTokenAccountStatus(null);
   };
 
-  // 3단계 초기화 방식으로 스테이킹 실행
+  // Execute staking with 3-phase initialization method
   const handleThreePhaseStaking = async () => {
     if (!connected || !publicKey || !nft?.mint) {
       setError("Please connect your wallet and select an NFT to stake.");

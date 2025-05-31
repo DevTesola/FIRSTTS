@@ -20,9 +20,6 @@ export default function CollectionInfo({ minted, collectionSize = 1000 }) {
         <span>Tiered. Built for Holders.</span>
         <HeartIcon className="h-6 w-6 text-pink-400" />
       </p>
-      <p className="text-purple-300 font-mono text-sm md:text-base">
-        {minted} / {collectionSize} Minted
-      </p>
     </div>
   );
 }

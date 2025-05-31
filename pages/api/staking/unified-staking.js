@@ -1,6 +1,6 @@
 /**
- * 통합 NFT 스테이킹 API 엔드포인트
- * vec<pubkey> 타입 오류와 IllegalOwner 오류가 모두 수정된 통합 구현
+ * Integrated NFT Staking API Endpoint
+ * Unified implementation with fixes for both vec<pubkey> type errors and IllegalOwner errors
  */
 
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
@@ -18,10 +18,10 @@ import { prepareStakingTransaction } from '../../../shared/utils/staking/unified
 import { createSecurityMiddleware, validateSolanaAddress, sanitizeInput } from '../../../api-middlewares/apiSecurity';
 import { validateEnvironment } from '../../../utils/envValidator';
 
-// NFT 스테이킹 IDL 가져오기
+// Import NFT Staking IDL
 import rawNftStakingIdl from '../../../idl/nft_staking.json';
 
-// 공통 모듈에서 필요한 유틸리티 가져오기
+// Import utilities from common modules
 import {
   PROGRAM_ID,
   NFT_TIERS,
@@ -34,7 +34,7 @@ import {
   serializeTransaction
 } from '../../../shared';
 
-// 환경 변수 가져오기
+// Get environment variables
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -42,10 +42,10 @@ const supabase = createClient(
 );
 
 /**
- * NFT 티어 값을 표준화하는 헬퍼 함수
+ * Helper function to standardize NFT tier values
  * 
- * @param {string} tierValue - 원시 티어 값
- * @returns {string} 표준화된 티어 값
+ * @param {string} tierValue - Raw tier value
+ * @returns {string} Standardized tier value
  */
 function standardizeTier(tierValue) {
   if (!tierValue) return 'COMMON';

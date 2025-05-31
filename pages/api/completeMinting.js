@@ -1,6 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
 import { completeMinting } from '../../utils/completeMinting';
 import { createClient } from '@supabase/supabase-js';
+import { optimizedRateLimiter } from '../../api-middlewares/optimizedRateLimit';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -8,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -72,3 +73,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Apply rate limiting middleware (10 requests per minute, weight: 2)
+export default optimizedRateLimiter(handler);

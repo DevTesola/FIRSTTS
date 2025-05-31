@@ -85,16 +85,16 @@ const PATH_SPECIFIC_LIMITS = {
     windowMs: 60000, // 1 minute
     weight: 1 // Request weight multiplier
   },
-  // Minting APIs have stricter limits
+  // Minting APIs - relaxed limits to not interfere with existing minting process
   'purchaseNFT': {
-    limit: 10,
+    limit: 20,
     windowMs: 60000, // 1 minute
-    weight: 2 // Higher weight - more expensive operation
+    weight: 1 // Reduced weight to prevent mint failures
   },
   'completeMinting': {
-    limit: 10,
+    limit: 20,
     windowMs: 60000, // 1 minute
-    weight: 2
+    weight: 1 // Reduced weight to prevent mint failures
   },
   // Staking APIs
   'prepareStaking': {
@@ -158,18 +158,17 @@ function getClientIdentifier(req) {
 }
 
 /**
- * Optimized rate limiting middleware
+ * Optimized rate limiting middleware for Next.js API routes
  * 
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- * @param {Function} next - Next middleware function
- * @returns {void}
+ * @param {Function} handler - API handler function
+ * @returns {Function} - Wrapped handler with rate limiting
  */
-function optimizedRateLimiter(req, res, next) {
-  // Skip rate limiting for non-API routes for better performance
-  if (!req.url.startsWith('/api/')) {
-    return next();
-  }
+function optimizedRateLimiter(handler) {
+  return async (req, res) => {
+    // Skip rate limiting for non-API routes for better performance
+    if (!req.url || !req.url.startsWith('/api/')) {
+      return handler(req, res);
+    }
   
   // Get client identifier
   const identifier = getClientIdentifier(req);
@@ -244,8 +243,9 @@ function optimizedRateLimiter(req, res, next) {
   res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - requestRecord.count));
   res.setHeader('X-RateLimit-Reset', Math.ceil(requestRecord.resetTime / 1000));
   
-  // Proceed to next middleware
-  next();
+    // Proceed to handler
+    return handler(req, res);
+  };
 }
 
 // Last cleaned timestamp to track cleaning schedule
@@ -342,5 +342,6 @@ function cleanupExpiredRecords() {
 // Export middleware and factory
 module.exports = {
   rateLimiter: optimizedRateLimiter,
+  optimizedRateLimiter,
   createRateLimiter
 };

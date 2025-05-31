@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { getDirectGatewayUrl, isIPFSUrl } from '../utils/mediaUtils';
+import { mintingConfig } from '../utils/minting-config';
 
 export default function MintResultModal({ result, onClose }) {
   const { publicKey } = useWallet();
@@ -78,7 +79,7 @@ export default function MintResultModal({ result, onClose }) {
   
   // Extract mint address from metadata if available
   const mintAddress = metadata.mintAddress || metadata.mint || "";
-  const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
+  const network = mintingConfig.network;
   
   // Create meaningful links
   // Solscan link for the transaction
@@ -87,15 +88,11 @@ export default function MintResultModal({ result, onClose }) {
   // Magic Eden link if we have a mint address
   const magicEdenUrl = `https://magiceden.io/item-details/${mintAddress}?cluster=${network}`;
   
-  // Tesola website URL
-  const tesolaUrl = `https://tesola.xyz/solara/${filename}`;
-  
-  // Create tweet text with proper links to Solscan, Magic Eden and tesola.xyz
+  // Create tweet text with proper links to Solscan and Magic Eden
   const tweetText = encodeURIComponent(
     `I just minted SOLARA #${formattedId} – ${tier} tier from the GEN:0 collection! 🚀\n\n` +
     `View on Solscan: ${solscanUrl}\n` +
-    `View on Magic Eden: ${magicEdenUrl}\n` +
-    `Visit: ${tesolaUrl}\n\n` +
+    `View on Magic Eden: ${magicEdenUrl}\n\n` +
     `#SOLARA #NFT #Solana`
   );
   
@@ -220,8 +217,9 @@ export default function MintResultModal({ result, onClose }) {
   };
   
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-      <div className="bg-gray-900 rounded-xl max-w-lg w-full p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 overflow-y-auto z-50">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="bg-gray-900 rounded-xl max-w-lg w-full p-6 shadow-2xl my-8">
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-white mb-2">
             Congratulations! SOLARA #{formattedId} Minted!
@@ -275,7 +273,7 @@ export default function MintResultModal({ result, onClose }) {
             </div>
           )}
           
-          {/* Links to Solscan, Magic Eden and TESOLA.xyz */}
+          {/* Links to Solscan and Magic Eden */}
           <div className="flex flex-col gap-2 mb-4">
             {mintAddress && (
               <>
@@ -304,19 +302,6 @@ export default function MintResultModal({ result, onClose }) {
                     <path d="M14 4H20V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                   View on Magic Eden
-                </a>
-                <a 
-                  href={tesolaUrl}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-green-400 hover:underline flex items-center"
-                >
-                  <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 6H6C5.46957 6 4.96086 6.21071 4.58579 6.58579C4.21071 6.96086 4 7.46957 4 8V18C4 18.5304 4.21071 19.0391 4.58579 19.4142C4.96086 19.7893 5.46957 20 6 20H16C16.5304 20 17.0391 19.7893 17.4142 19.4142C17.7893 19.0391 18 18.5304 18 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M8 12L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M14 4H20V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  View on TESOLA.xyz
                 </a>
               </>
             )}
@@ -381,6 +366,7 @@ export default function MintResultModal({ result, onClose }) {
               </>
             )}
           </button>
+        </div>
         </div>
       </div>
     </div>

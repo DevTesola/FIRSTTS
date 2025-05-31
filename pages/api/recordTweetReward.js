@@ -1,5 +1,6 @@
 // pages/api/recordTweetReward.js
 import { createClient } from '@supabase/supabase-js';
+import { optimizedRateLimiter } from '../../api-middlewares/optimizedRateLimit';
 
 // 일반 클라이언트 (제한된 권한)
 const supabase = createClient(
@@ -16,7 +17,7 @@ const supabaseAdmin = createClient(
 // 환경 변수에서 보상 금액 가져오기
 const SHARE_REWARD_AMOUNT = parseInt(process.env.NEXT_PUBLIC_SHARE_REWARD_AMOUNT || '5');
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -297,3 +298,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Apply rate limiting middleware (15 requests per minute, weight: 1)
+export default optimizedRateLimiter(handler);

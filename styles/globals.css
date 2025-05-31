@@ -7,6 +7,46 @@
   font-family: 'Orbitron', sans-serif !important;
 }
 
+/* Enhanced Minting button with spectacular effects */
+.mint-button {
+  @apply text-xl md:text-2xl px-8 py-4 font-extrabold
+         bg-blue-600 hover:bg-blue-700
+         hover:shadow-[0_0_30px_15px_rgba(0,128,255,0.8)]
+         text-white rounded-xl shadow-2xl
+         transition duration-300 ease-in-out
+         relative z-10;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.mint-button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.mint-button::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: linear-gradient(45deg, rgba(0,128,255,0.4), rgba(128,0,255,0.4));
+  z-index: -1;
+  border-radius: 16px;
+  filter: blur(10px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mint-button:hover::after {
+  opacity: 1;
+  animation: rotateBorderGlow 3s linear infinite;
+}
+
+@keyframes rotateBorderGlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 모든 요소의 기본 배경을 투명하게 설정 - !important 제거하여 컨테이너 스타일 허용 */
 body, html, #__next {
   background-color: transparent;

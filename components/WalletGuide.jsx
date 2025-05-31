@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { Connection } from "@solana/web3.js";
 import { useAnalytics } from "./AnalyticsProvider";
+import { mintingConfig } from "../utils/minting-config";
 
 /**
  * 개선된 지갑 연결 가이드 컴포넌트
@@ -22,32 +24,33 @@ export default function WalletGuide({ forceShow, onClose }) {
     if (!connected || !publicKey) return;
     
     try {
-      // 환경 변수에서 RPC 엔드포인트 가져오기
-      const rpcEndpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
+      // 민팅 설정에서 메인넷 RPC 엔드포인트 사용
+      const rpcEndpoint = mintingConfig.rpcEndpoint;
+      console.log('Using RPC endpoint for balance check:', rpcEndpoint);
+      console.log('Checking balance for wallet:', publicKey.toString());
       
-      // 잔액 조회 API 호출
-      const response = await fetch(`${rpcEndpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'getBalance',
-          params: [publicKey.toString()]
-        })
-      });
+      // Connection 클래스를 사용하여 CORS 문제 해결
+      const connection = new Connection(rpcEndpoint, 'confirmed');
+      const balance = await connection.getBalance(publicKey);
       
-      const data = await response.json();
-      
-      if (data.result && data.result.value !== undefined) {
-        // lamports를 SOL로 변환 (1 SOL = 10^9 lamports)
-        const balanceInSol = data.result.value / 1_000_000_000;
-        setSolBalance(balanceInSol);
-      }
+      // lamports를 SOL로 변환 (1 SOL = 10^9 lamports)
+      const balanceInSol = balance / 1_000_000_000;
+      console.log('Balance in lamports:', balance);
+      console.log('Balance in SOL:', balanceInSol);
+      setSolBalance(balanceInSol);
     } catch (error) {
       console.error('Error fetching balance:', error);
+      // 백업 RPC 시도
+      try {
+        console.log('Trying backup RPC...');
+        const backupConnection = new Connection('https://solana-api.projectserum.com', 'confirmed');
+        const balance = await backupConnection.getBalance(publicKey);
+        const balanceInSol = balance / 1_000_000_000;
+        console.log('Backup RPC - Balance in SOL:', balanceInSol);
+        setSolBalance(balanceInSol);
+      } catch (backupError) {
+        console.error('Backup RPC also failed:', backupError);
+      }
     }
   }, [publicKey, connected]);
   
@@ -140,13 +143,14 @@ export default function WalletGuide({ forceShow, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
+      className="fixed inset-0 bg-black/80 overflow-y-auto z-[100]"
       aria-labelledby="wallet-guide-title"
       role="dialog"
     >
-      <div 
-        className={`bg-gray-900 rounded-xl max-w-md w-full p-6 relative shadow-2xl ${animating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} transition-all duration-300`}
-      >
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div 
+          className={`bg-gray-900 rounded-xl max-w-md w-full p-6 relative shadow-2xl my-8 ${animating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} transition-all duration-300`}
+        >
         {/* 닫기 버튼 */}
         <button 
           onClick={closeGuide}
@@ -255,7 +259,7 @@ export default function WalletGuide({ forceShow, onClose }) {
               <div className="bg-purple-900/30 p-4 rounded-lg border border-purple-800 mb-4">
                 <h3 className="font-bold text-purple-300 mb-1">Important:</h3>
                 <p className="text-sm text-gray-300">
-                  Make sure your wallet is funded with SOL before minting. The current mint price is 1.5 SOL.
+                  Make sure your wallet is funded with SOL before minting. The current mint price is 3 SOL.
                 </p>
               </div>
               
@@ -304,7 +308,7 @@ export default function WalletGuide({ forceShow, onClose }) {
                     <span className="text-gray-400 text-sm">Balance:</span>
                     <span className="ml-2 font-bold text-yellow-400">{solBalance.toFixed(4)} SOL</span>
                     
-                    {solBalance < 1.6 && (
+                    {solBalance < 3.1 && (
                       <span className="ml-2 text-xs bg-red-900/70 text-red-300 px-2 py-0.5 rounded-full">
                         Low balance for minting
                       </span>
@@ -372,6 +376,7 @@ export default function WalletGuide({ forceShow, onClose }) {
               Start Minting
             </button>
           )}
+        </div>
         </div>
       </div>
     </div>

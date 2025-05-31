@@ -32,9 +32,7 @@ export const EmergencyUnstakeResultModal = ({
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     zIndex: 1000,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflowY: 'auto',
   };
 
   const modalContentStyle = {
@@ -116,7 +114,8 @@ export const EmergencyUnstakeResultModal = ({
 
   return (
     <div style={modalOverlayStyle} onClick={onClose}>
-      <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+      <div style={{ minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+        <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
         <div style={modalHeaderStyle}>
           <h3>Unstaking Complete</h3>
           <button style={closeButtonStyle} onClick={onClose}>×</button>
@@ -160,6 +159,7 @@ export const EmergencyUnstakeResultModal = ({
         </div>
 
         <button style={buttonStyle} onClick={onClose}>Confirm</button>
+        </div>
       </div>
     </div>
   );

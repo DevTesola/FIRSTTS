@@ -19,7 +19,7 @@ export function middleware(request) {
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'same-origin');
   
-  // Enhanced CSP - stricter policy
+  // Enhanced CSP - Solana RPC 엔드포인트 추가
   response.headers.set(
     'Content-Security-Policy', 
     "default-src 'self'; " +
@@ -27,7 +27,7 @@ export function middleware(request) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "img-src 'self' data: https: blob:; " +
     "font-src 'self' https://fonts.gstatic.com; " +
-    "connect-src 'self' https://*.supabase.co https://*.helius-rpc.com wss://*.solana.com https://api.coingecko.com; " +
+    "connect-src 'self' https://*.supabase.co https://*.helius-rpc.com wss://*.solana.com https://api.coingecko.com https://api.devnet.solana.com https://api.mainnet-beta.solana.com https://*.solana.com https://*.rpcpool.com https://tesola.mypinata.cloud https://*.pinata.cloud https://cloudflare-ipfs.com https://ipfs.io; " +
     "frame-src 'self' https://phantom.app https://solflare.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com; " +
     "object-src 'none'; " +
     "base-uri 'self';"

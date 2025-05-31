@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Connection, Transaction } from "@solana/web3.js";
@@ -20,16 +19,15 @@ import Tokenomics from "./Tokenomics";
 import Roadmap from "./Roadmap";
 import TokenUtility from "./TokenUtility";
 import FAQ from "./FAQ";
-import ScrollableTabs from "../common/ScrollableTabs";
 
-// Client-only component wrapper
+// 클라이언트 전용 컴포넌트 래퍼
 const ClientOnly = ({ children }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   return mounted ? children : null;
 };
 
-// Dynamic import for better performance - improved method
+// Dynamic import for better performance - 수정된 방식
 const VideoPlayer = dynamic(
   () => import("../VideoPlayer").then(mod => mod.default), 
   { 
@@ -49,101 +47,7 @@ const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || "http
 // Default purchase amount
 const DEFAULT_PURCHASE_AMOUNT = 20000;
 
-// Custom styles for extra small text and mobile optimization
-const TEXT_XXS_STYLE = `
-  .text-xxs {
-    font-size: 0.65rem;
-    line-height: 0.9rem;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
-
-  /* Animation for scroll hint */
-  @keyframes fadeInOut {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.8; }
-  }
-  
-  /* Adds subtle pulsing animation for scroll hint */
-  .scroll-hint {
-    animation: fadeInOut 2s ease-in-out infinite;
-  }
-  
-  /* Horizontal tabs specific styles */
-  .horizontal-tabs {
-    position: relative;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-  }
-
-  /* Horizontal tabs subtle gradient indicators */
-  .horizontal-tabs::before,
-  .horizontal-tabs::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 20px;
-    z-index: 2;
-    pointer-events: none;
-  }
-
-  .horizontal-tabs::before {
-    left: 0;
-    background: linear-gradient(to right, rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0));
-  }
-
-  .horizontal-tabs::after {
-    right: 0;
-    background: linear-gradient(to left, rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0));
-  }
-  
-  /* Enhanced mobile optimization */
-  @media (max-width: 640px) {
-    /* All interactive elements have minimum touch target size */
-    button, a, select, input, .interactive-element {
-      min-height: 44px;
-      min-width: 44px;
-    }
-    
-    /* Preset button sizes for consistent UI */
-    .tab-button {
-      min-width: 90px; /* Minimum width for tab buttons */
-    }
-    
-    /* Help with horizontal scrolling */
-    .scrollable-x {
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 4px;
-      margin-bottom: -4px;
-    }
-    
-    .scrollable-x > * {
-      scroll-snap-align: start;
-    }
-    
-    /* Improved spacing for mobile */
-    .mobile-spacing {
-      margin-bottom: 0.5rem;
-    }
-    
-    /* Better touch area for small buttons */
-    .touch-friendly {
-      padding: 0.5rem 0.75rem;
-    }
-  }
-`;
-
 export default function PresalePage({ initialSupply = 0 }) {
-  const router = useRouter();
   const { publicKey, connected, signTransaction } = useWallet() || {};
   
   // State management
@@ -336,12 +240,12 @@ export default function PresalePage({ initialSupply = 0 }) {
 
   // Terms modal
   const TermsModal = () => (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-purple-500/30 shadow-[0_0_25px_rgba(147,51,234,0.3)]">
-        <div className="p-4 sm:p-6">
-          <h3 className="text-xl sm:text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4 sm:mb-6">Terms & Conditions</h3>
+        <div className="p-6">
+          <h3 className="text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">Terms & Conditions</h3>
           
-          <div className="space-y-3 sm:space-y-4 text-gray-300 text-sm sm:text-base">
+          <div className="space-y-4 text-gray-300">
             <h4 className="font-bold text-white">1. Acceptance of Terms</h4>
             <p>By participating in the TESOLA token presale, you accept and agree to these terms and conditions.</p>
             
@@ -361,10 +265,10 @@ export default function PresalePage({ initialSupply = 0 }) {
             <p>The TESOLA team shall not be liable for any indirect, incidental, or consequential damages arising out of or in connection with your participation.</p>
           </div>
           
-          <div className="mt-4 sm:mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end">
             <button
               onClick={() => setShowTerms(false)}
-              className="py-2 sm:py-3 px-4 sm:px-6 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm sm:text-base"
+              className="py-3 px-6 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
             >
               I Understand
             </button>
@@ -374,7 +278,7 @@ export default function PresalePage({ initialSupply = 0 }) {
     </div>
   );
   
-  // Define NavTabs component as arrow function to solve scope issues
+  // NavTabs 컴포넌트를 화살표 함수로 직접 정의하여 스코프 문제 해결
   const NavTabs = () => {
     // Define tabs state
     const tabs = [
@@ -413,20 +317,18 @@ export default function PresalePage({ initialSupply = 0 }) {
     );
   };
 
-  // Verify VideoPlayer validity before rendering
+  // 표시 전에 VideoPlayer 유효성 확인
   const isVideoPlayerValid = typeof VideoPlayer === 'function' || 
                              (typeof VideoPlayer === 'object' && VideoPlayer !== null);
 
-  // Function to open Terms modal
+  // Terms 모달을 열기 위한 함수
   const handleShowTerms = () => {
     setShowTerms(true);
   };
   
-  // Token purchase function - redirect version (moves to Coming Soon page)
+  // Token purchase function - redirect to coming soon page
   const handlePurchase = () => {
-    // Set current path as returnUrl for easy navigation back
-    const returnUrl = encodeURIComponent(router.asPath);
-    router.push(`/coming-soon-presale?returnUrl=${returnUrl}`);
+    window.location.href = '/coming-soon-presale';
   };
 
   return (
@@ -457,25 +359,25 @@ export default function PresalePage({ initialSupply = 0 }) {
           Join the future of Solana with TESOLA - the community-driven utility token powering next-generation DeFi solutions
         </p>
         
-        {/* Community & Development badges */}
+        {/* Audited by & KYC badges */}
         <div className="flex justify-center gap-4 mt-4">
           <div className="bg-gray-800 px-4 py-2 rounded-full flex items-center">
-            <span className="text-blue-400 mr-2">🚀</span>
-            <span className="text-sm text-gray-300">Community Powered</span>
+            <span className="text-green-400 mr-2">✓</span>
+            <span className="text-sm text-gray-300">Audited by CertiK</span>
           </div>
           <div className="bg-gray-800 px-4 py-2 rounded-full flex items-center">
-            <span className="text-purple-400 mr-2">🔍</span>
-            <span className="text-sm text-gray-300">Open Source Project</span>
+            <span className="text-green-400 mr-2">✓</span>
+            <span className="text-sm text-gray-300">KYC Verified</span>
           </div>
         </div>
       </div>
       
-      {/* Main Video - rendered only on client-side */}
+      {/* Main Video - 클라이언트 측에서만 렌더링 */}
       <div className="rounded-xl overflow-hidden shadow-2xl mb-8 border border-purple-500/20">
         <ClientOnly>
           {isClient && isVideoPlayerValid && (
             <div className="video-wrapper-square relative mx-auto max-w-2xl mb-4">
-              {/* Centered 1:1 video container */}
+              {/* 중앙 정렬된 1:1 비디오 컨테이너 */}
               <div className="video-container-square relative overflow-hidden rounded-xl shadow-2xl border border-purple-500/30">
                 <iframe 
                   src="https://www.youtube.com/embed/AdkBE0cOxds?autoplay=1&mute=1&controls=1&showinfo=0&rel=0&loop=1&playlist=AdkBE0cOxds&modestbranding=1"
@@ -486,7 +388,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                 ></iframe>
               </div>
               
-              {/* Subscription benefits highlight & English buttons */}
+              {/* 구독 혜택 강조 & 영문 버튼 */}
               <div className="flex flex-col items-center mt-4">
                 <div className="flex flex-wrap justify-center gap-3">
                   <a 
@@ -516,7 +418,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                   </a>
                 </div>
                 
-                {/* Subscription benefit text - concise and elegant */}
+                {/* 구독 혜택 텍스트 - 간결하고 세련되게 */}
                 <p className="text-sm text-gray-300 mt-2 text-center max-w-md">
                   <span className="text-yellow-400">✨</span> Subscribe for exclusive events and early access to TESOLA updates
                 </p>
@@ -525,7 +427,7 @@ export default function PresalePage({ initialSupply = 0 }) {
           )}
           {isClient && !isVideoPlayerValid && (
             <div className="w-full h-64 bg-gray-800 flex items-center justify-center text-gray-500">
-              <div>Unable to load video</div>
+              <div>비디오를 로드할 수 없습니다</div>
             </div>
           )}
         </ClientOnly>
@@ -544,7 +446,7 @@ export default function PresalePage({ initialSupply = 0 }) {
       </div>
       
       {/* Combined Section: Presale Info and Purchase Form */}
-      <div className="mt-6 container-purple rounded-xl border border-purple-500/30 shadow-xl overflow-hidden">
+      <div className="mt-6 bg-gray-800/50 rounded-xl border border-purple-500/30 shadow-xl overflow-hidden">
         {/* Wallet Info & Purchase Form at the top */}
         <div className="border-b border-purple-500/20 p-6">
           <ClientOnly>
@@ -557,7 +459,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                 
                 {/* Connected wallet info */}
                 {connected && publicKey && (
-                  <div className="bg-gray-800 text-purple-300 font-mono text-xs sm:text-sm md:text-base rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 shadow-md w-full max-w-sm">
+                  <div className="bg-gray-800 text-purple-300 font-mono text-sm md:text-base rounded-lg px-4 py-2 shadow-md w-full max-w-sm">
                     <div className="flex items-center justify-between">
                       <span className="truncate">Wallet: {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
                       
@@ -614,10 +516,10 @@ export default function PresalePage({ initialSupply = 0 }) {
                 
                 {/* Purchase Form */}
                 {connected && (
-                  <div className="w-full max-w-sm mt-3 sm:mt-4 bg-gray-800 bg-opacity-50 p-3 sm:p-4 rounded-lg border border-purple-500 border-opacity-30">
+                  <div className="w-full max-w-sm mt-4 bg-gray-800 bg-opacity-50 p-4 rounded-lg border border-purple-500 border-opacity-30">
                     {/* Token amount selection */}
                     <div className="mb-4">
-                      <label htmlFor="tokenAmount" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                      <label htmlFor="tokenAmount" className="block text-sm font-medium text-gray-300 mb-1">
                         TESOLA Token Amount
                       </label>
                       <div className="relative mt-1 rounded-md shadow-sm">
@@ -636,16 +538,16 @@ export default function PresalePage({ initialSupply = 0 }) {
                               setPurchaseAmount(1000); // Minimum 1000 tokens
                             }
                           }}
-                          className="block w-full rounded-md border-gray-700 bg-gray-900 text-white px-3 sm:px-4 py-2 sm:py-3 pr-20 sm:pr-24 text-sm sm:text-base focus:border-purple-500 focus:ring-purple-500"
+                          className="block w-full rounded-md border-gray-700 bg-gray-900 text-white px-4 py-3 pr-24 focus:border-purple-500 focus:ring-purple-500"
                           placeholder="Enter amount"
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center">
-                          <span className="text-gray-400 px-2 sm:px-3 text-xs sm:text-sm">TESOLA</span>
+                          <span className="text-gray-400 px-3">TESOLA</span>
                         </div>
                       </div>
                       
                       {/* Quick amount buttons */}
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+                      <div className="flex flex-wrap gap-2 mt-2">
                         {[
                           { label: "5K", value: 5000 },
                           { label: "10K", value: 10000 },
@@ -661,7 +563,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                               key={option.value}
                               type="button"
                               onClick={() => !isDisabled && setPurchaseAmount(option.value)}
-                              className={`px-1.5 sm:px-2 py-1 text-xxs sm:text-xs rounded-md ${
+                              className={`px-2 py-1 text-xs rounded-md ${
                                 purchaseAmount === option.value 
                                   ? 'bg-purple-600 text-white' 
                                   : isDisabled
@@ -680,7 +582,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                           <button
                             type="button"
                             onClick={() => setPurchaseAmount(maxTokens)}
-                            className={`px-1.5 sm:px-2 py-1 text-xxs sm:text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700`}
+                            className={`px-2 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700`}
                           >
                             MAX
                           </button>
@@ -689,27 +591,27 @@ export default function PresalePage({ initialSupply = 0 }) {
                     </div>
                     
                     {/* Total cost display */}
-                    <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-900 rounded-lg">
+                    <div className="mb-4 p-3 bg-gray-900 rounded-lg">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-300 text-xs sm:text-sm">Price per token:</span>
-                        <span className="font-medium text-white text-xs sm:text-sm">{presalePrice}</span>
+                        <span className="text-gray-300">Price per token:</span>
+                        <span className="font-medium text-white">{presalePrice}</span>
                       </div>
-                      <div className="flex justify-between items-center mt-1.5 sm:mt-2">
-                        <span className="text-gray-300 text-xs sm:text-sm">Total cost:</span>
-                        <span className="font-bold text-base sm:text-lg text-white">{totalCost.toFixed(6)} SOL</span>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-gray-300">Total cost:</span>
+                        <span className="font-bold text-lg text-white">{totalCost.toFixed(6)} SOL</span>
                       </div>
                     </div>
                     
                     {/* Policy agreement checkbox */}
-                    <div className="mb-3 sm:mb-4 flex items-start space-x-2">
+                    <div className="mb-4 flex items-start space-x-2">
                       <input
                         type="checkbox"
                         id="agreeToPolicy"
                         checked={agreedToPolicy}
                         onChange={(e) => setAgreedToPolicy(e.target.checked)}
-                        className="mt-0.5 sm:mt-1"
+                        className="mt-1"
                       />
-                      <label htmlFor="agreeToPolicy" className="text-xs sm:text-sm">
+                      <label htmlFor="agreeToPolicy" className="text-sm">
                         I agree to the{" "}
                         <button
                           type="button"
@@ -725,12 +627,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     {/* Purchase button */}
                     <button
                       onClick={handlePurchase}
-                      disabled={!agreedToPolicy || transactionPending || !hasSufficientFunds || purchaseAmount < 1000}
-                      className={`w-full inline-flex items-center justify-center py-3 px-4 rounded-xl text-xl font-bold ${
-                        !agreedToPolicy || transactionPending || !hasSufficientFunds || purchaseAmount < 1000
-                          ? "bg-gray-600 text-gray-300 cursor-not-allowed opacity-50" 
-                          : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg"
-                      }`}
+                      className="w-full inline-flex items-center justify-center py-3 px-4 rounded-xl text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg"
                     >
                       {transactionPending ? (
                         <>
@@ -751,7 +648,7 @@ export default function PresalePage({ initialSupply = 0 }) {
                     </button>
                     
                     {/* Additional guidance */}
-                    <p className="text-xxs sm:text-xs text-gray-400 text-center mt-1.5 sm:mt-2">
+                    <p className="text-xs text-gray-400 text-center mt-2">
                       {maxTokens > 0 
                         ? `Minimum purchase: 1,000 tokens. Maximum for your tier: ${maxTokens.toLocaleString()} tokens.`
                         : "Minimum purchase: 1,000 tokens. Maximum: 10,000,000 tokens."
@@ -777,34 +674,83 @@ export default function PresalePage({ initialSupply = 0 }) {
         <div className="p-6">
           {/* Navigation tabs at the top of presale info box */}
           <div className="mb-6">
-            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-1.5 border border-purple-500/20 shadow-lg">
-              {/* 수평 스크롤 가능한 탭 컨테이너 */}
-              <div className="overflow-x-auto scrollbar-hide horizontal-tabs relative" style={{ WebkitOverflowScrolling: 'touch' }}>
-                {/* 스냅 스크롤링을 위한 내부 컨테이너 */}
-                <div className="flex gap-2 py-2 px-4 min-w-max md:justify-center">
-                  {[
-                    { id: 'presale', label: 'Presale' },
-                    { id: 'tokenomics', label: 'Tokenomics' },
-                    { id: 'roadmap', label: 'Roadmap' },
-                    { id: 'utility', label: 'Utility' },
-                    { id: 'faq', label: 'FAQ' }
-                  ].map(tab => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => {
-                        console.log(`Setting activeTab to: ${tab.id}`);
-                        setActiveTab(tab.id);
-                      }}
-                      className={`py-3 px-4 sm:px-5 rounded-lg text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 tab-button ${activeTab === tab.id 
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl' 
-                        : 'text-gray-300 hover:bg-gray-700/50 hover:text-white bg-gray-800/70'}`}
-                      style={{ fontFamily: "'Orbitron', sans-serif" }}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-2 border border-purple-500/20 shadow-lg presale-tabs">
+              <div className="flex flex-wrap md:flex-nowrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: presale');
+                    setActiveTab('presale');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'presale' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Presale
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: tokenomics');
+                    setActiveTab('tokenomics');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'tokenomics' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Tokenomics
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: roadmap');
+                    setActiveTab('roadmap');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'roadmap' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Roadmap
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: utility');
+                    setActiveTab('utility');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'utility' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  Utility
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting activeTab to: faq');
+                    setActiveTab('faq');
+                  }}
+                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    activeTab === 'faq' 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:shadow'
+                  }`}
+                  style={{ fontFamily: "'Orbitron', sans-serif !important" }}
+                >
+                  FAQ
+                </button>
               </div>
             </div>
           </div>
@@ -851,9 +797,6 @@ export default function PresalePage({ initialSupply = 0 }) {
 
       
       {/* Documents section removed as they are now in Layout.jsx */}
-      
-      {/* Add custom styles */}
-      <style jsx global>{TEXT_XXS_STYLE}</style>
     </div>
   );
 }

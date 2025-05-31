@@ -55,18 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
     errorDescription.style.color = '#d1d5db';
     errorDescription.style.textAlign = 'center';
     
-    const errorDetails = document.createElement('div');
-    errorDetails.style.background = 'rgba(0, 0, 0, 0.3)';
-    errorDetails.style.padding = '10px';
-    errorDetails.style.borderRadius = '4px';
-    errorDetails.style.fontSize = '12px';
-    errorDetails.style.fontFamily = 'monospace';
-    errorDetails.style.color = '#ef4444';
-    errorDetails.style.marginBottom = '20px';
-    errorDetails.style.maxHeight = '100px';
-    errorDetails.style.overflow = 'auto';
-    errorDetails.textContent = error?.message || '알 수 없는 오류';
-    
     const refreshButton = document.createElement('button');
     refreshButton.textContent = '새로고침';
     refreshButton.style.background = 'linear-gradient(to right, #7c3aed, #8b5cf6)';
@@ -85,33 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // 요소 조합
     errorMsg.appendChild(errorTitle);
     errorMsg.appendChild(errorDescription);
-    errorMsg.appendChild(errorDetails);
     errorMsg.appendChild(refreshButton);
     errorContainer.appendChild(errorMsg);
     
     // 문서에 추가
     document.body.appendChild(errorContainer);
-  };
-  
-  // 기본 오류 핸들러 확장
-  const originalError = console.error;
-  console.error = function() {
-    // 기본 로깅 유지
-    originalError.apply(this, arguments);
-    
-    // Next.js 누락된 컴포넌트 오류 감지
-    const errorMessage = arguments[0];
-    if (typeof errorMessage === 'string' && 
-        (errorMessage.includes('missing required error components') || 
-         errorMessage.includes('refreshing'))) {
-      
-      // 누락된 컴포넌트 오류 처리
-      console.log('Handling missing components error');
-      if (window.__NEXT_ERROR_RENDER) {
-        window.__NEXT_ERROR_RENDER({ 
-          message: 'Required components are missing. The application is trying to recover.'
-        });
-      }
-    }
   };
 });

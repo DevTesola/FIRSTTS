@@ -1,11 +1,11 @@
 /**
  * EnhancedStakingButton-V2.jsx
- * 향상된 NFT 스테이킹 버튼 컴포넌트 V2
+ * Enhanced NFT Staking Button Component V2
  * 
- * - Anchor 디스크리미네이터 계산 방식 적용
- * - 올바른 계정 순서 및 구조 사용
- * - 향상된 오류 처리 및 사용자 피드백
- * - 스테이킹 한도 확인 및 알림
+ * - Implements Anchor discriminator calculation method
+ * - Uses correct account order and structure
+ * - Enhanced error handling and user feedback
+ * - Staking limit verification and notifications
  */
 import React, { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -15,8 +15,8 @@ import { InfoTooltip } from "../common/InfoTooltip";
 import { debugLog, debugError } from "../../utils/debugUtils";
 
 /**
- * 향상된 NFT 스테이킹 버튼 컴포넌트
- * Anchor 호환 및 계정 구조 최적화 버전
+ * Enhanced NFT Staking Button Component
+ * Anchor-compatible and account structure optimized version
  */
 const EnhancedStakingButtonV2 = ({ 
   nft, 
@@ -40,7 +40,7 @@ const EnhancedStakingButtonV2 = ({
   });
   const [stakingInfo, setStakingInfo] = useState(null);
   
-  // 로딩 효과 처리
+  // Handle loading effects
   useEffect(() => {
     if (status === "idle" || status === "success" || status === "error") {
       if (onEndLoading) onEndLoading();
@@ -49,7 +49,7 @@ const EnhancedStakingButtonV2 = ({
     }
   }, [status, onStartLoading, onEndLoading]);
   
-  // 진행률 업데이트
+  // Update progress
   useEffect(() => {
     if (status === "preparing") setProgress(10);
     else if (status === "processing") setProgress(30);
@@ -59,26 +59,26 @@ const EnhancedStakingButtonV2 = ({
     else if (status === "success") setProgress(100);
   }, [status]);
   
-  // 트랜잭션 서명 및 제출 처리
+  // Process transaction signing and submission
   const processTransaction = async (phase, txBase64, description, nextStatus, skipWhenNull = true) => {
     if (!txBase64 && skipWhenNull) {
-      debugLog("EnhancedStakingButtonV2", `${phase} 트랜잭션이 필요 없음, 건너뜀`);
+      debugLog("EnhancedStakingButtonV2", `${phase} transaction not needed, skipping`);
       return { success: true, signature: null, skipped: true };
     }
     
     try {
-      debugLog("EnhancedStakingButtonV2", `${phase} 트랜잭션 처리 중: ${description}`);
-      // 트랜잭션 역직렬화 및 서명
+      debugLog("EnhancedStakingButtonV2", `Processing ${phase} transaction: ${description}`);
+      // Deserialize and sign transaction
       const txBuffer = Buffer.from(txBase64, "base64");
       const transaction = Transaction.from(txBuffer);
       
       setStatus("signing");
       const signedTx = await signTransaction(transaction);
       
-      // 서명된 트랜잭션 직렬화
+      // Serialize signed transaction
       const serializedTx = Buffer.from(signedTx.serialize()).toString("base64");
       
-      // 트랜잭션 제출
+      // Submit transaction
       setStatus("submitting");
       const response = await fetch("/api/staking/submitTransaction", {
         method: "POST",
@@ -96,13 +96,13 @@ const EnhancedStakingButtonV2 = ({
       
       const data = await response.json();
       
-      // 블록체인 상태 업데이트 대기
+      // Wait for blockchain state update
       setStatus("confirming");
       const waitTime = phase === "setup" ? 2000 : 2000;
-      debugLog("EnhancedStakingButtonV2", `${phase} 트랜잭션 확인 대기 중... (${waitTime}ms)`);
+      debugLog("EnhancedStakingButtonV2", `Waiting for ${phase} transaction confirmation... (${waitTime}ms)`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       
-      // 상태 업데이트
+      // Update status
       setStatus(nextStatus);
       
       return { 
@@ -111,17 +111,17 @@ const EnhancedStakingButtonV2 = ({
         skipped: false
       };
     } catch (err) {
-      debugError("EnhancedStakingButtonV2", `${phase} 트랜잭션 오류:`, err);
+      debugError("EnhancedStakingButtonV2", `${phase} transaction error:`, err);
       setError(`${description}: ${err.message}`);
       setStatus("error");
       return { success: false, error: err };
     }
   };
   
-  // 스테이킹 프로세스 실행
+  // Execute staking process
   const handleStake = async () => {
     if (!connected || !publicKey || !nft || !nft.mint) {
-      setError("지갑 연결 또는 NFT 정보가 없습니다");
+      setError("Wallet connection or NFT information is missing");
       return;
     }
     
@@ -135,12 +135,12 @@ const EnhancedStakingButtonV2 = ({
         stake: null
       });
       
-      // API 요청을 통해 스테이킹 준비
+      // Prepare staking through API request
       const tierAttr = nft.attributes?.find(attr => attr.trait_type?.toLowerCase() === "tier");
-      debugLog("EnhancedStakingButtonV2", "NFT 티어 정보:", tierAttr);
+      debugLog("EnhancedStakingButtonV2", "NFT tier information:", tierAttr);
       
-      debugLog("EnhancedStakingButtonV2", "향상된 스테이킹 준비 API 요청...");
-      // 향상된 스테이킹 API 엔드포인트 사용
+      debugLog("EnhancedStakingButtonV2", "Making enhanced staking preparation API request...");
+      // Use enhanced staking API endpoint
       const prepareResponse = await fetch("/api/staking/enhanced-staking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -156,7 +156,7 @@ const EnhancedStakingButtonV2 = ({
       
       if (!prepareResponse.ok) {
         const errorData = await prepareResponse.json();
-        throw new Error(errorData.message || "스테이킹 준비 중 오류가 발생했습니다");
+        throw new Error(errorData.message || "An error occurred during staking preparation");
       }
       
       const prepareData = await prepareResponse.json();
@@ -165,9 +165,9 @@ const EnhancedStakingButtonV2 = ({
         throw new Error(prepareData.message || "Staking preparation failed");
       }
       
-      debugLog("EnhancedStakingButtonV2", "스테이킹 준비 데이터:", prepareData.data);
+      debugLog("EnhancedStakingButtonV2", "Staking preparation data:", prepareData.data);
       
-      // 스테이킹 정보 저장 (보상 정보 등)
+      // Save staking information (reward details, etc.)
       if (prepareData.data.rewardDetails) {
         setStakingInfo(prepareData.data.rewardDetails);
       }
@@ -181,18 +181,18 @@ const EnhancedStakingButtonV2 = ({
       
       setStatus("processing");
       
-      // 모든 계정이 이미 초기화되어 있는지 확인
+      // Check if all accounts are already initialized
       if (accountInitialization.allReady) {
-        debugLog("EnhancedStakingButtonV2", "모든 계정이 이미 초기화되어 있습니다. 스테이킹 단계로 직접 진행합니다.");
+        debugLog("EnhancedStakingButtonV2", "All accounts are already initialized. Proceeding directly to staking step.");
         setStatus("signing");
       } else {
-        // 1. 계정 초기화 트랜잭션 처리
+        // 1. Process account initialization transaction
         if (requiredPhases.phase1) {
           const setupResult = await processTransaction(
             "setup",
             transactions.phase1,
-            "계정 초기화",
-            "signing" // 바로 서명 단계로 진행
+            "Account Initialization",
+            "signing" // Proceed directly to signing step
           );
           
           setTxResults(prev => ({ ...prev, setup: setupResult }));
@@ -201,18 +201,18 @@ const EnhancedStakingButtonV2 = ({
             return; // Stop on failure
           }
         } else {
-          debugLog("EnhancedStakingButtonV2", "계정 초기화가 필요 없음, 스테이킹으로 진행");
+          debugLog("EnhancedStakingButtonV2", "Account initialization not needed, proceeding to staking");
           setStatus("signing");
         }
       }
       
-      // 2. 스테이킹 트랜잭션 처리
+      // 2. Process staking transaction
       const stakeResult = await processTransaction(
         "stake",
         transactions.phase3,
-        "NFT 스테이킹",
+        "NFT Staking",
         "success",
-        false // 이 단계는 항상 실행되어야 함
+        false // This step must always be executed
       );
       
       setTxResults(prev => ({ ...prev, stake: stakeResult }));
@@ -224,9 +224,9 @@ const EnhancedStakingButtonV2 = ({
       // 3. Success handling
       setStatus("success");
       
-      // 4. 스테이킹 완료 기록
+      // 4. Record staking completion
       try {
-        debugLog("EnhancedStakingButtonV2", "스테이킹 완료 기록 중...");
+        debugLog("EnhancedStakingButtonV2", "Recording staking completion...");
         const completeResponse = await fetch("/api/staking/completeStaking-unified", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -241,13 +241,13 @@ const EnhancedStakingButtonV2 = ({
         });
         
         if (!completeResponse.ok) {
-          debugLog("EnhancedStakingButtonV2", "스테이킹 완료 기록 중 오류가 발생했지만, 블록체인 트랜잭션은 성공했습니다.");
+          debugLog("EnhancedStakingButtonV2", "Error recording staking completion, but blockchain transaction was successful.");
         }
       } catch (completeError) {
-        debugError("EnhancedStakingButtonV2", "스테이킹 완료 기록 중 오류:", completeError);
+        debugError("EnhancedStakingButtonV2", "Error during staking completion recording:", completeError);
       }
       
-      // 성공 콜백 호출
+      // Call success callback
       if (onSuccess) {
         onSuccess({
           signature: stakeResult.signature,
@@ -263,20 +263,20 @@ const EnhancedStakingButtonV2 = ({
       }
       
     } catch (err) {
-      debugError("EnhancedStakingButtonV2", "스테이킹 오류:", err);
+      debugError("EnhancedStakingButtonV2", "Staking error:", err);
       setStatus("error");
       setError(err.message || "Unknown error during staking");
       
-      // 오류 메시지 개선
+      // Enhance error message
       let enhancedErrorMessage = err.message;
       
-      // MaxNftsExceeded 오류 특별 처리
+      // Special handling for MaxNftsExceeded error
       if (err.message.includes("MaxNftsExceeded") || err.message.includes("maximum")) {
-        enhancedErrorMessage = "최대 NFT 스테이킹 한도에 도달했습니다. 다른 NFT를 스테이킹하기 전에 하나를 언스테이킹하세요.";
+        enhancedErrorMessage = "Maximum NFT staking limit reached. Please unstake one before staking another.";
       }
-      // 계정 역직렬화 오류 특별 처리
+      // Special handling for account deserialization error
       else if (err.message.includes("deserialize") || err.message.includes("AccountDidNotDeserialize")) {
-        enhancedErrorMessage = "계정 구조 문제가 발생했습니다. 비상 언스테이킹을 시도해보세요.";
+        enhancedErrorMessage = "Account structure issue detected. Please try emergency unstaking.";
       }
       
       // Call error callback
@@ -289,7 +289,7 @@ const EnhancedStakingButtonV2 = ({
     }
   };
   
-  // 스테이킹 취소 또는 재시도
+  // Cancel or retry staking
   const handleCancel = () => {
     setStatus("idle");
     setError(null);
@@ -300,7 +300,7 @@ const EnhancedStakingButtonV2 = ({
     });
   };
   
-  // 로딩 상태 UI 처리
+  // Handle loading state UI
   const renderLoadingState = () => {
     if (status === "idle" || status === "success") return null;
     
@@ -314,24 +314,24 @@ const EnhancedStakingButtonV2 = ({
         </div>
         
         <div className="mt-2 text-sm text-gray-300">
-          {status === "preparing" && "스테이킹 준비 중..."}
-          {status === "processing" && "계정 초기화 처리 중..."}
-          {status === "signing" && "트랜잭션 서명 중..."}
-          {status === "submitting" && "트랜잭션 제출 중..."}
-          {status === "confirming" && "블록체인 확인 중..."}
-          {status === "error" && "오류 발생"}
+          {status === "preparing" && "Preparing staking..."}
+          {status === "processing" && "Processing account initialization..."}
+          {status === "signing" && "Signing transaction..."}
+          {status === "submitting" && "Submitting transaction..."}
+          {status === "confirming" && "Confirming on blockchain..."}
+          {status === "error" && "Error occurred"}
         </div>
         
         {error && (
           <div className="mt-2 text-sm text-red-400">
-            오류: {error}
+            Error: {error}
           </div>
         )}
       </div>
     );
   };
   
-  // 트랜잭션 결과 정보 표시
+  // Display transaction result information
   const renderTransactionResults = () => {
     if (status !== "success") return null;
     
@@ -341,44 +341,44 @@ const EnhancedStakingButtonV2 = ({
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-green-500" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span>NFT를 성공적으로 스테이킹했습니다!</span>
+          <span>NFT has been successfully staked!</span>
         </div>
         
         <div className="text-xxs text-gray-500 space-y-1">
           {txResults.setup && !txResults.setup.skipped && (
-            <div>계정 초기화: {txResults.setup.signature?.slice(0, 8)}...</div>
+            <div>Account initialization: {txResults.setup.signature?.slice(0, 8)}...</div>
           )}
           {txResults.stake && (
-            <div>스테이킹 트랜잭션: {txResults.stake.signature?.slice(0, 8)}...</div>
+            <div>Staking transaction: {txResults.stake.signature?.slice(0, 8)}...</div>
           )}
         </div>
       </div>
     );
   };
   
-  // 스테이킹 정보 표시
+  // Display staking information
   const renderStakingInfo = () => {
     if (!showStakingInfo || !stakingInfo) return null;
     
     return (
       <div className="mt-3 text-xs">
         <div className="flex justify-between">
-          <span className="text-gray-400">예상 보상:</span>
+          <span className="text-gray-400">Estimated rewards:</span>
           <span className="text-green-400 font-semibold">{stakingInfo.totalRewards} TESOLA</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-400">일일 보상:</span>
+          <span className="text-gray-400">Daily rewards:</span>
           <span className="text-green-400">{Math.round(stakingInfo.averageDailyReward)} TESOLA</span>
         </div>
         {stakingInfo.longTermBonus > 0 && (
           <div className="flex justify-between">
-            <span className="text-gray-400">기간 보너스:</span>
+            <span className="text-gray-400">Period bonus:</span>
             <span className="text-blue-400">+{stakingInfo.longTermBonus}%</span>
           </div>
         )}
         {autoCompound && (
           <div className="flex justify-between">
-            <span className="text-gray-400">자동 복리:</span>
+            <span className="text-gray-400">Auto compound:</span>
             <span className="text-blue-400">+10%</span>
           </div>
         )}
@@ -393,10 +393,10 @@ const EnhancedStakingButtonV2 = ({
         disabled={disabled || !connected || !publicKey || status !== "idle" && status !== "error"}
         className={`w-full py-3 ${autoCompound ? 'bg-gradient-to-r from-blue-700 to-purple-800' : ''} ${className}`}
       >
-        {status === "success" ? "스테이킹 완료!" : "NFT 스테이킹"}
+        {status === "success" ? "Staking Complete!" : "Stake NFT"}
         {autoCompound && (
-          <InfoTooltip title="자동 복리" className="ml-2">
-            자동 복리가 활성화되어 보상에 +10% 추가 보너스가 적용됩니다.
+          <InfoTooltip title="Auto Compound" className="ml-2">
+            Auto compound is activated, adding a +10% bonus to your rewards.
           </InfoTooltip>
         )}
       </GlassButton>
@@ -411,7 +411,7 @@ const EnhancedStakingButtonV2 = ({
             onClick={handleCancel}
             className="text-sm text-blue-400 hover:text-blue-300"
           >
-            다시 시도
+            Try Again
           </button>
         </div>
       )}

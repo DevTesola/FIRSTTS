@@ -20,35 +20,9 @@ const nextConfig = {
   // Runtime settings for Vercel compatibility
   // Removed experimental settings to fix binding error
   
-  // Security headers
+  // Security headers - CSP 임시 완전 비활성화
   async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.devnet.solana.com https://api.mainnet-beta.solana.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none';",
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
-          },
-        ],
-      },
-    ];
+    return [];
   },
   
   // Image optimization

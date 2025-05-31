@@ -18,8 +18,9 @@ export default function PurchaseResultModal({ result, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-gray-900 rounded-xl max-w-lg w-full overflow-hidden border border-purple-500/30 shadow-[0_0_25px_rgba(147,51,234,0.3)] animate-fade-in">
+    <div className="fixed inset-0 bg-black/80 overflow-y-auto z-50 backdrop-blur-sm">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="bg-gray-900 rounded-xl max-w-lg w-full overflow-hidden border border-purple-500/30 shadow-[0_0_25px_rgba(147,51,234,0.3)] animate-fade-in my-8">
         {/* Success header */}
         <div className="bg-gradient-to-r from-purple-900 to-pink-900 p-6 relative">
           <div className="absolute inset-0 bg-[url('/confetti.svg')] opacity-30"></div>
@@ -97,6 +98,7 @@ export default function PurchaseResultModal({ result, onClose }) {
               View Transaction
             </a>
           </div>
+        </div>
         </div>
       </div>
     </div>

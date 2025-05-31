@@ -7,11 +7,21 @@ export default function RefundPolicyModal({ isVisible, onClose }) {
   if (!isVisible) return null;
   
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-900 max-w-2xl w-full mx-4 p-6 rounded-xl shadow-lg" onClick={e => e.stopPropagation()}>
-        <h2 className="text-2xl font-bold mb-4">SOLARA NFT Refund Policy</h2>
-        
-        <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
+    <div className="fixed inset-0 bg-black/75 overflow-y-auto z-50" onClick={onClose}>
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="bg-gray-900 max-w-2xl w-full p-6 rounded-xl shadow-lg my-8" onClick={e => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">SOLARA NFT Refund Policy</h2>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-white text-2xl font-bold"
+              aria-label="Close modal"
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
           <section>
             <h3 className="font-semibold text-purple-300">1. Basic Principle</h3>
             <p>SOLARA NFT sales are final and non-refundable.</p>
@@ -60,6 +70,7 @@ export default function RefundPolicyModal({ isVisible, onClose }) {
           <Link href="/solara/refund-policy" target="_blank" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">
             Full Policy
           </Link>
+        </div>
         </div>
       </div>
     </div>

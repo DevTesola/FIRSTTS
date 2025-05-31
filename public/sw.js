@@ -30,7 +30,11 @@ const NO_CACHE_PATTERNS = [
   /\/api\/admin\//,
   /\/api\/governance\//,
   /\/api\/leaderboard/,
-  /\/api\/auth\//
+  /\/api\/auth\//,
+  /\/api\/purchaseNFT/,
+  /\/api\/completeMinting/,
+  /\/api\/refreshLock/,
+  /\/api\/presale\//
 ];
 
 // 설치 이벤트 - 정적 에셋을 미리 캐시

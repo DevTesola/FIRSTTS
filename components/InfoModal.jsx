@@ -52,25 +52,26 @@ export default function InfoModal({ isVisible, onClose }) {
   
   return (
     <div
-      className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/85 backdrop-blur-sm overflow-y-auto z-50"
       onClick={onClose}
       role="dialog"
       aria-labelledby="modal-title"
     >
-      <div
-        className="bg-gray-900/90 p-8 rounded-2xl max-w-3xl w-full relative overflow-hidden border border-indigo-500/20"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          className="bg-gray-900/90 p-8 rounded-2xl max-w-3xl w-full relative overflow-hidden border border-indigo-500/20 my-8"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Background decoration elements */}
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
         
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white bg-gray-800/50 rounded-full w-8 h-8 flex items-center justify-center"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white bg-gray-800/50 rounded-full w-10 h-10 flex items-center justify-center text-xl z-10"
           aria-label="Close modal"
         >
-          ✕
+          ×
         </button>
         
         <h2 
@@ -158,6 +159,7 @@ export default function InfoModal({ isVisible, onClose }) {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -325,6 +325,9 @@ export default async function handler(req, res) {
     const activeStakes = [];
     let totalEarnedSoFar = 0;
     let totalProjectedRewards = 0;
+    let filteredOutCount = 0;
+    
+    console.log(`\n========== Processing ${stakedMints.length} NFTs from stakedMints array ==========`);
     
     for (const mintAddress of stakedMints) {
       try {
@@ -353,9 +356,10 @@ export default async function handler(req, res) {
           continue;
         }
         
-        // Skip if unstaked
-        if (stakeInfo.isUnstaked === 1) {
-          console.log(`Mint ${mintAddress} is unstaked (isUnstaked=${stakeInfo.isUnstaked}), skipping`);
+        // Skip if unstaked - check both numeric and boolean values for safety
+        if (stakeInfo.isUnstaked === 1 || stakeInfo.isUnstaked === true) {
+          console.log(`Mint ${mintAddress} is unstaked (isUnstaked=${stakeInfo.isUnstaked}), skipping from active stakes`);
+          filteredOutCount++;
           continue;
         }
         
@@ -439,6 +443,14 @@ export default async function handler(req, res) {
         console.error(`Error processing mint ${mintAddress}:`, err);
       }
     }
+    
+    // Log summary
+    console.log(`\n========== Staking Summary ==========`);
+    console.log(`Total NFTs in stakedMints array: ${stakedMints.length}`);
+    console.log(`Unstaked NFTs filtered out: ${filteredOutCount}`);
+    console.log(`Active stakes returned: ${activeStakes.length}`);
+    console.log(`Collection bonus: ${collectionBonus}`);
+    console.log(`=====================================\n`);
     
     // Prepare response data
     const responseData = {

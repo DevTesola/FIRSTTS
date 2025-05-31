@@ -3,8 +3,9 @@ import { PublicKey } from '@solana/web3.js';
 // Import from the fixed version to resolve lock issues
 import { purchaseNFT } from '../../utils/purchaseNFT-fix';
 import { validateSolanaAddress } from '../../api-middlewares/apiSecurity';
+import { optimizedRateLimiter } from '../../api-middlewares/optimizedRateLimit';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -42,3 +43,6 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
+// Apply rate limiting middleware (10 requests per minute, weight: 2)
+export default optimizedRateLimiter(handler);

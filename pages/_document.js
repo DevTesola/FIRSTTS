@@ -47,23 +47,6 @@ export default function MyDocument() {
         <Main />
         <NextScript />
         
-        {/* 모든 커스텀 스크립트는 비활성화 */}
-        {/* <script src="/cursor.js" /> */}
-        
-        {/* 오류 복구 스크립트 유지 */}
-        <script src="/recovery.js" />
-        
-        {/* 오류 컴포넌트 유지 */}
-        <script src="/error-components.js" />
-
-        {/* Service worker unregister patch for Vercel compatibility */}
-        <script src="/swr-patch.js" />
-        
-        {/* 행성 애니메이션 수정 스크립트 */}
-        <script src="/planet-fix.js" />
-        
-        {/* Wallet adapter override script for MetaMask compatibility */}
-        <script src="/wallet-adapter-override.js" />
       </body>
     </Html>
   );

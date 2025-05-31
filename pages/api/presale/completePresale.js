@@ -1,6 +1,7 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
 import { validateSolanaAddress } from '../../../api-middlewares/apiSecurity';
+import { optimizedRateLimiter } from '../../../api-middlewares/optimizedRateLimit';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -11,7 +12,7 @@ const supabase = createClient(
 // Solana RPC endpoint
 const SOLANA_RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || 'https://api.devnet.solana.com';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -113,3 +114,6 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message || 'Internal server error' });
   }
 }
+
+// Apply rate limiting middleware (5 requests per minute, weight: 2)
+export default optimizedRateLimiter(handler);

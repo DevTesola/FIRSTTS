@@ -4,10 +4,12 @@ config({ path: './.env.development.local' });
 import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import { createClient } from '@supabase/supabase-js';
-import { SOLANA_RPC_ENDPOINT, COLLECTION_MINT } from './cluster.js';
+import { COLLECTION_MINT } from './cluster.js';
 import { SELLER_KEYPAIR } from '../server/utils/sellerKeypair.js';
+import { mintingConfig } from './minting-config.js';
 
-const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
+// 민팅 전용 메인넷 연결 사용
+const connection = new Connection(mintingConfig.rpcEndpoint, mintingConfig.commitment);
 const metaplex = Metaplex.make(connection)
   .use(keypairIdentity(SELLER_KEYPAIR));
 
@@ -31,7 +33,7 @@ const IPFS_GATEWAYS = [
 ];
 
 const RESOURCE_CID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
-const NFT_PRICE_LAMPORTS = Number(process.env.NFT_PRICE_LAMPORTS) || 1.5 * LAMPORTS_PER_SOL;
+const NFT_PRICE_LAMPORTS = mintingConfig.nftPriceLamports;
 const SELLER_PUBLIC_KEY = process.env.NEXT_PUBLIC_SELLER_PUBLIC_KEY || 'qNfZ9QHYyu5dDDMvVAZ1hE55JX4GfUYQyfvLzZKBZi3';
 
 // Lock timeout in milliseconds (3 minutes)
