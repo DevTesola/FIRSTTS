@@ -10,13 +10,13 @@ import WalletGuide from "./WalletGuide";
 import { useAnalytics } from "./AnalyticsProvider";
 import { mintingConfig } from "../utils/minting-config";
 
-// 민팅 전용 메인넷 설정 사용
+// Use mainnet configuration for minting
 const SOLANA_RPC_ENDPOINT = mintingConfig.rpcEndpoint;
 const MINT_PRICE = `${mintingConfig.getNftPriceInSol()} SOL`;
 
 /**
- * 개선된 민팅 섹션 컴포넌트
- * 향상된 사용자 경험 및 오류 처리
+ * Enhanced minting section component
+ * Improved user experience and error handling
  */
 export default function MintSection({ 
   mintPrice = MINT_PRICE, 
@@ -35,7 +35,7 @@ export default function MintSection({
   const [solBalance, setSolBalance] = useState(null);
   const [hasSufficientFunds, setHasSufficientFunds] = useState(true);
 
-  // 사용자의 SOL 잔액 조회
+  // Check user's SOL balance
   const checkBalance = useCallback(async () => {
     if (!connected || !publicKey) return;
     
@@ -43,34 +43,34 @@ export default function MintSection({
       const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
       const balance = await connection.getBalance(publicKey);
       
-      // lamports를 SOL로 변환 (1 SOL = 10^9 lamports)
+      // Convert lamports to SOL (1 SOL = 10^9 lamports)
       const balanceInSol = balance / 1_000_000_000;
       setSolBalance(balanceInSol);
       
-      // 민팅 가격 (문자열에서 숫자로 변환)
+      // Mint price (convert string to number)
       const mintPriceValue = parseFloat(mintPrice.replace(' SOL', ''));
       
-      // 민팅에 충분한 SOL이 있는지 확인 (거래 수수료 0.01 SOL 추가)
+      // Check if user has enough SOL for minting (add 0.01 SOL for transaction fees)
       setHasSufficientFunds(balanceInSol >= (mintPriceValue + 0.01));
     } catch (err) {
       console.error('Error checking balance:', err);
-      // 오류가 발생해도 민팅은 허용 (실제 트랜잭션에서 다시 확인됨)
+      // Allow minting even if error occurs (will be checked again in actual transaction)
       setHasSufficientFunds(true);
     }
   }, [publicKey, connected, mintPrice]);
   
-  // 지갑 연결 시 잔액 확인
+  // Check balance when wallet is connected
   useEffect(() => {
     if (connected && publicKey) {
       checkBalance();
       
-      // 10초마다 잔액 업데이트
+      // Update balance every 10 seconds
       const interval = setInterval(checkBalance, 10000);
       return () => clearInterval(interval);
     }
   }, [connected, publicKey, checkBalance]);
   
-  // 민팅 시도 횟수가 변경되면 UI 상태 리셋
+  // Reset UI state when mint attempts change
   useEffect(() => {
     if (mintAttempts > 0) {
       setAgreedToPolicy(false);
@@ -78,9 +78,9 @@ export default function MintSection({
     }
   }, [mintAttempts]);
 
-  // 민팅 처리 함수
+  // Minting handler function
   const handlePurchase = async () => {
-    // 애널리틱스 이벤트 - 민팅 시작
+    // Analytics event - mint started
     trackEvent('mint_started', { wallet: publicKey?.toString()?.slice(0, 8) });
     
     try {
@@ -93,16 +93,16 @@ export default function MintSection({
         throw new Error("Please connect a wallet");
       }
       
-      // 잔액 다시 확인
+      // Check balance again
       await checkBalance();
       if (!hasSufficientFunds && solBalance !== null) {
         throw new Error(`Insufficient funds. You need at least ${mintPrice} plus transaction fees. Current balance: ${solBalance.toFixed(4)} SOL`);
       }
 
-      // 1단계: NFT 구매 준비 - NFT 예약 및 결제 트랜잭션 생성
+      // Step 1: Prepare NFT purchase - NFT reservation and payment transaction creation
       console.log("Preparing purchase...");
       
-      // AbortController로 60초 timeout 설정
+      // Set 60 second timeout with AbortController
       const purchaseController = new AbortController();
       const purchaseTimeoutId = setTimeout(() => purchaseController.abort(), 60000);
       
@@ -129,19 +129,19 @@ export default function MintSection({
       const { transaction, mint, filename, mintIndex, lockId, paymentId } = await res.json();
       console.log("Received transaction data:", { mint, filename, mintIndex, lockId });
       
-      // 애널리틱스 이벤트 - 트랜잭션 생성됨
+      // Analytics event - transaction created
       trackEvent('mint_transaction_created', { 
         mintIndex: mintIndex, 
         filename: filename 
       });
 
-      // 2단계: 트랜잭션 크기 검증
+      // Step 2: Transaction size validation
       const txBuf = Buffer.from(transaction, "base64");
       if (txBuf.length > 1232) {
         throw new Error("Transaction size exceeds Solana limit (1232 bytes)");
       }
 
-      // 3단계: 트랜잭션 서명 요청
+      // Step 3: Request transaction signature
       console.log("Signing transaction...");
       const tx = Transaction.from(txBuf);
       if (!tx.feePayer) tx.feePayer = publicKey;
@@ -150,17 +150,17 @@ export default function MintSection({
       try {
         signedTx = await signTransaction(tx);
       } catch (signError) {
-        // 애널리틱스 이벤트 - 서명 실패
+        // Analytics event - signature failed
         trackEvent('mint_signature_rejected', { error: signError.message });
         throw new Error('Transaction signing was cancelled or failed');
       }
       
       console.log("Transaction signed:", signedTx);
       
-      // 애널리틱스 이벤트 - 트랜잭션 서명됨
+      // Analytics event - transaction signed
       trackEvent('mint_transaction_signed');
 
-      // 4단계: 서명된 트랜잭션 전송
+      // Step 4: Send signed transaction
       const rawTx = signedTx.serialize();
       const connection = new Connection(SOLANA_RPC_ENDPOINT, "confirmed");
       
@@ -170,21 +170,21 @@ export default function MintSection({
         preflightCommitment: 'confirmed'
       });
       
-      // 애널리틱스 이벤트 - 트랜잭션 전송됨
+      // Analytics event - transaction sent
       trackEvent('mint_transaction_sent', { signature: signature });
 
-      // 5단계: 트랜잭션 확인 대기
+      // Step 5: Wait for transaction confirmation
       console.log("Waiting for transaction confirmation...");
       await connection.confirmTransaction(signature, 'confirmed');
 
-      // 애널리틱스 이벤트 - 트랜잭션 확인됨
+      // Analytics event - transaction confirmed
       trackEvent('mint_transaction_confirmed', { signature: signature });
 
-      // 5.5단계: 락 타임스탬프 갱신
+      // Step 5.5: Refresh lock timestamp
       try {
         console.log("Refreshing lock to prevent timeout...");
         
-        // AbortController로 30초 timeout 설정 (락 갱신은 빨라야 함)
+        // Set 30 second timeout with AbortController (lock refresh should be fast)
         const refreshController = new AbortController();
         const refreshTimeoutId = setTimeout(() => refreshController.abort(), 30000);
         
@@ -210,10 +210,10 @@ export default function MintSection({
         console.warn("Lock refresh error, continuing with minting:", refreshErr);
       }
 
-      // 6단계: 민팅 완료 처리
+      // Step 6: Complete minting process
       console.log("Completing minting process...");
       
-      // AbortController로 90초 timeout 설정 (민팅 완료는 시간이 오래 걸릴 수 있음)
+      // Set 90 second timeout with AbortController (minting completion may take longer)
       const completeController = new AbortController();
       const completeTimeoutId = setTimeout(() => completeController.abort(), 90000);
       
@@ -239,16 +239,16 @@ export default function MintSection({
       const completeMintData = await completeRes.json();
       console.log("Minting completed:", completeMintData);
       
-      // 애널리틱스 이벤트 - 민팅 완료
+      // Analytics event - mint completed
       trackEvent('mint_completed', { 
         mintAddress: completeMintData.mintAddress,
         filename: filename
       });
 
-      // 7단계: UI 업데이트 및 결과 표시
+      // Step 7: UI update and result display
       if (onMintComplete) {
         try {
-          // IPFS 게이트웨이로 메타데이터 가져오기
+          // Fetch metadata from IPFS gateway
           const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://tesola.mypinata.cloud';
           const resourceCID = process.env.NEXT_PUBLIC_RESOURCE_CID || 'bafybeifr7lmcpstyii42klei2yh6f3agxsk65sb2m5qjbrdfsn3ahpposu';
           const metadataUrl = `${ipfsGateway}/ipfs/${resourceCID}/${filename}.json`;
@@ -261,15 +261,15 @@ export default function MintSection({
           
           const metadata = await metadataRes.json();
           
-          // 민트 주소가 메타데이터에 없으면 추가
+          // Add mint address if not in metadata
           if (!metadata.mintAddress && completeMintData.mintAddress) {
             metadata.mintAddress = completeMintData.mintAddress;
           }
           
-          // 결과 콜백 호출
+          // Call result callback
           onMintComplete({ metadata, filename });
           
-          // 애널리틱스 이벤트 - 메타데이터 로드 완료
+          // Analytics event - metadata loaded
           trackEvent('mint_metadata_loaded', { 
             filename: filename,
             tier: metadata.attributes?.find(a => a.trait_type === 'Tier')?.value || 'Unknown'
@@ -277,10 +277,10 @@ export default function MintSection({
         } catch (metadataErr) {
           console.error("Metadata loading error:", metadataErr);
           
-          // 애널리틱스 이벤트 - 메타데이터 로드 실패
+          // Analytics event - metadata load failed
           trackEvent('mint_metadata_error', { error: metadataErr.message });
           
-          // 메타데이터 로드 실패해도 민팅은 성공했으므로 기본 정보로 콜백
+          // Minting succeeded even if metadata load failed, so callback with default info
           onMintComplete({
             metadata: {
               name: `SOLARA #${filename}`,
@@ -295,10 +295,10 @@ export default function MintSection({
     } catch (err) {
       console.error("Minting error:", err);
       
-      // 애널리틱스 이벤트 - 민팅 실패
+      // Analytics event - mint failed
       trackEvent('mint_failed', { error: err.message });
       
-      // 사용자 친화적인 오류 메시지 생성
+      // Generate user-friendly error message
       let userMessage = "Minting failed. Please try again.";
       
       if (err.message.includes("wallet")) userMessage = "Wallet not connected.";
@@ -323,7 +323,7 @@ export default function MintSection({
 
   return (
     <div className="flex flex-col items-center space-y-6 mt-10 w-full max-w-sm mx-auto">
-      {/* 지갑 연결 가이드 */}
+      {/* Wallet connection guide */}
       <WalletGuide />
       
       {isClient ? (
@@ -344,7 +344,7 @@ export default function MintSection({
                 )}
               </div>
               
-              {/* 잔액 부족 경고 */}
+              {/* Insufficient balance warning */}
               {!hasSufficientFunds && solBalance !== null && (
                 <div className="mt-1 text-xs text-red-400">
                   Insufficient funds for minting. You need at least {mintPrice} plus fees.
@@ -359,7 +359,7 @@ export default function MintSection({
       
       {isClient && connected && (
         <div className="w-full">
-          {/* 환불 정책 동의 체크박스 */}
+          {/* Refund policy agreement checkbox */}
           <div className="mb-4 flex items-start space-x-2">
             <input
               type="checkbox"
@@ -368,7 +368,7 @@ export default function MintSection({
               onChange={(e) => {
                 setAgreedToPolicy(e.target.checked);
                 if (e.target.checked) {
-                  // 애널리틱스 이벤트 - 환불 정책 동의
+                  // Analytics event - refund policy agreed
                   trackEvent('refund_policy_agreed');
                 }
               }}
@@ -380,7 +380,7 @@ export default function MintSection({
                 type="button"
                 onClick={() => {
                   showRefundPolicy();
-                  // 애널리틱스 이벤트 - 환불 정책 조회
+                  // Analytics event - refund policy viewed
                   trackEvent('refund_policy_viewed');
                 }}
                 className="text-purple-400 hover:text-purple-300 underline"
@@ -417,7 +417,7 @@ export default function MintSection({
             )}
           </button>
           
-          {/* 잔액 부족 경고 별도 표시 */}
+          {/* Separate insufficient balance warning */}
           {!hasSufficientFunds && solBalance !== null && connected && (
             <div className="mt-2 text-xs text-center text-red-400">
               Please add more SOL to your wallet to mint.
