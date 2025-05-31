@@ -1429,10 +1429,10 @@ const StakingComponent = React.memo(function StakingComponent({ nft, onSuccess, 
     <ErrorBoundary>
       {/* New 3-Phase Staking Banner */}
       <div className="mb-6 p-3 bg-indigo-50 rounded-md border border-indigo-200">
-        <h3 className="text-sm font-bold text-indigo-700 mb-1">통합 스테이킹 방식이 적용되었습니다</h3>
+        <h3 className="text-sm font-bold text-indigo-700 mb-1">Unified Staking System Active</h3>
         <p className="text-xs text-indigo-600">
-          이제 기존에 발생하던 모든 오류가 수정된 단일 스테이킹 방식을 제공합니다.
-          계정 초기화 오류와 벡터 파싱 오류가 해결되어 더 안정적인 스테이킹이 가능합니다.
+          All previous errors have been resolved with our improved single staking method.
+          Account initialization and vector parsing errors have been fixed for stable staking.
         </p>
       </div>
       <div className="bg-gray-800 border border-purple-500/30 rounded-lg p-6 shadow-lg relative">

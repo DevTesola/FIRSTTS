@@ -295,7 +295,7 @@ export default function SyncLogsPanel({ adminKey }) {
         >
           {loading ? (
             <>
-              <ArrowPathIcon className="w-4 h-4 mr-1 animate-spin" /> 로딩 중...
+              <ArrowPathIcon className="w-4 h-4 mr-1 animate-spin" /> Loading...
             </>
           ) : (
             <>
@@ -310,7 +310,7 @@ export default function SyncLogsPanel({ adminKey }) {
         <div className="overflow-x-auto">
           {logs.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              {loading ? '로그 로딩 중...' : '일치하는 로그가 없습니다.'}
+              {loading ? '로그 Loading...' : '일치하는 로그가 없습니다.'}
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
@@ -404,7 +404,7 @@ export default function SyncLogsPanel({ adminKey }) {
         <div className="overflow-x-auto">
           {errors.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              {loading ? '오류 로딩 중...' : '일치하는 오류가 없습니다.'}
+              {loading ? '오류 Loading...' : '일치하는 오류가 없습니다.'}
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
@@ -513,7 +513,7 @@ export default function SyncLogsPanel({ adminKey }) {
         <div>
           {!stats ? (
             <div className="p-8 text-center text-gray-500">
-              {loading ? '통계 로딩 중...' : '통계 데이터가 없습니다.'}
+              {loading ? '통계 Loading...' : '통계 데이터가 없습니다.'}
             </div>
           ) : (
             <>

@@ -740,7 +740,7 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
             <div className="w-full h-full bg-black/30 flex items-center justify-center">
               <div className="animate-pulse flex flex-col items-center">
                 <div className="w-4 h-4 rounded-full bg-purple-500/50 mb-1"></div>
-                <span className="text-xs text-white/50">로딩 중</span>
+                <span className="text-xs text-white/50">Loading</span>
               </div>
             </div>
           )}
@@ -902,11 +902,11 @@ const StakedNFTCard = ({ stake, onRefresh }) => {
                 }}
               />
             ) : (
-              // 로딩 중 표시 (확대 이미지)
+              // Loading 표시 (확대 이미지)
               <div className="w-full h-full bg-black/30 flex items-center justify-center">
                 <div className="animate-pulse flex flex-col items-center">
                   <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                  <div className="text-xs text-white/70">이미지 로딩 중...</div>
+                  <div className="text-xs text-white/70">이미지 Loading...</div>
                 </div>
               </div>
             )}

@@ -21,8 +21,8 @@ export default function Index() {
   return (
     <ErrorBoundary>
       <Head>
-        <title>TESOLA - 우주를 향한 여정</title>
-        <meta name="description" content="Enter the TESOLA experience - 우주 탐험과 미래 기술의 융합" />
+        <title>TESOLA - Journey to the Stars</title>
+        <meta name="description" content="Enter the TESOLA experience - Space exploration and future technology convergence" />
         
         {/* Emergency inline style - prevent blank screen */}
         <style dangerouslySetInnerHTML={{ __html: `
@@ -38,7 +38,7 @@ export default function Index() {
           }
         `}} />
       </Head>
-      <FallbackLoading message="TESOLA 경험 로딩 중..." />
+      <FallbackLoading message="Loading TESOLA experience..." />
     </ErrorBoundary>
   );
 }

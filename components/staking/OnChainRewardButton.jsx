@@ -196,7 +196,7 @@ export default function OnChainRewardButton({
         className="bg-blue-500 text-white py-2 px-4 rounded opacity-70 cursor-not-allowed"
         disabled
       >
-        리워드 정보 로딩 중...
+        Loading reward info...
       </button>
     );
   }

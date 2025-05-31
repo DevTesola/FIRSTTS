@@ -1,4 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
+import { mintingConfig } from '../../utils/minting-config';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -15,9 +16,8 @@ export default async function handler(req, res) {
     // Validate wallet address
     const publicKey = new PublicKey(wallet);
     
-    // Use server-side RPC connection (no CORS issues)
-    const rpcEndpoint = process.env.SOLANA_RPC_ENDPOINT || 'https://api.mainnet-beta.solana.com';
-    const connection = new Connection(rpcEndpoint, 'confirmed');
+    // Use minting config RPC endpoint (same as minting process)
+    const connection = new Connection(mintingConfig.rpcEndpoint, mintingConfig.commitment);
     const balance = await connection.getBalance(publicKey);
     
     // Convert to SOL
