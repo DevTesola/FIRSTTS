@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Connection } from "@solana/web3.js";
 import { useAnalytics } from "./AnalyticsProvider";
 import { mintingConfig } from "../utils/minting-config";
 
@@ -19,38 +18,35 @@ export default function WalletGuide({ forceShow, onClose }) {
   const [animating, setAnimating] = useState(false);
   const [solBalance, setSolBalance] = useState(null);
   
-  // 사용자의 SOL 잔액 조회
+  // 사용자의 SOL 잔액 조회 (서버 API 사용)
   const getBalance = useCallback(async () => {
     if (!connected || !publicKey) return;
     
     try {
-      // 민팅 설정에서 메인넷 RPC 엔드포인트 사용
-      const rpcEndpoint = mintingConfig.rpcEndpoint;
-      console.log('Using RPC endpoint for balance check:', rpcEndpoint);
       console.log('Checking balance for wallet:', publicKey.toString());
       
-      // Connection 클래스를 사용하여 CORS 문제 해결
-      const connection = new Connection(rpcEndpoint, 'confirmed');
-      const balance = await connection.getBalance(publicKey);
+      // 서버 API를 통해 잔액 조회 (CORS 문제 없음)
+      const response = await fetch('/api/getBalance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet: publicKey.toString()
+        })
+      });
       
-      // lamports를 SOL로 변환 (1 SOL = 10^9 lamports)
-      const balanceInSol = balance / 1_000_000_000;
-      console.log('Balance in lamports:', balance);
-      console.log('Balance in SOL:', balanceInSol);
-      setSolBalance(balanceInSol);
+      if (!response.ok) {
+        throw new Error(`Balance API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Balance in SOL:', data.balance);
+      setSolBalance(data.balance);
     } catch (error) {
       console.error('Error fetching balance:', error);
-      // 백업 RPC 시도
-      try {
-        console.log('Trying backup RPC...');
-        const backupConnection = new Connection('https://solana-api.projectserum.com', 'confirmed');
-        const balance = await backupConnection.getBalance(publicKey);
-        const balanceInSol = balance / 1_000_000_000;
-        console.log('Backup RPC - Balance in SOL:', balanceInSol);
-        setSolBalance(balanceInSol);
-      } catch (backupError) {
-        console.error('Backup RPC also failed:', backupError);
-      }
+      // 에러 발생시 조용히 처리
+      setSolBalance(null);
     }
   }, [publicKey, connected]);
   

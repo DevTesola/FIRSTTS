@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Connection, Transaction } from "@solana/web3.js";
+import { Transaction } from "@solana/web3.js";
 import Image from "next/image";
 import ErrorMessage from "./ErrorMessage";
 import WalletGuide from "./WalletGuide";
@@ -35,16 +35,28 @@ export default function MintSection({
   const [solBalance, setSolBalance] = useState(null);
   const [hasSufficientFunds, setHasSufficientFunds] = useState(true);
 
-  // Check user's SOL balance
+  // Check user's SOL balance (using server API)
   const checkBalance = useCallback(async () => {
     if (!connected || !publicKey) return;
     
     try {
-      const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
-      const balance = await connection.getBalance(publicKey);
+      // Use server API to get balance (no CORS issues)
+      const response = await fetch('/api/getBalance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet: publicKey.toString()
+        })
+      });
       
-      // Convert lamports to SOL (1 SOL = 10^9 lamports)
-      const balanceInSol = balance / 1_000_000_000;
+      if (!response.ok) {
+        throw new Error(`Balance API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const balanceInSol = data.balance;
       setSolBalance(balanceInSol);
       
       // Mint price (convert string to number)
@@ -160,24 +172,30 @@ export default function MintSection({
       // Analytics event - transaction signed
       trackEvent('mint_transaction_signed');
 
-      // Step 4: Send signed transaction
+      // Step 4: Send signed transaction via server API
       const rawTx = signedTx.serialize();
-      const connection = new Connection(SOLANA_RPC_ENDPOINT, "confirmed");
       
       console.log("Sending transaction to blockchain...");
-      const signature = await connection.sendRawTransaction(rawTx, {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed'
+      const submitResponse = await fetch('/api/submitTransaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transaction: Buffer.from(rawTx).toString('base64')
+        })
       });
       
-      // Analytics event - transaction sent
+      if (!submitResponse.ok) {
+        const submitError = await submitResponse.json();
+        throw new Error(submitError.error || 'Failed to submit transaction');
+      }
+      
+      const submitData = await submitResponse.json();
+      const signature = submitData.signature;
+      
+      // Analytics event - transaction sent and confirmed
       trackEvent('mint_transaction_sent', { signature: signature });
-
-      // Step 5: Wait for transaction confirmation
-      console.log("Waiting for transaction confirmation...");
-      await connection.confirmTransaction(signature, 'confirmed');
-
-      // Analytics event - transaction confirmed
       trackEvent('mint_transaction_confirmed', { signature: signature });
 
       // Step 5.5: Refresh lock timestamp
