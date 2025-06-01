@@ -90,6 +90,9 @@ async function createMainnetCollection() {
         __kind: 'V1',
         size: COLLECTION_SIZE,
       },
+      // CRITICAL: Set collection authority to mint wallet
+      collectionAuthority: mainnetKeypair,
+      updateAuthority: mainnetKeypair,
     }, { commitment: 'finalized' });
     
     console.log('\n✅ Collection NFT created successfully!');
