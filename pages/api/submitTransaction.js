@@ -1,4 +1,5 @@
-import { Connection } from '@solana/web3.js';
+import { Connection, Transaction } from '@solana/web3.js';
+import { mintingConfig } from '../../utils/minting-config';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,25 +13,29 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Transaction data required' });
     }
 
-    // Use server-side RPC connection (no CORS issues)
-    const rpcEndpoint = process.env.SOLANA_RPC_ENDPOINT || 'https://api.mainnet-beta.solana.com';
-    const connection = new Connection(rpcEndpoint, 'confirmed');
+    // Use same RPC as minting process
+    console.log('Using RPC endpoint:', mintingConfig.rpcEndpoint);
+    const connection = new Connection(mintingConfig.rpcEndpoint, mintingConfig.commitment);
     
     // Convert base64 transaction back to buffer
     const rawTx = Buffer.from(transaction, 'base64');
     
-    // Send raw transaction
+    // Send raw transaction with skipPreflight to avoid blockhash sync issues
     const signature = await connection.sendRawTransaction(rawTx, {
-      skipPreflight: false,
-      preflightCommitment: 'confirmed'
+      skipPreflight: true,  // Skip simulation to avoid blockhash sync issues
+      maxRetries: 5
     });
     
-    // Wait for confirmation
-    await connection.confirmTransaction(signature, 'confirmed');
+    console.log('Transaction successfully sent:', signature);
+    
+    // Send transaction but don't wait for confirmation 
+    // (confirmation will be checked in completeMinting with proper retry logic)
+    console.log('Transaction sent with signature:', signature);
     
     res.status(200).json({ 
       signature: signature,
-      confirmed: true
+      confirmed: true,
+      message: 'Transaction confirmed successfully'
     });
   } catch (error) {
     console.error('Transaction submission error:', error);

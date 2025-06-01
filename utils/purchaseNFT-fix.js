@@ -174,17 +174,15 @@ export async function purchaseNFT(buyerPublicKey) {
       
     transferTx.feePayer = buyerPublicKey;
     
-    // Get latest blockhash (with retry logic)
+    // Get confirmed blockhash for reliability
     let recentBlockhash;
     try {
       const { blockhash } = await connection.getLatestBlockhash('confirmed');
       recentBlockhash = blockhash;
+      console.log(`[${requestId}] Using confirmed blockhash: ${blockhash}`);
     } catch (bhError) {
-      console.error(`[${requestId}] Error getting blockhash, retrying once: ${bhError.message}`);
-      // Wait briefly and retry once
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const { blockhash } = await connection.getLatestBlockhash('confirmed');
-      recentBlockhash = blockhash;
+      console.error(`[${requestId}] Error getting blockhash: ${bhError.message}`);
+      throw new Error('Failed to get blockhash');
     }
     
     transferTx.recentBlockhash = recentBlockhash;
